@@ -70,5 +70,5 @@ env.bak/
 venv.bak/
 
 # custome directories
-./hdfs_local
+.vscode
 

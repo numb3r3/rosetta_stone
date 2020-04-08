@@ -1,0 +1,51 @@
+path:
+    local: &local
+      suffix_model_id: ''
+      model_dir: './data/models'
+      result_dir: './data/results'
+      summary_dir: './data/summaries'
+  
+default: &default
+  <<: *local
+  experiment: 'default'
+  train_files: 
+    - './datas/train_dataset'
+  eval_files: 
+    - './data/eval_dataset'
+  batch_size: 32
+  num_epochs: 10
+  steps_per_epoch: 1000
+  
+  checkpoint_selector:
+    eval_set: eval
+    eval_metric: accuracy
+    compare_fn: less
+  shuffle_batches: 10
+  num_reader_threads: 8
+  prefetch_buffer_size: 5
+  save_summary_steps: 10
+  save_checkpoints_steps: 500
+
+  optimizer: Adam
+  learning_rate: 0.001
+  warmup_steps: 1000
+  constant_steps: 2500
+  lr_decay_method: exponential
+  decay_steps: 1000
+  decay_rate: 0.5
+  weight_decay_rate: 0.01
+  exclude_from_weight_decay:
+    - 'LayerNorm'
+    - 'layer_norm'
+    - 'bias'
+  weight_averaging_decay: 0.9
+  gradient_clip: true
+  gradient_max_norm: 1.0
+
+  dropout_rate: 0.1
+
+  num_gpus: 
+
+default_gpu:
+  <<: *default
+  num_gpus: 1

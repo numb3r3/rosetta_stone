@@ -1,8 +1,8 @@
 Rosetta Stone
 =============
 
-**Resetta Stone* is a toolkit for Natural Lanauge Processing (NLP).
+**Resetta Stone** is a toolkit for Natural Lanauge Processing (NLP).
 
-# Prerequired
+# Prerequirements
 - Python >= 3.6
 - Pytorch >= 1.10

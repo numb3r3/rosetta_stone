@@ -1,0 +1,2 @@
+base: &base
+  num_epochs: 100

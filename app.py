@@ -1,11 +1,30 @@
 import argparse
 
-from rosetta import __version__
+from rosetta import __version__, helper
 from termcolor import colored
 
 
-def main(args, unknownargs):
-    print(args)
+def main(args, unused_argv):
+
+    logger = helper.set_logger("rosetta", verbose=True)
+
+    cli_args = helper.parse_cli_args(unused_argv) if unused_argv else None
+    hparams = helper.parse_args("app.yaml", args.model_name, "default")
+
+    if cli_args:
+        # useful when changing args for prediction
+        logger.info("override args with cli args ...")
+        for k, v in cli_args.items():
+            if k in hparams and hparams.get(k) != v:
+                logger.info("%20s: %20s -> %20s" % (k, hparams.get(k), v))
+                hparams[k] = v
+            elif k not in hparams:
+                logger.warning("%s is not a valid attribute! ignore!" % k)
+
+    logger.info("current parameters")
+    for k, v in sorted(hparams.items()):
+        if not k.startswith("_"):
+            logger.info("%20s = %-20s" % (k, v))
 
 
 def parse_args():
@@ -24,13 +43,8 @@ def parse_args():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
-    parser.add_argument("model_name", type=str, required=True, help="the model name")
-    parser.add_argument(
-        "--yaml",
-        type=str,
-        default="models.yaml",
-        help="the model configuration in yaml file",
-    )
+    parser.add_argument("model_name", type=str, help="the model name")
+
     parser.add_argument(
         "-c",
         "--command",
@@ -47,10 +61,10 @@ def parse_args():
         help="turn on detailed logging for debug",
     )
 
-    args, unknownargs = parser.parse_known_args()
-    return (args, unknownargs)
+    args, unused_argv = parser.parse_known_args()
+    return (args, unused_argv)
 
 
 if __name__ == "__main__":
-    args, unknownargs = parse_args()
-    main(args, unknownargs)
+    args, unused_argv = parse_args()
+    main(args, unused_argv)

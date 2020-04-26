@@ -7,19 +7,18 @@ path:
   
 default: &default
   <<: *local
-  experiment: 'default'
   train_files: 
     - './datas/train_dataset'
   eval_files: 
     - './data/eval_dataset'
   batch_size: 32
   num_epochs: 10
-  steps_per_epoch: 1000
   
   checkpoint_selector:
     eval_set: eval
     eval_metric: accuracy
     compare_fn: less
+  
   shuffle_batches: 10
   num_reader_threads: 8
   prefetch_buffer_size: 5
@@ -44,8 +43,4 @@ default: &default
 
   dropout_rate: 0.1
 
-  num_gpus: 
-
-default_gpu:
-  <<: *default
-  num_gpus: 1
+  num_gpus:

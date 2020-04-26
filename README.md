@@ -5,7 +5,7 @@ Rosetta Stone
 
 ## Requirements
 - Python >= 3.6
-- Pytorch >= 1.10
+- Pytorch >= 1.4.0
 
 ## Setup with Docker
 

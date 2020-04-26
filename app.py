@@ -4,14 +4,14 @@ from rosetta import __version__
 from termcolor import colored
 
 
-def main(args):
+def main(args, unknownargs):
     print(args)
 
 
 def parse_args():
-    # create the commend argument parser
+    # create the argument parser
     parser = argparse.ArgumentParser(
-        description="%s, a nlp toolkit based on pytorch. "
+        description="%s, a toolkit based on pytorch. "
         "Visit %s for tutorials and documents."
         % (
             colored("Rosetta v%s" % __version__, "green"),
@@ -24,14 +24,20 @@ def parse_args():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
-    parser.add_argument("-m", "--model", type=str, required=True, help="the model name")
+    parser.add_argument("model_name", type=str, required=True, help="the model name")
     parser.add_argument(
-        "-e",
-        "--mode",
+        "--yaml",
+        type=str,
+        default="models.yaml",
+        help="the model configuration in yaml file",
+    )
+    parser.add_argument(
+        "-c",
+        "--command",
         type=str,
         default="train",
-        choices=["train", "eval"],
-        help="the running mode",
+        choices=["train", "eval", "test"],
+        help="the running command",
     )
     parser.add_argument(
         "-v",
@@ -41,10 +47,10 @@ def parse_args():
         help="turn on detailed logging for debug",
     )
 
-    args = parser.parse_args()
-    return args
+    args, unknownargs = parser.parse_known_args()
+    return (args, unknownargs)
 
 
 if __name__ == "__main__":
-    args = parse_args()
-    main(args)
+    args, unknownargs = parse_args()
+    main(args, unknownargs)

@@ -14,17 +14,22 @@ try:
 except FileNotFoundError:
     __version__ = "0.0.0"
 
-base_dep = ["numpy", "termcolor"]
+with open("README.md", "r") as fh:
+    long_description = fh.read()
 
+with open("requirements.txt") as f:
+    base_dep = f.read().splitlines()
 
 setup(
     name=pkg_name,
     packages=find_packages(),
     version=__version__,
     include_package_data=True,
-    description="",
     author="numb3r3",
     author_email="wangfelix87@gmail.com",
+    description="",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     url="https://git.huya.com/wangfeng2/rosetta_stone",
     install_requires=base_dep,
     setup_requires=[
@@ -34,6 +39,7 @@ setup(
         "isort==4.3.21",
     ],
     tests_require=["pytest"],
+    python_requires=">=3.6",
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",

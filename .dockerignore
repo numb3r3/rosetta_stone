@@ -3,3 +3,5 @@
 **/__pycache__
 .gitignore
 .git
+.vscode
+.pytest_cache

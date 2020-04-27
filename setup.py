@@ -22,12 +22,12 @@ with open("requirements.txt") as f:
 
 setup(
     name=pkg_name,
-    packages=find_packages(),
+    packages=find_packages(exclude=["test", "docs", "examples"]),
     version=__version__,
     include_package_data=True,
     author="numb3r3",
     author_email="wangfelix87@gmail.com",
-    description="",
+    description="support tool for research experiments",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://git.huya.com/wangfeng2/rosetta_stone",

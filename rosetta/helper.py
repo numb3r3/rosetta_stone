@@ -5,12 +5,18 @@ from typing import List
 from ruamel.yaml import YAML
 
 
-def get_logger(name: str, log_format) -> logging.Logger:
+def get_logger(name: str, log_format: str = None) -> logging.Logger:
     import logging.handlers
 
     logger = logging.getLogger(name)
     ch = logging.StreamHandler()
     ch.setLevel(logging.INFO)
+    if not log_format:
+        log_format = (
+            "%(levelname)-.1s:"
+            + name
+            + ":[%(filename).8s:%(funcName).8s:%(lineno)3d]:%(message)s"
+        )
     ch.setFormatter(logging.Formatter(log_format, datefmt="%m-%d %H:%M:%S"))
     logger.addHandler(ch)
     return logger

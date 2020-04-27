@@ -18,5 +18,9 @@ docker build --tag huya_ai:rosetta .
 - run the docker container
 
 ```bash
-docker run --rm -it -v $(PWD):/tmp/resetta --name resetta huya_ai:rosetta bash
+docker run --rm -it -v $(PWD):/tmp/rosetta --name rosetta huya_ai:rosetta bash
 ```
+
+## References
+
+- [homura](https://github.com/moskomule/homura): PyTorch utilities including trainer, reporter, etc.

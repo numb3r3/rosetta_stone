@@ -5,3 +5,6 @@
 .git
 .vscode
 .pytest_cache
+
+saved_models/**
+data/**

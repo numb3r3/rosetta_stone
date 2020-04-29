@@ -1,6 +1,5 @@
---find-links https://download.pytorch.org/whl/torch_stable.html
-
-numpy==1.18.2
 termcolor==1.1.0
 ruamel.yaml==0.16.10
-torch==1.4.0+cpu
+transformers
+torch_optimizer
+pytest

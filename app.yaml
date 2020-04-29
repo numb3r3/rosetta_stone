@@ -1,2 +1,9 @@
-base: &base
+bert: &bert
+  model_package: rosetta.models.bert
+  model_class: Bert
+
+  bert_config_file: /workspace/project-nas-10251-sh/models/reberta_zh_base_pytorch/config.json
+  pretrained_bert_model:  /workspace/project-nas-10251-sh/models/reberta_zh_base_pytorch/pytorch_model.bin
+  
   num_epochs: 100
+

@@ -1,4 +1,5 @@
 import argparse
+import importlib
 
 from rosetta import __version__, helper
 from rosetta.base import lr_schedulers, optimizers
@@ -27,13 +28,9 @@ def main(args, unused_argv):
         if not k.startswith("_"):
             logger.info("%20s = %-20s" % (k, v))
 
-    # User does not need to care about the device
-    from torchvision.models import resnet50
-
-    resnet = resnet50()
-    # Model is registered in optimizer lazily. This is convenient for distributed training and other complicated scenes.
-    optimizer = optimizers.SGD(lr=0.1, momentum=0.9)
-    scheduler = lr_schedulers.MultiStepLR(milestones=[30, 80], gamma=0.1)
+    model_pkg = importlib.import_module(hparams["model_package"])
+    model_cls_ = getattr(model_pkg, hparams["model_class"])
+    model = model_cls_(hparams, logger)
 
 
 def parse_args():

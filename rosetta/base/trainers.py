@@ -118,6 +118,7 @@ class Trainer(object):
                 self.scaler.update()
             else:
                 loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
                 self.optimizer.step()
         return TensorMap(loss=loss, output=output)
 
@@ -135,7 +136,7 @@ class Trainer(object):
 
         for data in data_loader:
             if self.is_train:
-                # increment step here for `callbacks`
+                # increment step here
                 self.step += 1
             self._iteration(data, mode)
 
@@ -151,6 +152,7 @@ class Trainer(object):
         self.is_train = True
         self.epoch += 1
 
+        # Turn on the train mode
         self.model.train()
 
         if hasattr(self.loss_f, "train"):
@@ -162,7 +164,7 @@ class Trainer(object):
         if self.scheduler is not None:
             self.scheduler.step()
 
-    def eval(self, data_loader: Iterable or DataLoader, mode: str = "dev"):
+    def eval(self, data_loader: Iterable or DataLoader, mode: str = "eval"):
         """ Evaluate the model.
         
         :param data_loader:
@@ -171,6 +173,8 @@ class Trainer(object):
         """
 
         self.is_train = False
+
+        # Turn on the evaluation mode
         self.model.eval()
 
         if hasattr(self.loss_f, "eval"):

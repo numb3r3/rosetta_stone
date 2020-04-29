@@ -20,18 +20,39 @@ with open("README.md", "r") as fh:
 with open("requirements.txt") as f:
     base_dep = f.read().splitlines()
 
+# remove blank lines and comments
+base_dep = [
+    x.strip()
+    for x in base_dep
+    if ((x.strip()[0] != "#") and (len(x.strip()) > 3) and "-e git://" not in x)
+]
+
+extras_dep = {"chinese": ["jieba"], "audio": ["librosa>=0.7.0", "torchaudio"]}
+
+
+def combine_dep(new_key, base_keys):
+    extras_dep[new_key] = list(set(k for v in base_keys for k in extras_dep[v]))
+
+
+combine_dep("nlp", ["transformers"])
+combine_dep("cn_nlp", ["chinese", "nlp"])
+combine_dep("all", [k for k in extras_dep if k != "elmo"])
+
 setup(
     name=pkg_name,
-    packages=find_packages(exclude=["test", "docs", "examples"]),
+    packages=find_packages(
+        exclude=["*.tests", "*.tests.*", "tests.*", "tests", "test", "docs", "examples"]
+    ),
     version=__version__,
     include_package_data=True,
     author="numb3r3",
     author_email="wangfelix87@gmail.com",
-    description="support tool for research experiments",
+    description="make research work more friendly",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://git.huya.com/wangfeng2/rosetta_stone",
     install_requires=base_dep,
+    extras_require=extras_dep,
     setup_requires=[
         "setuptools>=18.0",
         "pytest-runner",

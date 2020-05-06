@@ -161,9 +161,6 @@ class Trainer(object):
         with torch.enable_grad():
             self._loop(data_loader, mode=mode)
 
-        if self.scheduler is not None:
-            self.scheduler.step()
-
     def eval(self, data_loader: Iterable or DataLoader, mode: str = "eval"):
         """ Evaluate the model.
         

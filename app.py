@@ -32,16 +32,9 @@ def main(args, unused_argv):
     model_cls_ = getattr(model_pkg, hparams["model_class"])
     model = model_cls_(hparams, logger)
 
-    dataset_pkg = importlib.import_module(hparams["dataset_package"])
-    dataset_cls_ = getattr(model_pkg, hparams["dataset_class"])
-    dataset = dataset_cls_(hparams, logger)
-
-
-    data_loader = torch.utils.data.DataLoader(dataset=coco, 
-                                              batch_size=batch_size,
-                                              shuffle=shuffle,
-                                              num_workers=num_workers,
-                                              collate_fn=collate_fn)
+    dataio_pkg = importlib.import_module(hparams["dataio_package"])
+    dataio_cls_ = getattr(dataio_pkg, hparams["datasio_class"])
+    dataio = dataio_cls_(hparams, logger)
 
 def parse_args():
     # create the argument parser

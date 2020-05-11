@@ -19,8 +19,20 @@ class Bert(nn.Module):
     Paper: https://arxiv.org/abs/1810.04805
     """
 
-    def __init__(self, pretrained_model_path: str, **kwargs):
+    def __init__(self, pretrained_model_path: str = None, **kwargs):
+        super().__init__()
         self.logger = helper.get_logger(__name__)
+
+        if pretrained_model_path:
+            self.restore_from_pretrained(pretrained_model_path)
+        elif "bert_config_path" in kwargs:
+            config_path = kwargs["bert_config_path"]
+            config = modeling_bert.BertConfig.from_pretrained(config_path)
+            self.model = modeling_bert.BertModel(config)
+        else:
+            raise ValueError("Pleas provide pretrained model or config path!")
+
+    def restore_from_pretrained(self, pretrained_model_path: str):
         # We need to differentiate between loading model using custom format and Pytorch-Transformers format
         config_path = os.path.join(pretrained_model_path, "bert_config.json")
         if os.path.exists(config_path):

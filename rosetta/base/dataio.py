@@ -10,7 +10,7 @@ from .. import helper
 
 
 class BaseDataIO:
-    """
+    """ Generates and stores PyTorch DataLoader objects for the train, dev and test datasets.
 
     """
 

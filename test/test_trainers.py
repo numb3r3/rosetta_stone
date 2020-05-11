@@ -1,6 +1,6 @@
 import pytest
-import torch
 from rosetta.base import lr_schedulers, optimizers, trainers
+import torch
 from torch import nn
 from torch.nn import functional as F
 

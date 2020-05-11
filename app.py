@@ -30,11 +30,12 @@ def main(args, unused_argv):
 
     model_pkg = importlib.import_module(hparams["model_package"])
     model_cls_ = getattr(model_pkg, hparams["model_class"])
-    model = model_cls_(hparams, logger)
+    model = model_cls_(**hparams)
 
     dataio_pkg = importlib.import_module(hparams["dataio_package"])
     dataio_cls_ = getattr(dataio_pkg, hparams["datasio_class"])
-    dataio = dataio_cls_(hparams, logger)
+    dataio = dataio_cls_(**hparams)
+
 
 def parse_args():
     # create the argument parser

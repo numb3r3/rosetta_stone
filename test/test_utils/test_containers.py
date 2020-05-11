@@ -1,6 +1,6 @@
 import pytest
-import torch
 from rosetta.utils.containers import TensorMap, TensorTuple
+import torch
 
 
 def test_map():

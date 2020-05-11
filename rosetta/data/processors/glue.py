@@ -1,7 +1,7 @@
 import dataclasses
+from dataclasses import dataclass
 import json
 import logging
-from dataclasses import dataclass
 from typing import List, Optional, Union
 
 from transformers.tokenization_utils import PreTrainedTokenizer

@@ -1,12 +1,11 @@
 from typing import Dict, List, Tuple
 
 import torch
-from torch.utils.data.dataset import Dataset
-from transformers.tokenization_utils import PreTrainedTokenizer
+from torch.nn.utils.rnn import pad_sequence
 
+from . import SentDataset
 from ...base.dataio import BaseDataIO
 from ...data.tokenization import Tokenizer
-from . import SentDataset
 
 
 class MaskedTextDataIO(BaseDataIO):
@@ -15,7 +14,7 @@ class MaskedTextDataIO(BaseDataIO):
         tokenizer_name: str = "bert",
         max_length: int = 256,
         mlm_prob: float = 0.15,
-        **kwargs
+        **kwargs,
     ):
         self.tokenizer = Tokenizer.load(tokenizer_name, do_lower_case=True)
         self.max_length = max_length

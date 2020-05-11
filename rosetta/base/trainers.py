@@ -1,7 +1,7 @@
 import contextlib
-import warnings
 from functools import partial as Partial
 from typing import Callable, Dict, Iterable, Mapping, Optional, Tuple
+import warnings
 
 import torch
 from torch import nn

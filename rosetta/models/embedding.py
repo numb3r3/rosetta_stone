@@ -1,6 +1,6 @@
+from collections import OrderedDict
 import json
 import os
-from collections import OrderedDict
 from typing import Dict
 
 import numpy as np

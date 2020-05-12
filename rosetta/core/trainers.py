@@ -1,24 +1,30 @@
 import contextlib
 from functools import partial as Partial
-from typing import Callable, Dict, Iterable, Mapping, Optional, Tuple
+from typing import Dict, Iterable, Mapping, Optional
 import warnings
 
 import torch
 from torch import nn
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler as Scheduler
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, DistributedSampler
 
+# from ..utils.containers import TensorMap, TensorTuple
 from .. import helper
-from ..utils.containers import TensorMap, TensorTuple
+from ..utils.distribute import (
+    get_global_rank,
+    get_local_rank,
+    is_distributed,
+    is_horovod_available,
+)
 
 
-try:
-    from apex import amp
+# try:
+#     from apex import amp
 
-    AMP_AVAILABLE = True
-except ImportError:
-    AMP_AVAILABLE = False
+#     AMP_AVAILABLE = True
+# except ImportError:
+#     AMP_AVAILABLE = False
 
 
 class Trainer(object):
@@ -29,7 +35,10 @@ class Trainer(object):
         lr_scheduler: Scheduler = None,
         evaluate_every=100,
         device: Optional[torch.device or str] = None,
+        use_horovod: bool = False,
         use_amp: bool = False,
+        use_sync_bn: bool = False,
+        verbose: bool = True,
         **kwargs,
     ):
         self.logger = helper.get_logger(__name__)
@@ -43,12 +52,28 @@ class Trainer(object):
         else:
             self.device = device
 
+        if use_horovod and not is_horovod_available():
+            raise RuntimeError("horovod is not available!")
+
+        if is_distributed():
+            if use_sync_bn:
+                model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
+
+            rank = get_local_rank()
+            torch.cuda.set_device(rank)
+            if get_global_rank() > 0:
+                # to avoid overwriting
+                verbose = False
+
         if isinstance(model, nn.Module):
             self.model = model
         else:
             raise TypeError(
                 f"Unknown type for `model`. Expected nn.Module but got {type(model)}"
             )
+
+        # if data_parallel and not isinstance(self.model, nn.DataParallel) and torch.cuda.device_count() > 1:
+        #     self.model = nn.DataParallel(self.model)
 
         if "cuda" in str(self.device):
             self.model.to(self.device)
@@ -58,33 +83,66 @@ class Trainer(object):
                 f"cuda: False (torch.cuda.is_available()={torch.cuda.is_available()})"
             )
 
+        if not use_horovod and is_distributed():
+            self.model = nn.parallel.DistributedDataParallel(
+                self.model, device_ids=[rank]
+            )
+
+        if isinstance(self.model, nn.parallel.DistributedDataParallel) or isinstance(
+            self.model, nn.DataParallel
+        ):
+            self.accessible_model = self.model.module
+        else:
+            self.accessible_model = self.model
+
         self.optimizer = optimizer
         self.lr_scheduler = lr_scheduler
 
         self.set_optimizer()
         self.set_scheduler()
 
-        self.global_step = -1
-        self.epoch = -1
-        self.is_train = True
+        if use_horovod:
+            import horovod.torch as hvd
 
-        self._use_amp = use_amp
-        if use_amp and not AMP_AVAILABLE:
-            raise ImportError(
-                f"Got use_amp = {use_amp}, but cannot find apex. "
-                "Please install Apex if you want to make use of automatic mixed precision. "
-                "https://github.com/NVIDIA/apex"
+            hvd.broadcast_parameters(self.model.state_dict(), root_rank=0)
+            hvd.broadcast_optimizer_state(self.optimizer, root_rank=0)
+            self.optimizer = hvd.DistributedOptimizer(
+                self.optimizer, named_parameters=self.model.named_parameters()
             )
 
+        self._verbose = verbose
+
+        self._global_step = -1
+        self._epoch = -1
+        self._is_train = True
+
         # self._use_amp = use_amp
-        # if use_amp:
-        #     if not hasattr(torch.cuda, "amp"):
-        #         warnings.warn("amp is not available")
-        #         self._use_amp = False
-        #     else:
-        #         self.scaler = torch.cuda.amp.GradScaler()
+        # if use_amp and not AMP_AVAILABLE:
+        #     raise ImportError(
+        #         f"Got use_amp = {use_amp}, but cannot find apex. "
+        #         "Please install Apex if you want to make use of automatic mixed precision. "
+        #         "https://github.com/NVIDIA/apex"
+        #     )
+
+        self._use_amp = use_amp
         if use_amp:
-            self.scaler = torch.cuda.amp.GradScaler()
+            if not hasattr(torch.cuda, "amp"):
+                warnings.warn("amp is not available")
+                self._use_amp = False
+            else:
+                self.scaler = torch.cuda.amp.GradScaler()
+
+    @property
+    def global_step(self):
+        return self._global_step
+
+    @property
+    def epoch(self):
+        return self._epoch
+
+    @property
+    def is_train(self):
+        return self._is_train
 
     def __enter__(self):
         """
@@ -124,14 +182,14 @@ class Trainer(object):
         with context():
             try:
                 output, loss, metrics = self.model(**feed_dict)
-            except expression as identifier:
+            except Exception:
                 raise ValueError(
                     f"The implemented module = {type(self.model)} should return 3-tuples, i.e, output, loss, metrics. "
                 )
 
         if mode == "train":
             # increment step here
-            self.global_step += 1
+            self._global_step += 1
             self.optimizer.zero_grad()
             if self._use_amp:
                 self.scaler(loss).backward()
@@ -175,8 +233,8 @@ class Trainer(object):
         :param mode: Name of this loop. Default is `train`. 
         """
 
-        self.is_train = True
-        self.epoch += 1
+        self._is_train = True
+        self._epoch += 1
 
         # Turn on the train mode
         self.model.train()
@@ -187,15 +245,20 @@ class Trainer(object):
             #     self.iteration(batch, mode)
             self.logger.info(f"epoch {self.epoch} finished")
 
+        if isinstance(data_loader, DataLoader) and isinstance(
+            data_loader.sampler, DistributedSampler
+        ):
+            data_loader.sampler.set_epoch(self.epoch)
+
     def eval(self, data_loader: Iterable or DataLoader, set_name: str = None):
         """ Evaluate the model.
-        
+
         :param data_loader:
         :param mode: Name of this loop. Default is `dev`. 
         :return:
         """
 
-        self.is_train = False
+        self._is_train = False
 
         # Turn on the evaluation mode
         self.model.eval()
@@ -206,20 +269,19 @@ class Trainer(object):
     def run(
         self,
         train_loader: Iterable or DataLoader,
-        val_loaders: Iterable or DataLoader or Dict[str, Iterable or DataLoader],
-        total_iterations: int,
-        val_intervals: int,
+        eval_loaders: Iterable or DataLoader or Dict[str, Iterable or DataLoader],
+        total_steps: int,
+        eval_intervals: int,
     ):
-
         """ Train the model for a given iterations. This module is almost equal to ::
-            for ep in range(total_iterations):
+            for ep in range(total_steps):
                 trainer.train(train_loader)
                 for k, v in eval_loaders.items():
                     trainer.eval(v, k)
         :param train_loader:
-        :param val_loaders:
-        :param total_iterations:
-        :param val_intervals:
+        :param eval_loaders:
+        :param total_steps:
+        :param eval_intervals:
         :return:
         """
 
@@ -228,30 +290,30 @@ class Trainer(object):
                 self.loader = loader
 
             def __len__(self):
-                return val_intervals
+                return eval_intervals
 
             def __iter__(self):
                 counter = 0
                 while True:
                     for data in self.loader:
-                        if counter == val_intervals:
+                        if counter == eval_intervals:
                             return  # from python 3.7, this is valid
                         yield data
                         counter += 1
 
         train_loader = ProxyLoader(train_loader)
-        if not isinstance(val_loaders, Dict) and (
-            isinstance(val_loaders, Iterable) or isinstance(val_loaders, DataLoader)
+        if not isinstance(eval_loaders, Dict) and (
+            isinstance(eval_loaders, Iterable) or isinstance(eval_loaders, DataLoader)
         ):
-            val_loaders = {"eval": val_loaders}
+            eval_loaders = {"eval": eval_loaders}
 
-        for ep in range(total_iterations // val_intervals):
+        for ep in range(total_steps // eval_intervals):
             self.train(train_loader)
             if isinstance(train_loader.loader, DataLoader) and isinstance(
                 train_loader.loader.sampler, DistributedSampler
             ):
                 train_loader.loader.sampler.set_epoch(self.epoch)
-            for name, loader in val_loaders.items():
+            for name, loader in eval_loaders.items():
                 self.eval(loader, name)
 
     def set_optimizer(self):

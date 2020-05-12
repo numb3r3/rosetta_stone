@@ -1,22 +1,36 @@
 import argparse
 import importlib
+from typing import Dict, Iterable
 
 from rosetta import __version__, helper
 from rosetta.core import lr_schedulers, optimizers, trainers
+from rosetta.utils.distribute import get_num_nodes, init_distributed
 from termcolor import colored
 from torch.nn import functional as F
+from torch.utils.data import DataLoader
 
 
-def run_train(model, data_loader, eval_loader=None):
-    optimizer = optimizers.SGD()
-    scheduler = lr_schedulers.StepLR(9)
-    trainer = trainers.Trainer(model, optimizer, scheduler=scheduler)
+def run_train(
+    model,
+    data_loader: Iterable or DataLoader,
+    eval_loader: Iterable or DataLoader = None,
+    use_horovod: bool = False,
+    hparams: Dict = {},
+):
+    optimizer = optimizers.SGD(lr=hparams["learning_rate"], weight_decay=1e-4)
+    scheduler = lr_schedulers.MultiStepLR([30, 60, 80])
+    trainer = trainers.Trainer(
+        model, optimizer, scheduler=scheduler, use_horovod=use_horovod
+    )
     trainer.train(data_loader)
 
 
 def main(args, unused_argv):
 
     logger = helper.set_logger("rosetta", verbose=True)
+
+    if args.enable_distribute:
+        init_distributed(use_horovod=args.use_horovod, backend=None, init_method=None)
 
     cli_args = helper.parse_cli_args(unused_argv) if unused_argv else None
     hparams = helper.parse_args("app.yaml", args.model_name, "default")
@@ -52,7 +66,9 @@ def main(args, unused_argv):
         hparams["eval_files"], batch_size=hparams["batch_size"], mode="eval"
     )
 
-    run_train(model, train_loader, eval_loader)
+    run_train(
+        model, train_loader, eval_loader, use_horovod=args.use_horovod, hparams=hparams
+    )
 
 
 def parse_args():
@@ -81,6 +97,19 @@ def parse_args():
         choices=["train", "eval", "test"],
         help="the running command",
     )
+    parser.add_argument(
+        "--enable_distribute",
+        action="store_true",
+        default=False,
+        help="turn on distributed training",
+    )
+    parser.add_argument(
+        "--use_horovod",
+        action="store_true",
+        default=False,
+        help="use horrovod for distributed training",
+    )
+
     parser.add_argument(
         "-v",
         "--verbose",

@@ -5,10 +5,10 @@ import torch
 
 
 class PretrainedModel(metaclass=ABCMeta):
-    @abstractmethod
-    def init_from_checkpoint(self, checkpoint_file: str):
-        """
-        """
+    # @abstractmethod
+    # def init_from_checkpoint(self, checkpoint_file: str):
+    #     """
+    #     """
 
     def freeze(self, layers):
         """ To be implemented"""
@@ -77,7 +77,7 @@ class PretrainedModel(metaclass=ABCMeta):
 
         # PyTorch's `_load_from_state_dict` does not copy parameters in a module's descendants
         # so we need to apply the function recursively.
-        def load(module: nn.Module, prefix=""):
+        def load(module: torch.nn.Module, prefix=""):
             local_metadata = {} if metadata is None else metadata.get(prefix[:-1], {})
             module._load_from_state_dict(
                 state_dict,

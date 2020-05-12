@@ -1,7 +1,7 @@
 import os
 
 import pytest
-from rosetta.base.dataio import BaseDataIO
+from rosetta.core.dataio import BaseDataIO
 import torch
 from torch.utils.data.dataset import Dataset
 

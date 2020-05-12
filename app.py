@@ -2,7 +2,7 @@ import argparse
 import importlib
 
 from rosetta import __version__, helper
-from rosetta.base import lr_schedulers, optimizers, trainers
+from rosetta.core import lr_schedulers, optimizers, trainers
 from termcolor import colored
 from torch.nn import functional as F
 

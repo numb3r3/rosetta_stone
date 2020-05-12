@@ -1,16 +1,15 @@
 import os
 
 import pytest
-from rosetta.models.bert import Bert
+from rosetta.models.language_model import BertLM
 import torch
 
 
 def test_model_from_scratch():
     with pytest.raises(ValueError):
-        model = Bert()
+        model = BertLM()
 
     params = {
-        "bert_config_path": "https://s3.amazonaws.com/models.huggingface.co/bert/bert-base-uncased-config.json"
+        "bert_config_file": "https://s3.amazonaws.com/models.huggingface.co/bert/bert-base-uncased-config.json"
     }
-
-    model = Bert(**params)
+    model = BertLM(**params)

@@ -79,15 +79,19 @@ class BertLM(nn.Module):
             input_ids,
             token_type_ids=token_type_ids,
             attention_mask=attention_mask,
-            position_ids=position_ids
+            position_ids=position_ids,
         )
 
         if self.model.encoder.output_hidden_states == True:
-            sequence_output, pooled_output, all_hidden_states = output_tuple[0], output_tuple[1], output_tuple[2]
+            sequence_output, pooled_output, all_hidden_states = (
+                output_tuple[0],
+                output_tuple[1],
+                output_tuple[2],
+            )
             return sequence_output, pooled_output, all_hidden_states
         else:
             sequence_output, pooled_output = output_tuple[0], output_tuple[1]
-            return sequence_output, pooled_output  
+            return sequence_output, pooled_output
 
         # sequence_output = all_hidden_states[self.extraction_layer]
 

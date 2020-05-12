@@ -4,7 +4,7 @@ import torch
 from torch.nn.utils.rnn import pad_sequence
 
 from . import SentDataset
-from ...base.dataio import BaseDataIO
+from ...core.dataio import BaseDataIO
 from ...data.tokenization import Tokenizer
 
 

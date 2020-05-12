@@ -17,12 +17,7 @@ class PretrainedBert(torch.nn.Module):
 
         self.dropout = torch.nn.Dropout(kwargs.get("embeds_dropout_prob", 0.1))
 
-    def forward(
-        self,
-        input_ids,
-        masked_lm_labels,
-        **kwargs
-    ):
+    def forward(self, input_ids, masked_lm_labels, **kwargs):
         """
         Push data through the whole model and returns logits. The data will propagate through the language
         model and each of the attached prediction heads.
@@ -33,7 +28,7 @@ class PretrainedBert(torch.nn.Module):
 
         # Run forward pass of language model
         sequence_output, pooled_output = self.bert_lm(input_ids, **kwargs)
-        
+
         output = self.dropout(sequence_output)
         logits = self.predict_head(output)
 

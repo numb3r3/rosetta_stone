@@ -21,7 +21,7 @@ def test_basic_trainer():
     model = DumyModel()
     optimizer = optimizers.SGD()
     scheduler = lr_schedulers.StepLR(9)
-    trainer = trainers.Trainer(model, optimizer, scheduler=scheduler)
+    trainer = trainers.Trainer(model, optimizer, lr_scheduler=scheduler)
     loader = [
         {"x": torch.randn(2, 10), "y": torch.zeros(2, dtype=torch.long)}
         for _ in range(10)
@@ -37,4 +37,4 @@ def test_basic_trainer():
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 9)
     trainer = trainers.Trainer(model, optimizer, scheduler=scheduler)
     trainer.run(loader, loader, 15, 11)
-    assert trainer.step == 11 - 1
+    assert trainer.global_step == 11 - 1

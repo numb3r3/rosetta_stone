@@ -13,13 +13,21 @@ from .. import helper
 from ..utils.containers import TensorMap, TensorTuple
 
 
+try:
+    from apex import amp
+
+    AMP_AVAILABLE = True
+except ImportError:
+    AMP_AVAILABLE = False
+
+
 class Trainer(object):
     def __init__(
         self,
         model: nn.Module,
         optimizer: Optimizer,
-        # loss_f: Optional[Callable or Dict[str, Callable]],
-        scheduler: Scheduler = None,
+        lr_scheduler: Scheduler = None,
+        evaluate_every=100,
         device: Optional[torch.device or str] = None,
         use_amp: bool = False,
         **kwargs,
@@ -51,24 +59,32 @@ class Trainer(object):
             )
 
         self.optimizer = optimizer
-        self.scheduler = scheduler
+        self.lr_scheduler = lr_scheduler
 
         self.set_optimizer()
         self.set_scheduler()
 
-        # self.loss_f = loss_f
-
-        self.step = -1
+        self.global_step = -1
         self.epoch = -1
         self.is_train = True
 
         self._use_amp = use_amp
+        if use_amp and not AMP_AVAILABLE:
+            raise ImportError(
+                f"Got use_amp = {use_amp}, but cannot find apex. "
+                "Please install Apex if you want to make use of automatic mixed precision. "
+                "https://github.com/NVIDIA/apex"
+            )
+
+        # self._use_amp = use_amp
+        # if use_amp:
+        #     if not hasattr(torch.cuda, "amp"):
+        #         warnings.warn("amp is not available")
+        #         self._use_amp = False
+        #     else:
+        #         self.scaler = torch.cuda.amp.GradScaler()
         if use_amp:
-            if not hasattr(torch.cuda, "amp"):
-                warnings.warn("amp is not available")
-                self._use_amp = False
-            else:
-                self.scaler = torch.cuda.amp.GradScaler()
+            self.scaler = torch.cuda.amp.GradScaler()
 
     def __enter__(self):
         """
@@ -81,9 +97,11 @@ class Trainer(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.exit()
 
-    def iteration(self, data: Dict[str, torch.Tensor]) -> Mapping[str, torch.Tensor]:
+    def _iteration(
+        self, feed_dict: Dict[str, torch.Tensor], mode: str = "eval"
+    ) -> Mapping[str, torch.Tensor]:
         """ Iteration part, user can override via duck typing or override_iteration ::
-            def iteration(self, data: Tuple[torch.Tensor]) -> Mapping[str, torch.Tensor]:
+            def iteration(self, feed_dict: Dict[str, torch.Tensor]) -> Mapping[str, torch.Tensor]:
                 input, labels = data
                 output = self.model(input)
                 loss = self.loss_f(output, labels)
@@ -104,9 +122,16 @@ class Trainer(object):
         )
         context = torch.cuda.amp.autocast if self._use_amp else compat_nullcontext
         with context():
-            output, loss, metrics = self.model(**data)
-            # loss = self.loss_f(output, labels)
-        if self.is_train:
+            try:
+                output, loss, metrics = self.model(**feed_dict)
+            except expression as identifier:
+                raise ValueError(
+                    f"The implemented module = {type(self.model)} should return 3-tuples, i.e, output, loss, metrics. "
+                )
+
+        if mode == "train":
+            # increment step here
+            self.global_step += 1
             self.optimizer.zero_grad()
             if self._use_amp:
                 self.scaler(loss).backward()
@@ -114,32 +139,37 @@ class Trainer(object):
                 self.scaler.update()
             else:
                 loss.backward()
+                # TODO: enable custome grad norm
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
                 self.optimizer.step()
-        return TensorMap(loss=loss, output=output)
 
-    def _iteration(self, data: Dict[str, torch.Tensor], mode: str):
-        """ Iteration level training loop
-        :param data: should be TensorTuple
-        :param mode: train, test or val
-        :return:
-        """
-        results = self.iteration(data)
-        if self.is_train and self.scheduler is not None:
-            self.scheduler.step()
+            # update step for lr_scheduler
+            if self.lr_scheduler:
+                self.lr_scheduler.step()
+        return output, loss, metrics
+
+    # def _iteration(self, data: Dict[str, torch.Tensor], mode: str):
+    #     """ Iteration level training loop
+    #     :param data: should be TensorTuple
+    #     :param mode: train, test or val
+    #     :return:
+    #     """
+    #     results = self.iteration(data)
+    #     if self.is_train and self.scheduler is not None:
+    #         self.scheduler.step()
 
     def _loop(self, data_loader: Iterable or DataLoader, mode: str):
 
         for data in data_loader:
-            if self.is_train:
-                # increment step here
-                self.step += 1
+            # if self.is_train:
+            #     # increment step here
+            #     self.step += 1
             self._iteration(data, mode)
 
         self.logger.debug(f"epoch {self.epoch} finished")
 
-    def train(self, data_loader: Iterable or DataLoader, mode: str = "train"):
-        """ Training the model for an epoch.
+    def train(self, data_loader: Iterable or DataLoader):
+        """ Perform the training procedure for an epoch.
 
         :param data_loader:
         :param mode: Name of this loop. Default is `train`. 
@@ -151,13 +181,13 @@ class Trainer(object):
         # Turn on the train mode
         self.model.train()
 
-        # if hasattr(self.loss_f, "train"):
-        #     self.loss_f.train()
-
         with torch.enable_grad():
-            self._loop(data_loader, mode=mode)
+            self._loop(data_loader, mode="train")
+            # for batch in data_loader:
+            #     self.iteration(batch, mode)
+            self.logger.info(f"epoch {self.epoch} finished")
 
-    def eval(self, data_loader: Iterable or DataLoader, mode: str = "eval"):
+    def eval(self, data_loader: Iterable or DataLoader, set_name: str = None):
         """ Evaluate the model.
         
         :param data_loader:
@@ -170,11 +200,8 @@ class Trainer(object):
         # Turn on the evaluation mode
         self.model.eval()
 
-        # if hasattr(self.loss_f, "eval"):
-        #     self.loss_f.eval()
-
         with torch.no_grad():
-            self._loop(data_loader, mode=mode)
+            self._loop(data_loader, mode="eval")
 
     def run(
         self,
@@ -254,18 +281,18 @@ class Trainer(object):
                     self.scheduler = torch.optim.lr_scheduler.Foo(self.optimizer)
         """
 
-        scheduler = self.scheduler
+        scheduler = self.lr_scheduler
         if scheduler is not None and self.optimizer is None:
             raise TypeError("Optimizer is not set, so scheduler cannot be set")
 
         if isinstance(scheduler, Scheduler) or scheduler is None:
-            self.scheduler = scheduler
+            self.lr_scheduler = scheduler
         elif isinstance(scheduler, Partial):
             if not issubclass(scheduler.func, Scheduler):
                 raise TypeError(
                     f"`scheduler.func` is expected to be subclass of `_LRScheduler`"
                     f" but got {type(scheduler.func)}"
                 )
-            self.scheduler = scheduler(self.optimizer)
+            self.lr_scheduler = scheduler(self.optimizer)
         else:
             raise TypeError(f"Unexpected type {type(scheduler)} for `scheduler`")

@@ -2,8 +2,16 @@ import argparse
 import importlib
 
 from rosetta import __version__, helper
-from rosetta.base import lr_schedulers, optimizers
+from rosetta.base import lr_schedulers, optimizers, trainers
 from termcolor import colored
+from torch.nn import functional as F
+
+
+def run_train(model, data_loader, eval_loader=None):
+    optimizer = optimizers.SGD()
+    scheduler = lr_schedulers.StepLR(9)
+    trainer = trainers.Trainer(model, optimizer, scheduler=scheduler)
+    trainer.train(data_loader)
 
 
 def main(args, unused_argv):
@@ -29,12 +37,22 @@ def main(args, unused_argv):
             logger.info("%20s = %-20s" % (k, v))
 
     model_pkg = importlib.import_module(hparams["model_package"])
-    model_cls_ = getattr(model_pkg, hparams["model_class"])
+    model_cls_ = getattr(model_pkg, hparams.get("model_class", "Model"))
     model = model_cls_(**hparams)
 
     dataio_pkg = importlib.import_module(hparams["dataio_package"])
-    dataio_cls_ = getattr(dataio_pkg, hparams["datasio_class"])
+    dataio_cls_ = getattr(dataio_pkg, hparams.get("dataio_class", "DataIO"))
     dataio = dataio_cls_(**hparams)
+
+    train_loader = dataio.create_data_loader(
+        hparams["train_files"], batch_size=hparams["batch_size"], mode="train"
+    )
+
+    eval_loader = dataio.create_data_loader(
+        hparams["eval_files"], batch_size=hparams["batch_size"], mode="eval"
+    )
+
+    run_train(model, train_loader, eval_loader)
 
 
 def parse_args():

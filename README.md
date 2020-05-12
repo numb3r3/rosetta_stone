@@ -1,7 +1,7 @@
 Rosetta Stone
 =============
 
-**Resetta Stone** is a toolkit for Natural Lanauge Processing (NLP).
+**Resetta Stone** is a toolkit that aims to reduce the cycle time in a deep learning experiment. It enables users to performe end-to-end experiment quickly and efficiently. In comparison with the other open source libraries, Rosetta is an alternate low-code toolkit that can be used to perform deep learning tasks with only few lines of code. Rosetta is essentially a wrapper aroud pytorch, apex, tensorboardX and many more. 
 
 - Unified design for various applications
 - Pre-trained models

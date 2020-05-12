@@ -18,17 +18,13 @@ class Trainer(object):
         self,
         model: nn.Module,
         optimizer: Optimizer,
-        loss_f: Optional[Callable or Dict[str, Callable]],
+        # loss_f: Optional[Callable or Dict[str, Callable]],
         scheduler: Scheduler = None,
         device: Optional[torch.device or str] = None,
         use_amp: bool = False,
-        logger=None,
         **kwargs,
     ):
-
-        if logger is None:
-            logger = helper.get_logger(__name__)
-        self.logger = logger
+        self.logger = helper.get_logger(__name__)
 
         if device is None:
             self.device = (
@@ -60,7 +56,7 @@ class Trainer(object):
         self.set_optimizer()
         self.set_scheduler()
 
-        self.loss_f = loss_f
+        # self.loss_f = loss_f
 
         self.step = -1
         self.epoch = -1
@@ -85,7 +81,7 @@ class Trainer(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.exit()
 
-    def iteration(self, data: Tuple[torch.Tensor]) -> Mapping[str, torch.Tensor]:
+    def iteration(self, data: Dict[str, torch.Tensor]) -> Mapping[str, torch.Tensor]:
         """ Iteration part, user can override via duck typing or override_iteration ::
             def iteration(self, data: Tuple[torch.Tensor]) -> Mapping[str, torch.Tensor]:
                 input, labels = data
@@ -100,7 +96,7 @@ class Trainer(object):
         :return: TensorMap or Dict
         """
 
-        input, labels = data
+        # input, labels = data
         compat_nullcontext = (
             contextlib.nullcontext
             if hasattr(contextlib, "nullcontext")
@@ -108,8 +104,8 @@ class Trainer(object):
         )
         context = torch.cuda.amp.autocast if self._use_amp else compat_nullcontext
         with context():
-            output = self.model(input)
-            loss = self.loss_f(output, labels)
+            output, loss, metrics = self.model(**data)
+            # loss = self.loss_f(output, labels)
         if self.is_train:
             self.optimizer.zero_grad()
             if self._use_amp:
@@ -122,7 +118,7 @@ class Trainer(object):
                 self.optimizer.step()
         return TensorMap(loss=loss, output=output)
 
-    def _iteration(self, data: Tuple[torch.Tensor], mode: str):
+    def _iteration(self, data: Dict[str, torch.Tensor], mode: str):
         """ Iteration level training loop
         :param data: should be TensorTuple
         :param mode: train, test or val
@@ -155,8 +151,8 @@ class Trainer(object):
         # Turn on the train mode
         self.model.train()
 
-        if hasattr(self.loss_f, "train"):
-            self.loss_f.train()
+        # if hasattr(self.loss_f, "train"):
+        #     self.loss_f.train()
 
         with torch.enable_grad():
             self._loop(data_loader, mode=mode)
@@ -174,8 +170,8 @@ class Trainer(object):
         # Turn on the evaluation mode
         self.model.eval()
 
-        if hasattr(self.loss_f, "eval"):
-            self.loss_f.eval()
+        # if hasattr(self.loss_f, "eval"):
+        #     self.loss_f.eval()
 
         with torch.no_grad():
             self._loop(data_loader, mode=mode)

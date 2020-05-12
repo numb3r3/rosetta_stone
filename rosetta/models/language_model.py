@@ -12,27 +12,29 @@ from transformers import modeling_bert
 from .. import helper
 
 
-class Bert(nn.Module):
+class BertLM(nn.Module):
     """
     A BERT model that wraps HuggingFace's implementation
     (https://github.com/huggingface/transformers) to fit the LanguageModel class.
     Paper: https://arxiv.org/abs/1810.04805
     """
 
-    def __init__(self, pretrained_model_path: str = None, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__()
         self.logger = helper.get_logger(__name__)
 
-        if pretrained_model_path:
-            self.restore_from_pretrained(pretrained_model_path)
-        elif "bert_config_path" in kwargs:
-            config_path = kwargs["bert_config_path"]
+        if "pretrained_model_path" in kwargs:
+            pretrained_model_path = kwargs["pretrained_model_path"]
+            self._restore_from_pretrained(pretrained_model_path)
+        elif "bert_config_file" in kwargs:
+            config_path = kwargs["bert_config_file"]
             config = modeling_bert.BertConfig.from_pretrained(config_path)
             self.model = modeling_bert.BertModel(config)
         else:
             raise ValueError("Pleas provide pretrained model or config path!")
+        self.extraction_layer = kwargs.get("extraction_layer", -1)
 
-    def restore_from_pretrained(self, pretrained_model_path: str):
+    def _restore_from_pretrained(self, pretrained_model_path: str, **kwargs):
         # We need to differentiate between loading model using custom format and Pytorch-Transformers format
         config_path = os.path.join(pretrained_model_path, "bert_config.json")
         if os.path.exists(config_path):
@@ -48,7 +50,18 @@ class Bert(nn.Module):
                 pretrained_model_path, **kwargs
             )
 
-    def forward(self, input_ids, segment_ids, padding_mask, **kwargs):
+    # def cross_entropy_one_hot(input, target):
+    #     _, labels = target.max(dim=0)
+    #     return nn.CrossEntropyLoss()(input, labels)
+
+    def forward(
+        self,
+        input_ids,
+        attention_mask=None,
+        token_type_ids=None,
+        position_ids=None,
+        **kwargs
+    ):
         """
         Perform the forward pass of the BERT model.
         :param input_ids: The ids of each token in the input sequence. Is a tensor of shape [batch_size, max_seq_len]
@@ -61,56 +74,47 @@ class Bert(nn.Module):
            of shape [batch_size, max_seq_len]
         :return: Embeddings for each token in the input sequence.
         """
+
         output_tuple = self.model(
-            input_ids, token_type_ids=segment_ids, attention_mask=padding_mask
+            input_ids,
+            token_type_ids=token_type_ids,
+            attention_mask=attention_mask,
+            position_ids=position_ids
         )
-        if self.model.encoder.output_hidden_states:
-            sequence_output, pooled_output, all_hidden_states = (
-                output_tuple[0],
-                output_tuple[1],
-                output_tuple[2],
-            )
+
+        if self.model.encoder.output_hidden_states == True:
+            sequence_output, pooled_output, all_hidden_states = output_tuple[0], output_tuple[1], output_tuple[2]
             return sequence_output, pooled_output, all_hidden_states
         else:
             sequence_output, pooled_output = output_tuple[0], output_tuple[1]
-            return sequence_output, pooled_output
+            return sequence_output, pooled_output  
 
-    def get_output_dims(self):
-        # These are the names of the attributes in various model configs which refer to the number of dimensions
-        # in the output vectors
-        OUTPUT_DIM_NAMES = ["dim", "hidden_size", "d_model"]
+        # sequence_output = all_hidden_states[self.extraction_layer]
 
-        config = self.model.config
-        for odn in OUTPUT_DIM_NAMES:
-            if odn in dir(config):
-                return getattr(config, odn)
-        else:
-            raise Exception(
-                "Could not infer the output dimensions of the language model"
-            )
+        # sequence_output = self.dropout(sequence_output)
 
-    def enable_hidden_states_output(self):
-        self.model.encoder.output_hidden_states = True
+        # # not available in earlier layers
+        # if self.extraction_layer != -1:
+        #     pooled_output = None
+        # return (sequence_output, pooled_output)
 
-    def disable_hidden_states_output(self):
-        self.model.encoder.output_hidden_states = False
+        # # Forward pass through model
+        # logits = self.model.forward(**batch)
+        # per_sample_loss = self.model.logits_to_loss(logits=logits, global_step=self.global_step, **batch)
 
-    def save_config(self, save_dir):
-        save_filename = os.path.join(save_dir, "bert_config.json")
-        with open(save_filename, "w") as file:
-            string = self.model.config.to_json_string()
-            file.write(string)
+        # if self.model.encoder.output_hidden_states:
+        #     sequence_output, pooled_output, all_hidden_states = (
+        #         output_tuple[0],
+        #         output_tuple[1],
+        #         output_tuple[2],
+        #     )
+        #     return ((sequence_output, pooled_output, all_hidden_states), loss, metrics)
+        # else:
+        #     sequence_output, pooled_output = output_tuple[0], output_tuple[1]
+        #     return ((sequence_output, pooled_output), loss, metrics)
 
-    def save(self, save_dir):
-        """
-        Save the model state_dict and its config file so that it can be loaded again.
-        :param save_dir: The directory in which the model should be saved.
-        :type save_dir: str
-        """
-        # Save Weights
-        save_filename = os.path.join(save_dir, "bert_model.bin")
-        model_to_save = (
-            self.model.module if hasattr(self.model, "module") else self.model
-        )  # Only save the model it-self
-        torch.save(model_to_save.state_dict(), save_filename)
-        self.save_config(save_dir)
+        # loss = None
+        # metrics = {}
+        # predicts = {"sequence_output": sequence_output, "pooled_output": pooled_output}
+
+        # return predicts, loss, metrics

@@ -26,6 +26,15 @@ docker build --tag huya_ai:rosetta .
 docker run --rm -it -v $(PWD):/tmp/rosetta --name rosetta huya_ai:rosetta bash
 ```
 
+## Contribution Guide
+You can contribute to this project by sending a merge request. After approval, the merge request will be merged by the reviewer.
+
+Before making a contribution, please confirm that:
+- Code quality stays consistent across the script, module or package.
+- Code is covered by unit tests.
+- API is maintainable.
+
 ## References
 
 - [homura](https://github.com/moskomule/homura): PyTorch utilities including trainer, reporter, etc.
+- [kotonoha](https://github.com/moskomule/kotonoha): NLP utilities for research

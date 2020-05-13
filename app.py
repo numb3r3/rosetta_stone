@@ -5,6 +5,7 @@ from typing import Dict, Iterable
 from rosetta import __version__, helper
 from rosetta.core import lr_schedulers, optimizers, trainers
 from rosetta.utils.distribute import get_num_nodes, init_distributed
+from runx.logx import logx
 from termcolor import colored
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
@@ -20,9 +21,15 @@ def run_train(
     optimizer = optimizers.SGD(lr=hparams["learning_rate"], weight_decay=1e-4)
     scheduler = lr_schedulers.MultiStepLR([30, 60, 80])
     trainer = trainers.Trainer(
-        model, optimizer, scheduler=scheduler, use_horovod=use_horovod
+        model,
+        optimizer,
+        scheduler=scheduler,
+        use_horovod=use_horovod,
+        log_interval=hparams["log_interval"],
     )
-    trainer.train(data_loader)
+
+    for epoch in range(hparams["num_epochs"]):
+        trainer.train(data_loader, epoch=epoch)
 
 
 def main(args, unused_argv):
@@ -49,6 +56,10 @@ def main(args, unused_argv):
     for k, v in sorted(hparams.items()):
         if not k.startswith("_"):
             logger.info("%20s = %-20s" % (k, v))
+
+    logx.initialize(
+        logdir=hparams["log_dir"], coolname=True, tensorboard=True, hparams=vars(args)
+    )
 
     model_pkg = importlib.import_module(hparams["model_package"])
     model_cls_ = getattr(model_pkg, hparams.get("model_class", "Model"))
@@ -96,6 +107,9 @@ def parse_args():
         default="train",
         choices=["train", "eval", "test"],
         help="the running command",
+    )
+    parser.add_argument(
+        "--no-cuda", action="store_true", default=False, help="disables CUDA training"
     )
     parser.add_argument(
         "--enable_distribute",

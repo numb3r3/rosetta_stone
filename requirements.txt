@@ -1,5 +1,7 @@
 termcolor==1.1.0
 ruamel.yaml==0.16.10
+tensorboard==1.14.0
+runx
 transformers
 torch_optimizer
 dataclass

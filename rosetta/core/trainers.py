@@ -3,6 +3,7 @@ from functools import partial as Partial
 from typing import Dict, Iterable, Mapping, Optional
 import warnings
 
+from runx.logx import logx
 import torch
 from torch import nn
 from torch.optim import Optimizer
@@ -19,12 +20,12 @@ from ..utils.distribute import (
 )
 
 
-# try:
-#     from apex import amp
+try:
+    from apex import amp
 
-#     AMP_AVAILABLE = True
-# except ImportError:
-#     AMP_AVAILABLE = False
+    AMP_AVAILABLE = True
+except ImportError:
+    AMP_AVAILABLE = False
 
 
 class Trainer(object):
@@ -33,7 +34,8 @@ class Trainer(object):
         model: nn.Module,
         optimizer: Optimizer,
         lr_scheduler: Scheduler = None,
-        evaluate_every=100,
+        log_interval: int = 10,
+        evaluate_every: int = 100,
         device: Optional[torch.device or str] = None,
         use_horovod: bool = False,
         use_amp: bool = False,
@@ -110,27 +112,34 @@ class Trainer(object):
                 self.optimizer, named_parameters=self.model.named_parameters()
             )
 
+        self._log_interval = log_interval
         self._verbose = verbose
-
         self._global_step = -1
         self._epoch = -1
         self._is_train = True
 
-        # self._use_amp = use_amp
-        # if use_amp and not AMP_AVAILABLE:
-        #     raise ImportError(
-        #         f"Got use_amp = {use_amp}, but cannot find apex. "
-        #         "Please install Apex if you want to make use of automatic mixed precision. "
-        #         "https://github.com/NVIDIA/apex"
-        #     )
-
         self._use_amp = use_amp
         if use_amp:
-            if not hasattr(torch.cuda, "amp"):
-                warnings.warn("amp is not available")
-                self._use_amp = False
+            if not AMP_AVAILABLE:
+                raise ImportError(
+                    f"Got use_amp = {use_amp}, but cannot find apex. "
+                    "Please install Apex if you want to make use of automatic mixed precision. "
+                    "https://github.com/NVIDIA/apex"
+                )
             else:
                 self.scaler = torch.cuda.amp.GradScaler()
+
+        # self._use_amp = use_amp
+        # if use_amp:
+        #     if not hasattr(torch.cuda, "amp"):
+        #         warnings.warn("amp is not available")
+        #         self._use_amp = False
+        #     else:
+        #         self.scaler = torch.cuda.amp.GradScaler()
+
+    @property
+    def log_interval(self):
+        return self._log_interval
 
     @property
     def global_step(self):
@@ -206,27 +215,27 @@ class Trainer(object):
                 self.lr_scheduler.step()
         return output, loss, metrics
 
-    # def _iteration(self, data: Dict[str, torch.Tensor], mode: str):
-    #     """ Iteration level training loop
-    #     :param data: should be TensorTuple
-    #     :param mode: train, test or val
-    #     :return:
-    #     """
-    #     results = self.iteration(data)
-    #     if self.is_train and self.scheduler is not None:
-    #         self.scheduler.step()
+    def _loop(self, data_loader: Iterable or DataLoader, mode: str, **kwargs):
 
-    def _loop(self, data_loader: Iterable or DataLoader, mode: str):
+        for batch_idx, feed_dict in enumerate(data_loader):
+            output, loss, metrics = self._iteration(feed_dict, mode)
 
-        for data in data_loader:
-            # if self.is_train:
-            #     # increment step here
-            #     self.step += 1
-            self._iteration(data, mode)
+            if mode == "train" and batch_idx % self.log_interval == 0:
+                logx.msg(
+                    "Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
+                        self.epoch,
+                        batch_idx,
+                        len(data_loader.dataset),
+                        100.0 * batch_idx / len(data_loader),
+                        loss.item(),
+                    )
+                )
 
-        self.logger.debug(f"epoch {self.epoch} finished")
+                # capture metrics
+                metrics.update({"loss": loss.item()})
+                logx.metric("train", metrics, self.global_step)
 
-    def train(self, data_loader: Iterable or DataLoader):
+    def train(self, data_loader: Iterable or DataLoader, **kwargs):
         """ Perform the training procedure for an epoch.
 
         :param data_loader:
@@ -240,9 +249,7 @@ class Trainer(object):
         self.model.train()
 
         with torch.enable_grad():
-            self._loop(data_loader, mode="train")
-            # for batch in data_loader:
-            #     self.iteration(batch, mode)
+            self._loop(data_loader, mode="train", **kwargs)
             self.logger.info(f"epoch {self.epoch} finished")
 
         if isinstance(data_loader, DataLoader) and isinstance(
@@ -250,7 +257,7 @@ class Trainer(object):
         ):
             data_loader.sampler.set_epoch(self.epoch)
 
-    def eval(self, data_loader: Iterable or DataLoader, set_name: str = None):
+    def eval(self, data_loader: Iterable or DataLoader, set_name: str = None, **kwargs):
         """ Evaluate the model.
 
         :param data_loader:
@@ -264,7 +271,7 @@ class Trainer(object):
         self.model.eval()
 
         with torch.no_grad():
-            self._loop(data_loader, mode="eval")
+            self._loop(data_loader, mode="eval", **kwargs)
 
     def run(
         self,

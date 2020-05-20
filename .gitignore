@@ -72,3 +72,6 @@ venv.bak/
 # custome directories
 .vscode
 
+
+.DS_Store
+

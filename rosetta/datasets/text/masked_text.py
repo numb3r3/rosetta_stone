@@ -20,7 +20,7 @@ class MaskedTextDataIO(BaseDataIO):
         self.max_length = max_length
         self.mlm_prob = mlm_prob
 
-    def create_dataset(self, file_paths: List[str], **kwargs):
+    def create_dataset(self, file_paths: List[str], mode: str="train", **kwargs):
         return SentDataset(
             file_paths, tokenizer=self.tokenizer, max_length=self.max_length
         )
@@ -30,7 +30,8 @@ class MaskedTextDataIO(BaseDataIO):
     ) -> Dict[str, torch.Tensor]:
         batch = self._tensorize_batch(batch)
         inputs, labels = self.mask_tokens(batch)
-        return {"input_ids": inputs, "masked_lm_labels": labels}
+        return (inputs, labels)
+        # return {"input_ids": inputs, "masked_lm_labels": labels}
 
     def _tensorize_batch(self, examples: List[torch.Tensor]) -> torch.Tensor:
         length_of_first = examples[0].size(0)

@@ -18,3 +18,14 @@ bert: &bert
   
   num_epochs: 100
 
+resnet56: &resnet56
+  model_package: examples.vision.resnet_model
+  model_class: ResNet
+  dataio_package: rosetta.datasets.vision.cifar10
+  dataio_class: CIFAR10
+
+  batch_size: 256
+  
+  n_size: 9
+  num_classes: 10
+

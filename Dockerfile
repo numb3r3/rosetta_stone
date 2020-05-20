@@ -5,7 +5,7 @@ FROM python:3.6.8
 
 WORKDIR /tmp/rosetta
 
-RUN pip install torch==1.5.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+RUN pip install torch==1.4.0+cpu torchvision==0.5.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
 
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt

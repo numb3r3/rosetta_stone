@@ -1,6 +1,6 @@
 import contextlib
 from functools import partial as Partial
-from typing import Dict, Iterable, Mapping, Optional
+from typing import Dict, Tuple, Iterable, Mapping, Optional
 import warnings
 
 from runx.logx import logx
@@ -10,7 +10,6 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler as Scheduler
 from torch.utils.data import DataLoader, DistributedSampler
 
-# from ..utils.containers import TensorMap, TensorTuple
 from .. import helper
 from ..utils.distribute import (
     get_global_rank,
@@ -37,6 +36,7 @@ class Trainer(object):
         log_interval: int = 10,
         evaluate_every: int = 100,
         device: Optional[torch.device or str] = None,
+        use_cuda_nonblocking: bool = False,
         use_horovod: bool = False,
         use_amp: bool = False,
         use_sync_bn: bool = False,
@@ -53,7 +53,7 @@ class Trainer(object):
             )
         else:
             self.device = device
-
+        
         if use_horovod and not is_horovod_available():
             raise RuntimeError("horovod is not available!")
 
@@ -79,7 +79,9 @@ class Trainer(object):
 
         if "cuda" in str(self.device):
             self.model.to(self.device)
+            self._cuda_nonblocking = use_cuda_nonblocking
         else:
+            self._cuda_nonblocking = False
             # usually, this is not expected
             self.logger.info(
                 f"cuda: False (torch.cuda.is_available()={torch.cuda.is_available()})"
@@ -165,7 +167,7 @@ class Trainer(object):
         self.exit()
 
     def _iteration(
-        self, feed_dict: Dict[str, torch.Tensor], mode: str = "eval"
+        self, feed_tuple: Tuple[torch.Tensor], mode: str = "eval"
     ) -> Mapping[str, torch.Tensor]:
         """ Iteration part, user can override via duck typing or override_iteration ::
             def iteration(self, feed_dict: Dict[str, torch.Tensor]) -> Mapping[str, torch.Tensor]:
@@ -190,7 +192,7 @@ class Trainer(object):
         context = torch.cuda.amp.autocast if self._use_amp else compat_nullcontext
         with context():
             try:
-                output, loss, metrics = self.model(**feed_dict)
+                output, loss, metrics = self.model(*feed_tuple)
             except Exception:
                 raise ValueError(
                     f"The implemented module = {type(self.model)} should return 3-tuples, i.e, output, loss, metrics. "
@@ -217,8 +219,13 @@ class Trainer(object):
 
     def _loop(self, data_loader: Iterable or DataLoader, mode: str, **kwargs):
 
-        for batch_idx, feed_dict in enumerate(data_loader):
-            output, loss, metrics = self._iteration(feed_dict, mode)
+        for batch_idx, feed_tuple in enumerate(data_loader):
+            _feed_tuple = []
+            for x in feed_tuple:
+                x = x.to(self.device, non_blocking=self._cuda_nonblocking)
+                _feed_tuple.append(x)
+            
+            output, loss, metrics = self._iteration(_feed_tuple, mode)
 
             if mode == "train" and batch_idx % self.log_interval == 0:
                 logx.msg(

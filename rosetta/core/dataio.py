@@ -35,7 +35,7 @@ class BaseDataIO:
 
         return ret
 
-    def create_dataset(self, file_paths: List[str], **kwargs):
+    def create_dataset(self, file_paths: List[str], mode: str="train", **kwargs):
         raise NotImplementedError
 
     def create_data_loader(
@@ -60,7 +60,7 @@ class BaseDataIO:
         :type pin_memory: bool
         :return: A DataLoader that wraps the input Dataset.
         """
-        dataset = self.create_dataset(file_paths, **kwargs)
+        dataset = self.create_dataset(file_paths, mode, **kwargs)
         shuffle = True if mode == "train" else False
         tensor_names = None
         if type(dataset).__name__ == "_StreamingDataSet":

@@ -35,7 +35,7 @@ class BaseDataIO:
 
         return ret
 
-    def create_dataset(self, file_paths: List[str], mode: str="train", **kwargs):
+    def create_dataset(self, file_paths: List[str], mode: str = "train", **kwargs):
         raise NotImplementedError
 
     def create_data_loader(

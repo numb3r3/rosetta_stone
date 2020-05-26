@@ -20,7 +20,7 @@ class MaskedTextDataIO(BaseDataIO):
         self.max_length = max_length
         self.mlm_prob = mlm_prob
 
-    def create_dataset(self, file_paths: List[str], mode: str="train", **kwargs):
+    def create_dataset(self, file_paths: List[str], mode: str = "train", **kwargs):
         return SentDataset(
             file_paths, tokenizer=self.tokenizer, max_length=self.max_length
         )

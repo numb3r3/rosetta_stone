@@ -1,6 +1,6 @@
 import contextlib
 from functools import partial as Partial
-from typing import Dict, Tuple, Iterable, Mapping, Optional
+from typing import Dict, Iterable, Mapping, Optional, Tuple
 import warnings
 
 from runx.logx import logx
@@ -14,15 +14,16 @@ from .. import helper
 from ..utils.distribute import (
     get_global_rank,
     get_local_rank,
+    init_distributed,
     is_distributed,
     is_horovod_available,
-    init_distributed,
 )
 
 
 try:
     from apex import amp
     from apex.parallel import convert_syncbn_model
+
     AMP_AVAILABLE = True
 except ImportError:
     AMP_AVAILABLE = False
@@ -67,8 +68,6 @@ class Trainer(object):
         else:
             self.device = device
 
-        
-        
         self._use_amp = use_amp
         if use_amp and not AMP_AVAILABLE:
             raise ImportError(
@@ -98,7 +97,7 @@ class Trainer(object):
                 verbose = False
 
             init_distributed(use_horovod=use_horovod)
-            
+
         if "cuda" in str(self.device):
             # self.model.to(self.device)
             self.model = self.model.to(self.device)
@@ -115,15 +114,17 @@ class Trainer(object):
 
         self.lr_scheduler = lr_scheduler
         self.set_scheduler()
-        
+
         if self._use_amp:
-            self.model, self.optimizer = amp.initialize(self.model, self.optimizer, opt_level="O1")
+            self.model, self.optimizer = amp.initialize(
+                self.model, self.optimizer, opt_level="O1"
+            )
 
         if not use_horovod and is_distributed():
             self.model = nn.parallel.DistributedDataParallel(
-                self.model, device_ids=[rank],
+                self.model, device_ids=[rank]
             )
-        
+
         # if isinstance(self.model, nn.parallel.DistributedDataParallel) or isinstance(
         #     self.model, nn.DataParallel
         # ):
@@ -145,7 +146,7 @@ class Trainer(object):
         self._global_step = -1
         self._epoch = -1
         self._is_train = True
-           
+
         # self._use_amp = use_amp
         # if use_amp:
         #     if not hasattr(torch.cuda, "amp"):
@@ -212,7 +213,7 @@ class Trainer(object):
         #         raise ValueError(
         #             f"The implemented module = {type(self.model)} should return 3-tuples, i.e, output, loss, metrics. "
         #         )
-        
+
         try:
             output, loss, metrics = self.model(*batch_data)
         except Exception:
@@ -236,7 +237,7 @@ class Trainer(object):
                 loss.backward()
                 # TODO: enable custome grad norm
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
-            
+
             self.optimizer.step()
 
             # update step for lr_scheduler
@@ -254,7 +255,7 @@ class Trainer(object):
             # for x in feed_tuple:
             #     x = x.to(self.device, non_blocking=self._cuda_nonblocking)
             #     _feed_tuple.append(x)
-            
+
             output, loss, metrics = self._iteration(batch_data, mode)
 
             if mode == "train" and batch_idx % self.log_interval == 0:
@@ -373,8 +374,10 @@ class Trainer(object):
 
         elif isinstance(optimizer, Partial):
             if not issubclass(optimizer.func, Optimizer):
-                raise TypeError(f"`optimizer.func` is expected to be subclass of `Optimizer`"
-                                f" but got {type(optimizer.func)}")
+                raise TypeError(
+                    f"`optimizer.func` is expected to be subclass of `Optimizer`"
+                    f" but got {type(optimizer.func)}"
+                )
             self.optimizer = optimizer(self.model.parameters())
 
         else:
@@ -396,8 +399,10 @@ class Trainer(object):
 
         elif isinstance(lr_scheduler, Partial):
             if not issubclass(lr_scheduler.func, Scheduler):
-                raise TypeError(f"`scheduler.func` is expected to be subclass of `_LRScheduler`"
-                                f" but got {type(lr_scheduler.func)}")
+                raise TypeError(
+                    f"`scheduler.func` is expected to be subclass of `_LRScheduler`"
+                    f" but got {type(lr_scheduler.func)}"
+                )
             self.lr_scheduler = lr_scheduler(self.optimizer)
 
         else:

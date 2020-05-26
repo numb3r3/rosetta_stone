@@ -80,7 +80,12 @@ def main(args, unused_argv):
     )
 
     run_train(
-        model, train_loader, eval_loader, use_horovod=args.use_horovod, use_amp=args.use_amp, hparams=hparams
+        model,
+        train_loader,
+        eval_loader,
+        use_horovod=args.use_horovod,
+        use_amp=args.use_amp,
+        hparams=hparams,
     )
 
 

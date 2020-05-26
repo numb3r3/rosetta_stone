@@ -16,12 +16,13 @@ from ..utils.distribute import (
     get_local_rank,
     is_distributed,
     is_horovod_available,
+    init_distributed,
 )
 
 
 try:
     from apex import amp
-
+    from apex.parallel import convert_syncbn_model
     AMP_AVAILABLE = True
 except ImportError:
     AMP_AVAILABLE = False
@@ -38,12 +39,24 @@ class Trainer(object):
         device: Optional[torch.device or str] = None,
         use_cuda_nonblocking: bool = False,
         use_horovod: bool = False,
-        use_amp: bool = False,
+        use_amp: bool = None,
         use_sync_bn: bool = False,
         verbose: bool = True,
         **kwargs,
     ):
         self.logger = helper.get_logger(__name__)
+
+        if isinstance(model, nn.Module):
+            self.model = model
+        else:
+            raise TypeError(
+                f"Unknown type for `model`. Expected nn.Module but got {type(model)}"
+            )
+
+        # if not isinstance(model, nn.Module):
+        #     raise TypeError(
+        #         f"Unknown type for `model`. Expected nn.Module but got {type(model)}"
+        #     )
 
         if device is None:
             self.device = (
@@ -53,32 +66,42 @@ class Trainer(object):
             )
         else:
             self.device = device
+
         
+        
+        self._use_amp = use_amp
+        if use_amp and not AMP_AVAILABLE:
+            raise ImportError(
+                f"Got use_amp = {use_amp}, but cannot find apex. "
+                "Please install Apex if you want to make use of automatic mixed precision. "
+                "https://github.com/NVIDIA/apex"
+            )
+
         if use_horovod and not is_horovod_available():
             raise RuntimeError("horovod is not available!")
 
         if is_distributed():
-            if use_sync_bn:
-                model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
+            # Init device and distributed settings
+
+            # if use_sync_bn:
+            #     model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
+            if self._use_amp:
+                self.model = convert_syncbn_model(self.model)
+            else:
+                self.model = nn.SyncBatchNorm.convert_sync_batchnorm(self.model)
 
             rank = get_local_rank()
             torch.cuda.set_device(rank)
+            # device = torch.device("cuda", rank)
             if get_global_rank() > 0:
                 # to avoid overwriting
                 verbose = False
 
-        if isinstance(model, nn.Module):
-            self.model = model
-        else:
-            raise TypeError(
-                f"Unknown type for `model`. Expected nn.Module but got {type(model)}"
-            )
-
-        # if data_parallel and not isinstance(self.model, nn.DataParallel) and torch.cuda.device_count() > 1:
-        #     self.model = nn.DataParallel(self.model)
-
+            init_distributed(use_horovod=use_horovod)
+            
         if "cuda" in str(self.device):
-            self.model.to(self.device)
+            # self.model.to(self.device)
+            self.model = self.model.to(self.device)
             self._cuda_nonblocking = use_cuda_nonblocking
         else:
             self._cuda_nonblocking = False
@@ -87,23 +110,26 @@ class Trainer(object):
                 f"cuda: False (torch.cuda.is_available()={torch.cuda.is_available()})"
             )
 
+        self.optimizer = optimizer
+        self.set_optimizer()
+
+        self.lr_scheduler = lr_scheduler
+        self.set_scheduler()
+        
+        if self._use_amp:
+            self.model, self.optimizer = amp.initialize(self.model, self.optimizer, opt_level="O1")
+
         if not use_horovod and is_distributed():
             self.model = nn.parallel.DistributedDataParallel(
-                self.model, device_ids=[rank]
+                self.model, device_ids=[rank],
             )
-
-        if isinstance(self.model, nn.parallel.DistributedDataParallel) or isinstance(
-            self.model, nn.DataParallel
-        ):
-            self.accessible_model = self.model.module
-        else:
-            self.accessible_model = self.model
-
-        self.optimizer = optimizer
-        self.lr_scheduler = lr_scheduler
-
-        self.set_optimizer()
-        self.set_scheduler()
+        
+        # if isinstance(self.model, nn.parallel.DistributedDataParallel) or isinstance(
+        #     self.model, nn.DataParallel
+        # ):
+        #     self.accessible_model = self.model.module
+        # else:
+        #     self.accessible_model = self.model
 
         if use_horovod:
             import horovod.torch as hvd
@@ -119,18 +145,7 @@ class Trainer(object):
         self._global_step = -1
         self._epoch = -1
         self._is_train = True
-
-        self._use_amp = use_amp
-        if use_amp:
-            if not AMP_AVAILABLE:
-                raise ImportError(
-                    f"Got use_amp = {use_amp}, but cannot find apex. "
-                    "Please install Apex if you want to make use of automatic mixed precision. "
-                    "https://github.com/NVIDIA/apex"
-                )
-            else:
-                self.scaler = torch.cuda.amp.GradScaler()
-
+           
         # self._use_amp = use_amp
         # if use_amp:
         #     if not hasattr(torch.cuda, "amp"):
@@ -167,7 +182,7 @@ class Trainer(object):
         self.exit()
 
     def _iteration(
-        self, feed_tuple: Tuple[torch.Tensor], mode: str = "eval"
+        self, batch_data: Tuple[torch.Tensor], mode: str = "eval"
     ) -> Mapping[str, torch.Tensor]:
         """ Iteration part, user can override via duck typing or override_iteration ::
             def iteration(self, feed_dict: Dict[str, torch.Tensor]) -> Mapping[str, torch.Tensor]:
@@ -184,33 +199,45 @@ class Trainer(object):
         """
 
         # input, labels = data
-        compat_nullcontext = (
-            contextlib.nullcontext
-            if hasattr(contextlib, "nullcontext")
-            else contextlib.suppress
-        )
-        context = torch.cuda.amp.autocast if self._use_amp else compat_nullcontext
-        with context():
-            try:
-                output, loss, metrics = self.model(*feed_tuple)
-            except Exception:
-                raise ValueError(
-                    f"The implemented module = {type(self.model)} should return 3-tuples, i.e, output, loss, metrics. "
-                )
+        # compat_nullcontext = (
+        #     contextlib.nullcontext
+        #     if hasattr(contextlib, "nullcontext")
+        #     else contextlib.suppress
+        # )
+        # context = torch.cuda.amp.autocast if self._use_amp else compat_nullcontext
+        # with context():
+        #     try:
+        #         output, loss, metrics = self.model(*feed_tuple)
+        #     except Exception:
+        #         raise ValueError(
+        #             f"The implemented module = {type(self.model)} should return 3-tuples, i.e, output, loss, metrics. "
+        #         )
+        
+        try:
+            output, loss, metrics = self.model(*batch_data)
+        except Exception:
+            raise ValueError(
+                f"The implemented module = {type(self.model)} should return 3-tuples, i.e, output, loss, metrics. "
+            )
 
         if mode == "train":
             # increment step here
             self._global_step += 1
+
+            # compute gradient and do SGD step
             self.optimizer.zero_grad()
             if self._use_amp:
-                self.scaler(loss).backward()
-                self.scaler.step(self.optimizer)
-                self.scaler.update()
+                with amp.scale_loss(loss, self.optimizer) as scaled_loss:
+                    scaled_loss.backward()
+                # self.scaler(loss).backward()
+                # self.scaler.step(self.optimizer)
+                # self.scaler.update()
             else:
                 loss.backward()
                 # TODO: enable custome grad norm
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
-                self.optimizer.step()
+            
+            self.optimizer.step()
 
             # update step for lr_scheduler
             if self.lr_scheduler:
@@ -219,13 +246,16 @@ class Trainer(object):
 
     def _loop(self, data_loader: Iterable or DataLoader, mode: str, **kwargs):
 
-        for batch_idx, feed_tuple in enumerate(data_loader):
-            _feed_tuple = []
-            for x in feed_tuple:
-                x = x.to(self.device, non_blocking=self._cuda_nonblocking)
-                _feed_tuple.append(x)
+        for batch_idx, batch_data in enumerate(data_loader):
+
+            # Move batch of samples to device
+            batch_data = [x.to(self.device) for x in batch_data]
+            # _feed_tuple = []
+            # for x in feed_tuple:
+            #     x = x.to(self.device, non_blocking=self._cuda_nonblocking)
+            #     _feed_tuple.append(x)
             
-            output, loss, metrics = self._iteration(_feed_tuple, mode)
+            output, loss, metrics = self._iteration(batch_data, mode)
 
             if mode == "train" and batch_idx % self.log_interval == 0:
                 logx.msg(
@@ -340,13 +370,13 @@ class Trainer(object):
         optimizer = self.optimizer
         if isinstance(optimizer, Optimizer) or optimizer is None:
             self.optimizer = optimizer
+
         elif isinstance(optimizer, Partial):
             if not issubclass(optimizer.func, Optimizer):
-                raise TypeError(
-                    f"`optimizer.func` is expected to be subclass of `Optimizer`"
-                    f" but got {type(optimizer.func)}"
-                )
+                raise TypeError(f"`optimizer.func` is expected to be subclass of `Optimizer`"
+                                f" but got {type(optimizer.func)}")
             self.optimizer = optimizer(self.model.parameters())
+
         else:
             raise TypeError(f"Unexpected type {type(optimizer)} for `optimizer`")
 
@@ -357,18 +387,18 @@ class Trainer(object):
                     self.scheduler = torch.optim.lr_scheduler.Foo(self.optimizer)
         """
 
-        scheduler = self.lr_scheduler
-        if scheduler is not None and self.optimizer is None:
+        lr_scheduler = self.lr_scheduler
+        if lr_scheduler is not None and self.optimizer is None:
             raise TypeError("Optimizer is not set, so scheduler cannot be set")
 
-        if isinstance(scheduler, Scheduler) or scheduler is None:
-            self.lr_scheduler = scheduler
-        elif isinstance(scheduler, Partial):
-            if not issubclass(scheduler.func, Scheduler):
-                raise TypeError(
-                    f"`scheduler.func` is expected to be subclass of `_LRScheduler`"
-                    f" but got {type(scheduler.func)}"
-                )
-            self.lr_scheduler = scheduler(self.optimizer)
+        if isinstance(lr_scheduler, Scheduler) or lr_scheduler is None:
+            self.lr_scheduler = lr_scheduler
+
+        elif isinstance(lr_scheduler, Partial):
+            if not issubclass(lr_scheduler.func, Scheduler):
+                raise TypeError(f"`scheduler.func` is expected to be subclass of `_LRScheduler`"
+                                f" but got {type(lr_scheduler.func)}")
+            self.lr_scheduler = lr_scheduler(self.optimizer)
+
         else:
-            raise TypeError(f"Unexpected type {type(scheduler)} for `scheduler`")
+            raise TypeError(f"Unexpected type {type(lr_scheduler)} for `lr_scheduler`")

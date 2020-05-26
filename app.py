@@ -16,6 +16,7 @@ def run_train(
     data_loader: Iterable or DataLoader,
     eval_loader: Iterable or DataLoader = None,
     use_horovod: bool = False,
+    use_amp: bool = False,
     hparams: Dict = {},
 ):
     optimizer = optimizers.SGD(lr=hparams["learning_rate"], weight_decay=1e-4)
@@ -25,6 +26,7 @@ def run_train(
         optimizer,
         scheduler=scheduler,
         use_horovod=use_horovod,
+        use_amp=use_amp,
         log_interval=hparams["log_interval"],
     )
 
@@ -36,8 +38,8 @@ def main(args, unused_argv):
 
     logger = helper.set_logger("rosetta", verbose=True)
 
-    if args.enable_distribute:
-        init_distributed(use_horovod=args.use_horovod, backend=None, init_method=None)
+    # if args.enable_distribute:
+    #     init_distributed(use_horovod=args.use_horovod, backend=None, init_method=None)
 
     cli_args = helper.parse_cli_args(unused_argv) if unused_argv else None
     hparams = helper.parse_args("app.yaml", args.model_name, "default")
@@ -78,7 +80,7 @@ def main(args, unused_argv):
     )
 
     run_train(
-        model, train_loader, eval_loader, use_horovod=args.use_horovod, hparams=hparams
+        model, train_loader, eval_loader, use_horovod=args.use_horovod, use_amp=args.use_amp, hparams=hparams
     )
 
 
@@ -111,6 +113,14 @@ def parse_args():
     parser.add_argument(
         "--no-cuda", action="store_true", default=False, help="disables CUDA training"
     )
+
+    parser.add_argument(
+        "--use_amp",
+        action="store_true",
+        default=False,
+        help="use apex for speeding up training",
+    )
+
     parser.add_argument(
         "--enable_distribute",
         action="store_true",

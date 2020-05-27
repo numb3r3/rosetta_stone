@@ -21,8 +21,10 @@ from ..utils.distribute import (
 
 
 try:
+    import apex
     from apex import amp
-    from apex.parallel import convert_syncbn_model
+
+    # from apex.parallel import convert_syncbn_model
 
     AMP_AVAILABLE = True
 except ImportError:
@@ -79,24 +81,25 @@ class Trainer(object):
         if use_horovod and not is_horovod_available():
             raise RuntimeError("horovod is not available!")
 
+        # Init distributed settings
         if is_distributed():
-            # Init device and distributed settings
-
             # if use_sync_bn:
             #     model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
+
+            # init_distributed(use_horovod=use_horovod)
+
+            # normalization parameters are synchronized across workers during forward pass.
             if self._use_amp:
-                self.model = convert_syncbn_model(self.model)
-            else:
+                self.model = apex.parallel.convert_syncbn_model(self.model)
+            elif not use_horovod:
+                # TODO: add sync_batchnorm for horovod
                 self.model = nn.SyncBatchNorm.convert_sync_batchnorm(self.model)
 
             rank = get_local_rank()
             torch.cuda.set_device(rank)
-            # device = torch.device("cuda", rank)
             if get_global_rank() > 0:
                 # to avoid overwriting
                 verbose = False
-
-            init_distributed(use_horovod=use_horovod)
 
         if "cuda" in str(self.device):
             # self.model.to(self.device)

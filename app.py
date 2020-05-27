@@ -4,7 +4,7 @@ from typing import Dict, Iterable
 
 from rosetta import __version__, helper
 from rosetta.core import lr_schedulers, optimizers, trainers
-from rosetta.utils.distribute import get_num_nodes, init_distributed
+from rosetta.utils.distribute import get_global_rank, init_distributed, is_distributed
 from runx.logx import logx
 from termcolor import colored
 from torch.nn import functional as F
@@ -38,15 +38,15 @@ def main(args, unused_argv):
 
     logger = helper.set_logger("rosetta", verbose=True)
 
-    # if args.enable_distribute:
-    #     init_distributed(use_horovod=args.use_horovod, backend=None, init_method=None)
+    if is_distributed() or args.use_horovod:
+        init_distributed(use_horovod=args.use_horovod)
 
     cli_args = helper.parse_cli_args(unused_argv) if unused_argv else None
     hparams = helper.parse_args("app.yaml", args.model_name, "default")
 
     if cli_args:
-        # useful when changing args for prediction
-        logger.info("override args with cli args ...")
+        # useful when changing params defined in YAML
+        logger.info("override parameters with cli args ...")
         for k, v in cli_args.items():
             if k in hparams and hparams.get(k) != v:
                 logger.info("%20s: %20s -> %20s" % (k, hparams.get(k), v))
@@ -60,7 +60,11 @@ def main(args, unused_argv):
             logger.info("%20s = %-20s" % (k, v))
 
     logx.initialize(
-        logdir=hparams["log_dir"], coolname=True, tensorboard=True, hparams=vars(args)
+        logdir=hparams["log_dir"],
+        coolname=True,
+        tensorboard=True,
+        global_rank=get_global_rank(),
+        hparams=vars(args),
     )
 
     model_pkg = importlib.import_module(hparams["model_package"])
@@ -95,7 +99,7 @@ def parse_args():
         description="%s, a toolkit based on pytorch. "
         "Visit %s for tutorials and documents."
         % (
-            colored("Rosetta v%s" % __version__, "green"),
+            colored("rosetta stone v%s" % __version__, "green"),
             colored(
                 "https://git.huya.com/wangfeng2/rosetta_stone",
                 "cyan",
@@ -123,20 +127,14 @@ def parse_args():
         "--use_amp",
         action="store_true",
         default=False,
-        help="use apex for speeding up training",
+        help="use apex for automatic mixed precision training",
     )
 
-    parser.add_argument(
-        "--enable_distribute",
-        action="store_true",
-        default=False,
-        help="turn on distributed training",
-    )
     parser.add_argument(
         "--use_horovod",
         action="store_true",
         default=False,
-        help="use horrovod for distributed training",
+        help="use horovod for distributed training",
     )
 
     parser.add_argument(

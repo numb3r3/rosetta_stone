@@ -15,6 +15,7 @@ logger = helper.get_logger(__name__)
 args = " ".join(sys.argv)
 
 _DISTRIBUTED_FLAG = False
+_USE_HOROVOD_FLAG = False
 
 
 def init_distributed(
@@ -49,6 +50,9 @@ def init_distributed(
             logger.debug("init horovod")
         else:
             raise RuntimeError("horovod is not available!")
+
+        global _USE_HOROVOD_FLAG
+        _USE_HOROVOD_FLAG = True
 
     else:
         if backend is None:
@@ -98,7 +102,7 @@ def get_local_rank() -> int:
     if not is_distributed():
         return -1
     else:
-        if is_horovod_available():
+        if _USE_HOROVOD_FLAG:
             import horovod.torch as hvd
 
             return hvd.local_rank()
@@ -108,7 +112,7 @@ def get_local_rank() -> int:
 def get_global_rank() -> int:
     # returns -1 if not distributed, else returns global rank
     # it works before dist.init_process_group
-    if _DISTRIBUTED_FLAG and is_horovod_available():
+    if _DISTRIBUTED_FLAG and _USE_HOROVOD_FLAG:
         import horovod.torch as hvd
 
         return hvd.rank()
@@ -128,7 +132,7 @@ def get_num_nodes() -> int:
 
 
 def get_world_size() -> int:
-    if _DISTRIBUTED_FLAG and is_horovod_available():
+    if _DISTRIBUTED_FLAG and _USE_HOROVOD_FLAG:
         import horovod.torch as hvd
 
         return hvd.size()

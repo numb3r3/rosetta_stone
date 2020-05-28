@@ -124,3 +124,21 @@ def test_bert_tokenizer_all_meta(caplog):
         False,
         False,
     ]
+
+
+def test_bert_cn_tokenizer():
+    tokenizer = Tokenizer.load(
+        pretrained_model_name_or_path="bert-base-chinese", do_lower_case=True
+    )
+    assert type(tokenizer) == BertTokenizer
+    assert tokenizer.basic_tokenizer.do_lower_case == True
+    assert tokenizer.pad_token_id == 0
+
+    lines = ["幽人归独卧，滞虑洗孤清。持此谢高鸟，因之传远情。", "日夕怀空意，人谁感至精？", "飞沈理自隔，何所慰吾诚？"]
+
+    batch_encoding = tokenizer.batch_encode_plus(
+        lines, add_special_tokens=False, max_length=128, return_lengths=True
+    )
+    token_ids = batch_encoding["input_ids"]
+    token_len = batch_encoding["length"]
+    assert token_len == [24, 12, 12]

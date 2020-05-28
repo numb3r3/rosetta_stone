@@ -27,16 +27,16 @@ base_dep = [
     if ((x.strip()[0] != "#") and (len(x.strip()) > 3) and "-e git://" not in x)
 ]
 
-extras_dep = {"chinese": ["jieba"], "audio": ["librosa>=0.7.0", "torchaudio"]}
+extras_dep = {"chinese": ["jieba"], "audio": ["librosa>=0.7.0", "torchaudio==0.4.0"]}
 
 
-def combine_dep(new_key, base_keys):
-    extras_dep[new_key] = list(set(k for v in base_keys for k in extras_dep[v]))
+# def combine_dep(new_key, base_keys):
+#     extras_dep[new_key] = list(set(k for v in base_keys for k in extras_dep[v]))
 
 
-combine_dep("nlp", ["transformers"])
-combine_dep("cn_nlp", ["chinese", "nlp"])
-combine_dep("all", [k for k in extras_dep if k != "elmo"])
+# combine_dep("nlp", ["transformers"])
+# combine_dep("cn_nlp", ["chinese", "nlp"])
+# combine_dep("all", [k for k in extras_dep if k != "elmo"])
 
 setup(
     name=pkg_name,

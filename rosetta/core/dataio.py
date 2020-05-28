@@ -43,7 +43,7 @@ class BaseDataIO:
         file_paths: List[str],
         batch_size: int,
         mode: str = "train",
-        pin_memory: bool = False,
+        pin_memory: bool = True,
         num_workers: int = 0,
         **kwargs
     ):

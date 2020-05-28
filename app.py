@@ -59,11 +59,14 @@ def main(args, unused_argv):
         if not k.startswith("_"):
             logger.info("%20s = %-20s" % (k, v))
 
+    # hacks: get_global_rank() would return -1 for standalone training
+    global_rank = max(0, get_global_rank())
+
     logx.initialize(
         logdir=hparams["log_dir"],
         coolname=True,
         tensorboard=True,
-        global_rank=get_global_rank(),
+        global_rank=global_rank,
         hparams=vars(args),
     )
 
@@ -76,11 +79,17 @@ def main(args, unused_argv):
     dataio = dataio_cls_(**hparams)
 
     train_loader = dataio.create_data_loader(
-        hparams["train_files"], batch_size=hparams["batch_size"], mode="train"
+        hparams["train_files"],
+        batch_size=hparams["batch_size"],
+        mode="train",
+        num_workers=hparams["data_loader_workers"],
     )
 
     eval_loader = dataio.create_data_loader(
-        hparams["eval_files"], batch_size=hparams["batch_size"], mode="eval"
+        hparams["eval_files"],
+        batch_size=hparams["batch_size"],
+        mode="eval",
+        num_workers=hparams["data_loader_workers"],
     )
 
     run_train(

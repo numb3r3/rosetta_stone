@@ -29,3 +29,54 @@ resnet56: &resnet56
   n_size: 9
   num_classes: 10
 
+lasnet: &lasnet
+  model_package: examples.speech.las_model
+  model_class: LASNet
+
+  dataio_package: rosetta.datasets.speech.aishell
+  dataio_class: AiShellDataIO
+
+  data_path: /workspace/project-nas-10251-sz/open_speech_data/Aishell/data_aishell
+  # tokenizer_name_or_path: bert-base-chinese
+  tokenizer_name_or_path: /workspace/project-nas-10251-sh/models/reberta_zh_l12_pytorch/vocab.txt
+
+  audio_config: # Attributes of audio feature
+    feat_type: 'fbank'
+    feat_dim:  40
+    frame_length: 25                      # ms
+    frame_shift: 10                       # ms
+    dither: 0                             # random dither audio, 0: no dither
+    apply_cmvn: True
+    delta_order: 2                        # 0: do nothing, 1: add delta, 2: add delta and accelerate
+    delta_window_size: 2
+  
+  encoder_config:
+    prenet: 'vgg'                         # 'vgg'/'cnn'/''
+    # vgg: True                             # 4x reduction on time feature extraction
+    module: 'LSTM'                        # 'LSTM'/'GRU'/'Transformer'
+    bidirection: True
+    dim: [512,512,512,512,512]
+    dropout: [0,0,0,0,0]
+    layer_norm: [False,False,False,False,False]
+    proj: [True,True,True,True,True]      # Linear projection + Tanh after each rnn layer
+    sample_rate: [1,1,1,1,1]
+    sample_style: 'drop'                  # 'drop'/'concat'
+
+  attention_config:
+    mode: 'loc'                           # 'dot'/'loc'
+    dim: 300
+    num_head: 1
+    v_proj: False                         # if False and num_head>1, encoder state will be duplicated for each head
+    temperature: 0.5                      # scaling factor for attention
+    loc_kernel_size: 100                  # just for mode=='loc'
+    loc_kernel_num: 10                    # just for mode=='loc'
+
+  decoder_config:
+    module: 'LSTM'                        # 'LSTM'/'GRU'/'Transformer'
+    dim: 512
+    layer: 1
+    dropout: 0
+
+  ctc_weight: 0.5
+  input_size: 120
+  batch_size: 32

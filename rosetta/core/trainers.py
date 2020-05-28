@@ -253,7 +253,10 @@ class Trainer(object):
         for batch_idx, batch_data in enumerate(data_loader):
 
             # Move batch of samples to device
-            batch_data = [x.to(self.device) for x in batch_data]
+            batch_data = [
+                x.to(self.device) if isinstance(x, torch.Tensor) else x
+                for x in batch_data
+            ]
             # _feed_tuple = []
             # for x in feed_tuple:
             #     x = x.to(self.device, non_blocking=self._cuda_nonblocking)
@@ -274,7 +277,7 @@ class Trainer(object):
 
                 # capture metrics
                 metrics.update({"loss": loss.item()})
-                logx.metric("train", metrics, self.global_step)
+                logx.metric(mode, metrics, self.global_step)
 
     def train(self, data_loader: Iterable or DataLoader, **kwargs):
         """ Perform the training procedure for an epoch.

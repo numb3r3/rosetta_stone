@@ -1,3 +1,5 @@
+"""Library with optimization definitions and functions."""
+
 from functools import partial
 
 import torch

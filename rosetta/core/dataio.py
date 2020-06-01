@@ -7,6 +7,7 @@ import torch
 from torch.utils.data import DataLoader, Dataset, Sampler
 
 from .. import helper
+from ..utils.distribute import is_distributed
 
 
 class BaseDataIO:
@@ -66,16 +67,17 @@ class BaseDataIO:
         if type(dataset).__name__ == "_StreamingDataSet":
             tensor_names = dataset.tensor_names
         sampler = None
-        # from torch.utils.data.distributed import DistributedSampler
-        # from torch.utils.data.sampler import RandomSampler
-        # if self.distributed:
-        #     sampler_train = DistributedSampler(self.data["train"])
-        # else:
-        #     sampler_train = RandomSampler(self.data["train"])
+        from torch.utils.data.distributed import DistributedSampler
+        from torch.utils.data.sampler import RandomSampler
+
+        if is_distributed():
+            sampler = DistributedSampler(dataset)
+        else:
+            sampler = RandomSampler(dataset)
         return DataLoader(
             dataset,
             shuffle=shuffle,
-            sampler=sampler(dataset) if sampler else None,
+            sampler=sampler,
             batch_size=batch_size,
             collate_fn=functools.partial(
                 self.collate_fn,

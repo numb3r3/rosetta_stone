@@ -1,4 +1,3 @@
-import contextlib
 from functools import partial as Partial
 from typing import Dict, Iterable, Mapping, Optional, Tuple
 import warnings
@@ -118,16 +117,6 @@ class Trainer(object):
         self.lr_scheduler = lr_scheduler
         self.set_scheduler()
 
-        if self._use_amp:
-            self.model, self.optimizer = amp.initialize(
-                self.model, self.optimizer, opt_level="O1"
-            )
-
-        if not use_horovod and is_distributed():
-            self.model = nn.parallel.DistributedDataParallel(
-                self.model, device_ids=[rank]
-            )
-
         # if isinstance(self.model, nn.parallel.DistributedDataParallel) or isinstance(
         #     self.model, nn.DataParallel
         # ):
@@ -138,10 +127,23 @@ class Trainer(object):
         if use_horovod:
             import horovod.torch as hvd
 
+            # broadcast parameters & optimizer state.
             hvd.broadcast_parameters(self.model.state_dict(), root_rank=0)
             hvd.broadcast_optimizer_state(self.optimizer, root_rank=0)
+
+            # wrap optimizer with DistributedOptimizer.
             self.optimizer = hvd.DistributedOptimizer(
                 self.optimizer, named_parameters=self.model.named_parameters()
+            )
+
+        if self._use_amp:
+            self.model, self.optimizer = amp.initialize(
+                self.model, self.optimizer, opt_level="O1"
+            )
+
+        if not use_horovod and is_distributed():
+            self.model = nn.parallel.DistributedDataParallel(
+                self.model, device_ids=[rank]
             )
 
         self._log_interval = log_interval
@@ -202,6 +204,7 @@ class Trainer(object):
         :return: TensorMap or Dict
         """
 
+        # import contextlib
         # input, labels = data
         # compat_nullcontext = (
         #     contextlib.nullcontext

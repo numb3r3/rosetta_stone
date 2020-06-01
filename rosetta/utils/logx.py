@@ -3,13 +3,27 @@ from runx.logx import logx
 from .. import helper
 
 
-def info(self, msg, logger=None):
+def info(self, msg):
+    assert hasattr(self, "logger")
     if not self.rank0:
         return
-    if logger is None:
-        logger = helper.get_logger(__name__)
-
-    logger.info(msg)
+    self.logger.info(msg)
 
 
-logx.info = info
+def warning(self, msg):
+    assert hasattr(self, "logger")
+    if not self.rank0:
+        return
+    self.logger.warning(msg)
+
+
+def debug(self, msg):
+    assert hasattr(self, "logger")
+    if not self.rank0:
+        return
+    self.logger.debug(msg)
+
+
+logx.info = lambda msg: info(logx, msg)
+logx.debug = lambda msg: debug(logx, msg)
+logx.warning = lambda msg: warning(logx, msg)

@@ -9,6 +9,7 @@ from torch.utils.data import Dataset
 from ...core.dataio import BaseDataIO
 from ...data.tokenization import Tokenizer
 from ...utils import io
+from ...utils.distribute import get_global_rank
 from .audio import create_audio_transform
 
 
@@ -46,7 +47,8 @@ class AiShellDataIO(BaseDataIO):
             url="http://www.openslr.org/resources/33/data_aishell.tgz",
             md5sum="2f494334227864a8a8fec932999db9d8",
         )
-        # self.create_manifest()
+        if get_global_rank() <= 0:
+            self.create_manifest()
 
         self.tokenizer = Tokenizer.load(tokenizer_name_or_path, do_lower_case=True)
         self.tokenizer.eos_token = "<EOS>"

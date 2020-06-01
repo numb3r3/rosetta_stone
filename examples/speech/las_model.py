@@ -1,13 +1,14 @@
 import math
 from typing import Dict
 
-import editdistance as ed
+# import editdistance as ed
 import numpy as np
 import torch
 from torch.distributions.categorical import Categorical
 import torch.nn as nn
 import torch.nn.functional as F
 
+from .metrics import edit_distance, word_error_rate
 from .module import (
     CNNExtractor,
     LocationAwareAttention,
@@ -58,17 +59,18 @@ def cal_cer(pred, truth, pad_idx: int = 0, mode: str = "cer", ctc=False):
         pred = pred.argmax(dim=-1)
 
     er = []
-    for p, t in zip(pred, truth):
-        p = p.tolist()
-        t = t.tolist()
-        new_p = []
-        for i, idx in enumerate(p):
+    for hyp, ref in zip(pred, truth):
+        hyp = hyp.tolist()
+        ref = ref.tolist()
+        new_hyp = []
+        for i, idx in enumerate(hyp):
             if idx == pad_idx or (ctc and i > 0 and idx == p[i - 1]):
                 continue
-            new_p.append(idx)
-        p = new_p
-
-        er.append(float(ed.eval(p, t)) / len(t))
+            new_hyp.append(idx)
+        hyp = new_hyp
+        # ed = edit_distance(p, t)
+        # er.append(float(ed) / len(t))
+        er.append(word_error_rate(ref, hyp))
     return sum(er) / len(er)
 
 
@@ -128,6 +130,7 @@ class LASNet(nn.Module):
                 bias = init_gate(bias)
 
         # Losses
+        # ignore_id may be assumed as 0, shared with CTC-blank symbol for ASR.
         self.seq_loss = torch.nn.CrossEntropyLoss(ignore_index=0)
 
     def set_state(self, prev_state, prev_attn):

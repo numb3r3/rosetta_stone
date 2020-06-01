@@ -36,9 +36,11 @@ lasnet: &lasnet
   dataio_package: rosetta.datasets.speech.aishell
   dataio_class: AiShellDataIO
 
-  data_path: /workspace/project-nas-10251-sz/open_speech_data/Aishell/data_aishell
+  data_path: /workspace/cpfs-data/datasets/open_speech_data/aishell/data_aishell
   # tokenizer_name_or_path: bert-base-chinese
-  tokenizer_name_or_path: /workspace/project-nas-10251-sh/models/reberta_zh_l12_pytorch/vocab.txt
+  tokenizer_name_or_path: /workspace/cpfs-data/models/reberta_zh_l12_pytorch/vocab.txt
+
+  log_dir: /workspace/cpfs-data/logs
 
   audio_config: # Attributes of audio feature
     feat_type: 'fbank'
@@ -53,13 +55,13 @@ lasnet: &lasnet
   encoder_config:
     prenet: 'vgg'                         # 'vgg'/'cnn'/''
     # vgg: True                             # 4x reduction on time feature extraction
-    module: 'LSTM'                        # 'LSTM'/'GRU'/'Transformer'
+    module: 'GRU'                        # 'LSTM'/'GRU'/'Transformer'
     bidirection: True
-    dim: [512,512,512,512,512]
-    dropout: [0,0,0,0,0]
-    layer_norm: [False,False,False,False,False]
-    proj: [True,True,True,True,True]      # Linear projection + Tanh after each rnn layer
-    sample_rate: [1,1,1,1,1]
+    dim: [512,512,512]
+    dropout: [0.1,0.1,0.1]
+    layer_norm: [False,False,False]
+    proj: [True,True,True]      # Linear projection + Tanh after each rnn layer
+    sample_rate: [1,1,1]
     sample_style: 'drop'                  # 'drop'/'concat'
 
   attention_config:
@@ -75,8 +77,9 @@ lasnet: &lasnet
     module: 'LSTM'                        # 'LSTM'/'GRU'/'Transformer'
     dim: 512
     layer: 1
-    dropout: 0
+    dropout: 0.1
 
-  ctc_weight: 0.5
+  ctc_weight: 0.3
   input_size: 120
-  batch_size: 32
+  batch_size: 52
+  learning_rate: 5e-5

@@ -2,10 +2,11 @@ import argparse
 import importlib
 from typing import Dict, Iterable
 
+# from runx.logx import logx
 from rosetta import __version__, helper
 from rosetta.core import lr_schedulers, optimizers, trainers
 from rosetta.utils.distribute import get_global_rank, init_distributed, is_distributed
-from runx.logx import logx
+from rosetta.utils.logx import logx
 from termcolor import colored
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
@@ -38,26 +39,11 @@ def main(args, unused_argv):
 
     logger = helper.set_logger("rosetta", verbose=True)
 
-    if is_distributed() or args.use_horovod:
-        init_distributed(use_horovod=args.use_horovod)
-
     cli_args = helper.parse_cli_args(unused_argv) if unused_argv else None
     hparams = helper.parse_args("app.yaml", args.model_name, "default")
 
-    if cli_args:
-        # useful when changing params defined in YAML
-        logger.info("override parameters with cli args ...")
-        for k, v in cli_args.items():
-            if k in hparams and hparams.get(k) != v:
-                logger.info("%20s: %20s -> %20s" % (k, hparams.get(k), v))
-                hparams[k] = v
-            elif k not in hparams:
-                logger.warning("%s is not a valid attribute! ignore!" % k)
-
-    logger.info("current parameters")
-    for k, v in sorted(hparams.items()):
-        if not k.startswith("_"):
-            logger.info("%20s = %-20s" % (k, v))
+    if is_distributed() or args.use_horovod:
+        init_distributed(use_horovod=args.use_horovod)
 
     # hacks: get_global_rank() would return -1 for standalone training
     global_rank = max(0, get_global_rank())
@@ -67,8 +53,30 @@ def main(args, unused_argv):
         coolname=True,
         tensorboard=True,
         global_rank=global_rank,
+        eager_flush=True,
         hparams=vars(args),
     )
+    logx.logger = logger
+
+    if cli_args:
+        # useful when changing params defined in YAML
+        # logger.info("override parameters with cli args ...")
+        logx.info("override parameters with cli args ...")
+        for k, v in cli_args.items():
+            if k in hparams and hparams.get(k) != v:
+                # logger.info("%20s: %20s -> %20s" % (k, hparams.get(k), v))
+                logx.info("%20s: %20s -> %20s" % (k, hparams.get(k), v))
+                hparams[k] = v
+            elif k not in hparams:
+                # logger.warning("%s is not a valid attribute! ignore!" % k)
+                logx.warning("%s is not a valid attribute! ignore!" % k)
+
+    # logger.info("current parameters")
+    logx.info("current parameters")
+    for k, v in sorted(hparams.items()):
+        if not k.startswith("_"):
+            # logger.info("%20s = %-20s" % (k, v))
+            logx.info("%20s = %-20s" % (k, v))
 
     model_pkg = importlib.import_module(hparams["model_package"])
     model_cls_ = getattr(model_pkg, hparams.get("model_class", "Model"))

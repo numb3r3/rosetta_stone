@@ -77,6 +77,7 @@ class Trainer(object):
                 "https://github.com/NVIDIA/apex"
             )
 
+        self._use_horovod = use_horovod
         if use_horovod and not is_horovod_available():
             raise RuntimeError("horovod is not available!")
 
@@ -204,22 +205,6 @@ class Trainer(object):
         :return: TensorMap or Dict
         """
 
-        # import contextlib
-        # input, labels = data
-        # compat_nullcontext = (
-        #     contextlib.nullcontext
-        #     if hasattr(contextlib, "nullcontext")
-        #     else contextlib.suppress
-        # )
-        # context = torch.cuda.amp.autocast if self._use_amp else compat_nullcontext
-        # with context():
-        #     try:
-        #         output, loss, metrics = self.model(*feed_tuple)
-        #     except Exception:
-        #         raise ValueError(
-        #             f"The implemented module = {type(self.model)} should return 3-tuples, i.e, output, loss, metrics. "
-        #         )
-
         try:
             output, loss, metrics = self.model(*batch_data)
         except Exception:
@@ -234,8 +219,17 @@ class Trainer(object):
             # compute gradient and do SGD step
             self.optimizer.zero_grad()
             if self._use_amp:
+                # Horovod with Apex
+                # https://gist.github.com/alsrgv/0713add50fe49a409316832a31612dde
                 with amp.scale_loss(loss, self.optimizer) as scaled_loss:
                     scaled_loss.backward()
+                    if self._use_horovod:
+                        self.optimizer.synchronize()
+
+                if self._use_horovod:
+                    with optimizer.skip_synchronize():
+                        self.optimizer.step()
+                # TODO: use `torch.cuda.amp` instead
                 # self.scaler(loss).backward()
                 # self.scaler.step(self.optimizer)
                 # self.scaler.update()
@@ -243,12 +237,16 @@ class Trainer(object):
                 loss.backward()
                 # TODO: enable custome grad norm
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
-
-            self.optimizer.step()
+                self.optimizer.step()
 
             # update step for lr_scheduler
             if self.lr_scheduler:
                 self.lr_scheduler.step()
+
+            logx.add_scalar(
+                "train/learning_rate", self.lr_scheduler.get_lr()[0], self.global_step
+            )
+
         return output, loss, metrics
 
     def _loop(self, data_loader: Iterable or DataLoader, mode: str, **kwargs):

@@ -21,11 +21,11 @@ def run_train(
     hparams: Dict = {},
 ):
     optimizer = optimizers.SGD(lr=hparams["learning_rate"], weight_decay=1e-4)
-    scheduler = lr_schedulers.MultiStepLR([30, 60, 80])
+    lr_scheduler = lr_schedulers.MultiStepLR([30, 60, 80])
     trainer = trainers.Trainer(
         model,
         optimizer,
-        scheduler=scheduler,
+        lr_scheduler=lr_scheduler,
         use_horovod=use_horovod,
         use_amp=use_amp,
         log_interval=hparams["log_interval"],

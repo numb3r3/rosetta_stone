@@ -82,4 +82,4 @@ lasnet: &lasnet
   ctc_weight: 0.3
   input_size: 120
   batch_size: 52
-  learning_rate: 5e-5
+  # learning_rate: 5e-5

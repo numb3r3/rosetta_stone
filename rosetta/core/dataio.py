@@ -5,9 +5,11 @@ from typing import Dict, List, Optional
 
 import torch
 from torch.utils.data import DataLoader, Dataset, Sampler
+from torch.utils.data.distributed import DistributedSampler
+from torch.utils.data.sampler import RandomSampler
 
 from .. import helper
-from ..utils.distribute import is_distributed
+from ..utils.distribute import get_global_rank, get_world_size, is_distributed
 
 
 class BaseDataIO:
@@ -62,21 +64,20 @@ class BaseDataIO:
         :return: A DataLoader that wraps the input Dataset.
         """
         dataset = self.create_dataset(file_paths, mode, **kwargs)
-        shuffle = True if mode == "train" else False
+        is_train = True if mode == "train" else False
         tensor_names = None
         if type(dataset).__name__ == "_StreamingDataSet":
             tensor_names = dataset.tensor_names
-        sampler = None
-        from torch.utils.data.distributed import DistributedSampler
-        from torch.utils.data.sampler import RandomSampler
 
+        sampler = None
         if is_distributed():
-            sampler = DistributedSampler(dataset)
-        else:
-            sampler = RandomSampler(dataset)
+            kwargs = dict(num_replicas=get_world_size(), rank=get_global_rank())
+            sampler = DistributedSampler(dataset, **kwargs)
+        elif is_train:
+            sampler = RandomSampler(dataset, True)
+
         return DataLoader(
             dataset,
-            shuffle=shuffle,
             sampler=sampler,
             batch_size=batch_size,
             collate_fn=functools.partial(

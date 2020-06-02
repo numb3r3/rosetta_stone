@@ -4,6 +4,7 @@ import time
 from typing import Dict, List, Optional
 
 import torch
+import torch.multiprocessing as mp
 from torch.utils.data import DataLoader, Dataset, Sampler
 from torch.utils.data.distributed import DistributedSampler
 from torch.utils.data.sampler import RandomSampler
@@ -75,6 +76,16 @@ class BaseDataIO:
             sampler = DistributedSampler(dataset, **kwargs)
         elif is_train:
             sampler = RandomSampler(dataset, True)
+
+        # When supported, use 'forkserver' to spawn dataloader workers instead of 'fork' to prevent
+        # issues with Infiniband implementations that are not fork-safe
+        if (
+            num_workers > 0
+            and hasattr(mp, "_supports_context")
+            and mp._supports_context
+            and "forkserver" in mp.get_all_start_methods()
+        ):
+            kwargs["multiprocessing_context"] = "forkserver"
 
         return DataLoader(
             dataset,

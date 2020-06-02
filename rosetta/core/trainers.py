@@ -106,9 +106,6 @@ class Trainer(object):
         self.optimizer = optimizer
         self.set_optimizer()
 
-        self.lr_scheduler = lr_scheduler
-        self.set_scheduler()
-
         # if isinstance(self.model, nn.parallel.DistributedDataParallel) or isinstance(
         #     self.model, nn.DataParallel
         # ):
@@ -144,11 +141,16 @@ class Trainer(object):
                 self.model, device_ids=[rank]
             )
 
+        self.lr_scheduler = lr_scheduler
+        self.set_scheduler()
+
         self._log_interval = log_interval
         self._verbose = verbose
         self._global_step = -1
         self._epoch = -1
         self._is_train = None
+
+        self.kwargs = kwargs
 
         # self._use_amp = use_amp
         # if use_amp:
@@ -209,20 +211,26 @@ class Trainer(object):
                 # https://gist.github.com/alsrgv/0713add50fe49a409316832a31612dde
                 with amp.scale_loss(loss, self.optimizer) as scaled_loss:
                     scaled_loss.backward()
+                    if self.kwargs.get("gradient_clip", None):
+                        torch.nn.utils.clip_grad_norm_(amp.master_params(self.optimizer), self.kwargs["gradient_max_norm"])
+                    
                     if self._use_horovod:
                         self.optimizer.synchronize()
 
                 if self._use_horovod:
                     with self.optimizer.skip_synchronize():
                         self.optimizer.step()
+                else:
+                    self.optimizer.step()
+
                 # TODO: use `torch.cuda.amp` instead
                 # self.scaler(loss).backward()
                 # self.scaler.step(self.optimizer)
                 # self.scaler.update()
             else:
                 loss.backward()
-                # TODO: enable custome grad norm
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
+                if self.kwargs.get("gradient_clip", None):
+                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.kwargs["gradient_max_norm"])
                 self.optimizer.step()
 
             # update step for lr_scheduler

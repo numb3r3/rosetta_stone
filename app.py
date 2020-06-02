@@ -2,6 +2,8 @@ import argparse
 import importlib
 import os
 from typing import Dict, Iterable
+from datetime import datetime
+
 
 # from runx.logx import logx
 from rosetta import __version__, helper
@@ -20,7 +22,7 @@ def run_train(
     use_amp: bool = False,
     hparams: Dict = {},
 ):
-    optim = hparams["optimizer"]
+    optim = hparams.pop("optimizer")
     if optim == "SGD":
         optimizer = optimizers.SGD(
             lr=hparams["learning_rate"],
@@ -52,7 +54,7 @@ def run_train(
         lr_scheduler=lr_scheduler,
         use_horovod=use_horovod,
         use_amp=use_amp,
-        log_interval=hparams["log_interval"],
+        **hparams,
     )
 
     for epoch in range(hparams["num_epochs"]):
@@ -77,9 +79,9 @@ def main(args, unused_argv):
     )
 
     from coolname import generate_slug
-
+    log_name = datetime.now().strftime("%Y-%m-%d") + "-" + generate_slug(2)
     logx.initialize(
-        logdir=os.path.join(log_dir, generate_slug(2)),
+        logdir=os.path.join(log_dir, log_name),
         coolname=True,
         tensorboard=True,
         global_rank=global_rank,

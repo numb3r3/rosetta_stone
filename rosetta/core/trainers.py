@@ -1,8 +1,7 @@
 from functools import partial as Partial
 from typing import Dict, Iterable, Mapping, Optional, Tuple
-import warnings
 
-from runx.logx import logx
+# from runx.logx import logx
 import torch
 from torch import nn
 from torch.optim import Optimizer
@@ -14,10 +13,10 @@ from ..utils.distribute import (
     get_global_rank,
     get_local_rank,
     get_world_size,
-    init_distributed,
     is_distributed,
     is_horovod_available,
 )
+from ..utils.logx import logx
 
 
 try:

@@ -1,11 +1,9 @@
 import functools
-import os
-import time
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 import torch
 import torch.multiprocessing as mp
-from torch.utils.data import DataLoader, Dataset, Sampler
+from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 from torch.utils.data.sampler import RandomSampler
 

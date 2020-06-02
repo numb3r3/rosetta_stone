@@ -20,7 +20,7 @@ default: &default
     eval_metric: accuracy
     compare_fn: less
   
-  data_loader_workers: 0
+  dataloader_workers: 0
   shuffle_batches: 10
   prefetch_buffer_size: 5
   
@@ -29,7 +29,7 @@ default: &default
   save_checkpoints_steps: 500
 
   optimizer: AdamW
-  learning_rate: 0.001  
+  learning_rate: 1e-3  
   warmup_steps: 1000
   constant_steps: 2500
   lr_decay_method: exponential

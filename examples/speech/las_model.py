@@ -8,7 +8,7 @@ from torch.distributions.categorical import Categorical
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .metrics import edit_distance, word_error_rate
+from .metrics import word_error_rate
 from .module import (
     CNNExtractor,
     LocationAwareAttention,
@@ -64,7 +64,7 @@ def cal_cer(pred, truth, pad_idx: int = 0, mode: str = "cer", ctc=False):
         ref = ref.tolist()
         new_hyp = []
         for i, idx in enumerate(hyp):
-            if idx == pad_idx or (ctc and i > 0 and idx == p[i - 1]):
+            if idx == pad_idx or (ctc and i > 0 and idx == hyp[i - 1]):
                 continue
             new_hyp.append(idx)
         hyp = new_hyp

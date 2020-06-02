@@ -1,5 +1,6 @@
 import argparse
 import importlib
+import os
 from typing import Dict, Iterable
 
 # from runx.logx import logx
@@ -19,7 +20,25 @@ def run_train(
     use_amp: bool = False,
     hparams: Dict = {},
 ):
-    optimizer = optimizers.SGD(lr=hparams["learning_rate"], weight_decay=1e-4)
+    optim = hparams["optimizer"]
+    if optim == "SGD":
+        optimizer = optimizers.SGD(
+            lr=hparams["learning_rate"],
+            weight_decay=hparams["weight_decay_rate"],
+            momentum=hparams.get("momentum", 0),
+            dampening=hparams.get("dampening", 0),
+        )
+    else:
+        optimizer = {
+            "SGD": optimizers.SGD,
+            "Adam": optimizers.Adam,
+            "AdamW": optimizers.AdamW,
+        }.get(optim)(
+            lr=hparams["learning_rate"],
+            weight_decay=hparams["weight_decay_rate"],
+            betas=(hparams.get("adam_beta1", 0.9), hparams.get("adam_beta2", 0.999)),
+        )
+
     lr_scheduler = lr_schedulers.MultiStepLR([30, 60, 80])
     trainer = trainers.Trainer(
         model,
@@ -97,14 +116,14 @@ def main(args, unused_argv):
         hparams["train_files"],
         batch_size=hparams["batch_size"],
         mode="train",
-        num_workers=hparams["data_loader_workers"],
+        num_workers=hparams["dataloader_workers"],
     )
 
     eval_loader = dataio.create_data_loader(
         hparams["eval_files"],
         batch_size=hparams["batch_size"],
         mode="eval",
-        num_workers=hparams["data_loader_workers"],
+        num_workers=hparams["dataloader_workers"],
     )
 
     run_train(

@@ -13,6 +13,7 @@ from .. import helper
 from ..utils.distribute import (
     get_global_rank,
     get_local_rank,
+    get_world_size,
     init_distributed,
     is_distributed,
     is_horovod_available,
@@ -125,6 +126,12 @@ class Trainer(object):
         # else:
         #     self.accessible_model = self.model
 
+        if is_distributed():
+            # scale the learning rate by the number of workers to account for
+            # increased total batch size
+            for param_group in self.optimizer.param_groups:
+                param_group['lr'] *= get_world_size()
+
         if use_horovod:
             import horovod.torch as hvd
 
@@ -227,7 +234,7 @@ class Trainer(object):
                         self.optimizer.synchronize()
 
                 if self._use_horovod:
-                    with optimizer.skip_synchronize():
+                    with self.optimizer.skip_synchronize():
                         self.optimizer.step()
                 # TODO: use `torch.cuda.amp` instead
                 # self.scaler(loss).backward()
@@ -295,7 +302,7 @@ class Trainer(object):
 
         with torch.enable_grad():
             self._loop(data_loader, mode="train", **kwargs)
-            self.logger.info(f"epoch {self.epoch} finished")
+            logx.info(f"epoch {self.epoch} finished")
 
         if isinstance(data_loader, DataLoader) and isinstance(
             data_loader.sampler, DistributedSampler

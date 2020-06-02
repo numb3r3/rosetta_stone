@@ -75,7 +75,10 @@ def cal_cer(pred, truth, pad_idx: int = 0, mode: str = "cer", ctc=False):
 
 
 class LASNet(nn.Module):
-    """ LAS end-to-end model, including Encoder/Decoder(s)"""
+    """ Implementation of "An improved hybrid CTC-Attention model for speech recognition"
+    https://arxiv.org/abs/1810.12020
+
+    """
 
     def __init__(
         self,

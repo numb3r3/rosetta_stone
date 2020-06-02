@@ -52,6 +52,7 @@ def main(args, unused_argv):
     )
 
     from coolname import generate_slug
+
     logx.initialize(
         logdir=os.path.join(log_dir, generate_slug(2)),
         coolname=True,

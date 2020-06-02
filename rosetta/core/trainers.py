@@ -42,8 +42,7 @@ class Trainer(object):
         device: Optional[torch.device or str] = None,
         use_cuda_nonblocking: bool = False,
         use_horovod: bool = False,
-        use_amp: bool = None,
-        use_sync_bn: bool = False,
+        use_amp: bool = False,
         verbose: bool = True,
         **kwargs,
     ):
@@ -84,11 +83,6 @@ class Trainer(object):
 
         # Init distributed settings
         if is_distributed():
-            # if use_sync_bn:
-            #     model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
-
-            # init_distributed(use_horovod=use_horovod)
-
             # normalization parameters are synchronized across workers during forward pass.
             if self._use_amp:
                 self.model = apex.parallel.convert_syncbn_model(self.model)
@@ -130,7 +124,7 @@ class Trainer(object):
             # scale the learning rate by the number of workers to account for
             # increased total batch size
             for param_group in self.optimizer.param_groups:
-                param_group['lr'] *= get_world_size()
+                param_group["lr"] *= get_world_size()
 
         if use_horovod:
             import horovod.torch as hvd
@@ -158,7 +152,7 @@ class Trainer(object):
         self._verbose = verbose
         self._global_step = -1
         self._epoch = -1
-        self._is_train = True
+        self._is_train = None
 
         # self._use_amp = use_amp
         # if use_amp:
@@ -183,17 +177,6 @@ class Trainer(object):
     @property
     def is_train(self):
         return self._is_train
-
-    def __enter__(self):
-        """
-        >>> with Trainer(...) as trainer:
-        >>>     trainer.train(...)
-        """
-
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.exit()
 
     def _iteration(
         self, batch_data: Tuple[torch.Tensor], mode: str = "eval"
@@ -265,10 +248,6 @@ class Trainer(object):
                 x.to(self.device) if isinstance(x, torch.Tensor) else x
                 for x in batch_data
             ]
-            # _feed_tuple = []
-            # for x in feed_tuple:
-            #     x = x.to(self.device, non_blocking=self._cuda_nonblocking)
-            #     _feed_tuple.append(x)
 
             output, loss, metrics = self._iteration(batch_data, mode)
 

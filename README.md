@@ -5,6 +5,8 @@ make your deep learning life easier
 
 **Rosetta Stone** is a toolkit that aims to make your deep learning life easier. It enables users to performe end-to-end experiment quickly and efficiently. In comparison with the other open source libraries, Rosetta is an alternate low-code toolkit that can be used to perform deep learning tasks with only few lines of code. Rosetta is essentially a wrapper aroud pytorch, apex, tensorboardX and many more. 
 
+The key features are:
+
 - yaml-styled model construction and hyper parameters setting
 - best practice
 - Unified design for various applications

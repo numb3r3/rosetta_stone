@@ -36,6 +36,14 @@ class AdamWeightDecayOptimizer(torch.optim.Optimizer):
         correct_bias=True,
         amsgrad=False,
     ):
+        """ Implements Adam algorithm with weight decay fix.
+        Parameters:
+            lr (float): learning rate. Default 1e-3.
+            betas (tuple of 2 floats): Adams beta parameters (b1, b2). Default: (0.9, 0.999)
+            eps (float): Adams epsilon. Default: 1e-6
+            weight_decay (float): Weight decay. Default: 0.0
+            correct_bias (bool): can be set to False to avoid correcting bias in Adam (e.g. like in Bert TF repository). Default True.
+        """
         if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr))
         if not 0.0 <= eps:
@@ -45,7 +53,12 @@ class AdamWeightDecayOptimizer(torch.optim.Optimizer):
         if not 0.0 <= betas[1] < 1.0:
             raise ValueError("Invalid beta parameter at index 1: {}".format(betas[1]))
         defaults = dict(
-            lr=lr, betas=betas, eps=eps, weight_decay=weight_decay, amsgrad=amsgrad
+            lr=lr,
+            betas=betas,
+            eps=eps,
+            weight_decay=weight_decay,
+            amsgrad=amsgrad,
+            correct_bias=correct_bias,
         )
         super().__init__(params, defaults)
 

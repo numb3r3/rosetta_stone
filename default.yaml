@@ -30,11 +30,13 @@ default: &default
 
   optimizer: AdamW
   learning_rate: 1e-3  
-  warmup_steps: 1000
-  constant_steps: 2500
+
+  lr_warmup_steps: 1000
+  lr_constant_steps: 2500
   lr_decay_method: exponential
-  decay_steps: 1000
-  decay_rate: 0.5
+  lr_decay_steps: 1000
+  lr_decay_rate: 0.5
+  
   weight_decay_rate: 0.01
   weight_averaging_decay: 0.9
   gradient_clip: true

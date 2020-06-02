@@ -1,7 +1,6 @@
 from functools import partial as Partial
 from typing import Dict, Iterable, Mapping, Optional, Tuple
 
-# from runx.logx import logx
 import torch
 from torch import nn
 from torch.optim import Optimizer
@@ -22,8 +21,6 @@ from ..utils.logx import logx
 try:
     import apex
     from apex import amp
-
-    # from apex.parallel import convert_syncbn_model
 
     AMP_AVAILABLE = True
 except ImportError:
@@ -53,11 +50,6 @@ class Trainer(object):
             raise TypeError(
                 f"Unknown type for `model`. Expected nn.Module but got {type(model)}"
             )
-
-        # if not isinstance(model, nn.Module):
-        #     raise TypeError(
-        #         f"Unknown type for `model`. Expected nn.Module but got {type(model)}"
-        #     )
 
         if device is None:
             self.device = (

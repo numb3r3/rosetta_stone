@@ -39,7 +39,13 @@ def run_train(
             betas=(hparams.get("adam_beta1", 0.9), hparams.get("adam_beta2", 0.999)),
         )
 
-    lr_scheduler = lr_schedulers.MultiStepLR([30, 60, 80])
+    lr_scheduler = lr_schedulers.DecayedLRWithWarmup(
+        warmup_steps=hparams["lr_warmup_steps"],
+        constant_steps=hparams["lr_constant_steps"],
+        decay_method=hparams["lr_decay_method"],
+        decay_steps=hparams["lr_decay_steps"],
+        decay_rate=hparams["lr_decay_rate"],
+    )
     trainer = trainers.Trainer(
         model,
         optimizer,

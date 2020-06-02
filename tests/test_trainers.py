@@ -22,10 +22,8 @@ def test_basic_trainer():
     optimizer = optimizers.SGD()
     scheduler = lr_schedulers.StepLR(9)
     trainer = trainers.Trainer(model, optimizer, lr_scheduler=scheduler)
-    loader = [
-        {"x": torch.randn(2, 10), "y": torch.zeros(2, dtype=torch.long)}
-        for _ in range(10)
-    ]
+
+    loader = [(torch.randn(2, 10), torch.zeros(2, dtype=torch.long)) for _ in range(10)]
 
     trainer.train(loader)
     assert pytest.approx(trainer.optimizer.param_groups[0]["lr"], 0.01)

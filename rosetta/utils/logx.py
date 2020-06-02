@@ -1,7 +1,5 @@
 from runx.logx import logx
 
-from .. import helper
-
 
 def info(self, msg):
     assert hasattr(self, "logger")

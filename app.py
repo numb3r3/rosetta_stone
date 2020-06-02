@@ -50,7 +50,7 @@ def run_train(
     )
 
     for epoch in range(hparams["num_epochs"]):
-        trainer.train(data_loader, epoch=epoch)
+        trainer.train(data_loader, epoch=epoch, **hparams)
 
 
 def main(args, unused_argv):

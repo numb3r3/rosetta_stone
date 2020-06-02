@@ -102,9 +102,14 @@ class Trainer(object):
         else:
             self._cuda_nonblocking = False
             # usually, this is not expected
-            self.logger.info(
-                f"cuda: False (torch.cuda.is_available()={torch.cuda.is_available()})"
-            )
+            if logx.initialized:
+                logx.info(
+                    f"cuda: False (torch.cuda.is_available()={torch.cuda.is_available()})"
+                )
+            else:
+                self.logger.info(
+                    f"cuda: False (torch.cuda.is_available()={torch.cuda.is_available()})"
+                )
 
         self.optimizer = optimizer
         self.set_optimizer()
@@ -232,16 +237,23 @@ class Trainer(object):
             if self.lr_scheduler:
                 self.lr_scheduler.step()
 
-            logx.add_scalar(
-                "train/learning_rate", self.lr_scheduler.get_lr()[0], self.global_step
-            )
+            if logx.initialized:
+                logx.add_scalar(
+                    "train/learning_rate",
+                    self.lr_scheduler.get_lr()[0],
+                    self.global_step,
+                )
 
         return output, loss, metrics
 
     def _loop(self, data_loader: Iterable or DataLoader, mode: str, **kwargs):
+        batch_size, total_size = (
+            (data_loader.batch_size, len(data_loader.dataset))
+            if isinstance(data_loader, DataLoader)
+            else (len(data_loader), len(data_loader))
+        )
 
         for batch_idx, batch_data in enumerate(data_loader):
-
             # Move batch of samples to device
             batch_data = [
                 x.to(self.device) if isinstance(x, torch.Tensor) else x
@@ -251,19 +263,29 @@ class Trainer(object):
             output, loss, metrics = self._iteration(batch_data, mode)
 
             if mode == "train" and batch_idx % self.log_interval == 0:
-                logx.msg(
-                    "Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
-                        self.epoch,
-                        batch_idx,
-                        len(data_loader.dataset),
-                        100.0 * batch_idx / len(data_loader),
-                        loss.item(),
-                    )
-                )
-
                 # capture metrics
                 metrics.update({"loss": loss.item()})
-                logx.metric(mode, metrics, self.global_step)
+                if logx.initialized:
+                    logx.msg(
+                        "Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
+                            self.epoch,
+                            batch_idx * batch_size,
+                            total_size,
+                            100.0 * batch_idx * batch_size / total_size,
+                            loss.item(),
+                        )
+                    )
+                    logx.metric(mode, metrics, self.global_step)
+                else:
+                    self.logger.info(
+                        "Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
+                            self.epoch,
+                            batch_idx * batch_size,
+                            total_size,
+                            100.0 * batch_idx * batch_size / total_size,
+                            loss.item(),
+                        )
+                    )
 
     def train(self, data_loader: Iterable or DataLoader, **kwargs):
         """ Perform the training procedure for an epoch.
@@ -280,7 +302,7 @@ class Trainer(object):
 
         with torch.enable_grad():
             self._loop(data_loader, mode="train", **kwargs)
-            logx.info(f"epoch {self.epoch} finished")
+            # logx.info(f"epoch {self.epoch} finished")
 
         if isinstance(data_loader, DataLoader) and isinstance(
             data_loader.sampler, DistributedSampler

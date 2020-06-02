@@ -8,7 +8,6 @@ from rosetta.core import lr_schedulers, optimizers, trainers
 from rosetta.utils.distribute import get_global_rank, init_distributed, is_distributed
 from rosetta.utils.logx import logx
 from termcolor import colored
-from torch.nn import functional as F
 from torch.utils.data import DataLoader
 
 
@@ -48,14 +47,21 @@ def main(args, unused_argv):
     # hacks: get_global_rank() would return -1 for standalone training
     global_rank = max(0, get_global_rank())
 
+    log_dir = hparams.get(
+        "log_dir", os.path.join(hparams["log_dir_prefix"], args.model_name)
+    )
+
+    from coolname import generate_slug
     logx.initialize(
-        logdir=hparams["log_dir"],
+        logdir=os.path.join(log_dir, generate_slug(2)),
         coolname=True,
         tensorboard=True,
         global_rank=global_rank,
         eager_flush=True,
-        hparams=vars(args),
+        hparams=hparams,
     )
+
+    # attach logger to logx
     logx.logger = logger
 
     if cli_args:

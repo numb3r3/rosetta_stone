@@ -40,7 +40,7 @@ lasnet: &lasnet
   # tokenizer_name_or_path: bert-base-chinese
   tokenizer_name_or_path: /workspace/cpfs-data/models/reberta_zh_l12_pytorch/vocab.txt
 
-  log_dir: /workspace/cpfs-data/logs
+  log_dir_prefix: /workspace/cpfs-data/logs
 
   audio_config: # Attributes of audio feature
     feat_type: 'fbank'

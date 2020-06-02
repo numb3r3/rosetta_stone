@@ -24,7 +24,7 @@ def init_distributed(
     init_method: Optional[str] = None,
     warning: bool = True,
 ):
-    """ Simple initializer for distributed training.
+    """ initializer for distributed training.
     :param use_horovod:
     :param backend: backend when
     :param init_method:

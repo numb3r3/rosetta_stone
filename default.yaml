@@ -1,10 +1,10 @@
 path:
     local: &local
       suffix_model_id: ''
-      log_dir: './data/logs'
-      model_dir: './data/models'
-      result_dir: './data/results'
-      summary_dir: './data/summaries'
+      log_dir_prefix: './data/logs'
+      model_dir_prefix: './data/models'
+      # result_dir: './data/results'
+      # summary_dir: './data/summaries'
   
 default: &default
   <<: *local
@@ -28,22 +28,16 @@ default: &default
   save_summary_steps: 10
   save_checkpoints_steps: 500
 
-  optimizer: Adam
-  learning_rate: 0.001
+  optimizer: AdamW
+  learning_rate: 0.001  
   warmup_steps: 1000
   constant_steps: 2500
   lr_decay_method: exponential
   decay_steps: 1000
   decay_rate: 0.5
   weight_decay_rate: 0.01
-  exclude_from_weight_decay:
-    - 'LayerNorm'
-    - 'layer_norm'
-    - 'bias'
   weight_averaging_decay: 0.9
   gradient_clip: true
   gradient_max_norm: 1.0
 
   dropout_rate: 0.1
-
-  num_gpus:

@@ -45,3 +45,4 @@ Before making a contribution, please confirm that:
 - [homura](https://github.com/moskomule/homura): PyTorch utilities including trainer, reporter, etc.
 - [FARM](https://github.com/deepset-ai/FARM): Fast & easy transfer learning for NLP. Harvesting language models for the industry. 
 - [kotonoha](https://github.com/moskomule/kotonoha): NLP utilities for research
+- [Tips, tricks and gotchas in PyTorch](https://coolnesss.github.io/2019-02-05/pytorch-gotchas)

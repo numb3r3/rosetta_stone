@@ -148,7 +148,7 @@ class LASNet(nn.Module):
         token_ids,
         token_len,
         teacher,
-        tf_rate=0.0,
+        tf_rate=0.3,
         emb_decoder=None,
         get_dec_state=False,
     ):

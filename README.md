@@ -23,14 +23,36 @@ The key features are:
 - build docker image
 
 ```bash
-docker build --tag huya_ai:rosetta .
+$ docker build --tag huya_ai:rosetta .
 ```
 
 - run the docker container
 
 ```bash
-docker run --rm -it -v $(PWD):/tmp/rosetta --name rosetta huya_ai:rosetta bash
+$ docker run --rm -it -v $(PWD):/tmp/rosetta --name rosetta huya_ai:rosetta bash
 ```
+
+## Usage
+
+- training from scratch
+
+```bash
+$ python app.py resnet56
+```
+
+- overrides parameters defined in yaml file
+
+```bash
+$ python app.py resnet56 --batch_size 125
+```
+
+- training using automatic mixture precision (amp)
+
+```bash
+$ python app.py resnet56 --use_amp
+```
+
+
 
 ## Contribution Guide
 You can contribute to this project by sending a merge request. After approval, the merge request will be merged by the reviewer.

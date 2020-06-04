@@ -94,8 +94,6 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, images, labels, **kwargs):
-        # print(images.get_device())
-        # print(labels.get_device())
         x = self.conv1(images)
         x = self.bn1(x)
         x = self.relu(x)
@@ -110,7 +108,7 @@ class ResNet(nn.Module):
 
         loss = nn.functional.cross_entropy(logits, labels)
 
-        predicts = {}
+        predicts = {"logits": logits}
 
         metrics = {}
 

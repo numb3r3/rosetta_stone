@@ -1,3 +1,18 @@
+resnet56: &resnet56
+  model_package: examples.vision.resnet_model
+  model_class: ResNet
+  dataio_package: examples.vision.cifar10
+  dataio_class: CIFAR10
+
+  batch_size: 256
+  
+  n_size: 9
+  num_classes: 10
+
+resnet110: &resnet110
+  <<: *resnet56
+  n_size: 18
+
 bert: &bert
   model_package: rosetta.models.pretrained_bert
   model_class: PretrainedBert
@@ -17,17 +32,6 @@ bert: &bert
   vocab_size: 30522
   
   num_epochs: 100
-
-resnet56: &resnet56
-  model_package: examples.vision.resnet_model
-  model_class: ResNet
-  dataio_package: rosetta.datasets.vision.cifar10
-  dataio_class: CIFAR10
-
-  batch_size: 256
-  
-  n_size: 9
-  num_classes: 10
 
 lasnet: &lasnet
   model_package: examples.speech.las_model
@@ -82,5 +86,6 @@ lasnet: &lasnet
   ctc_weight: 0.3
   input_size: 120
   batch_size: 32
-  
+
   learning_rate: 5e-5
+

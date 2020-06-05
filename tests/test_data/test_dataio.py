@@ -21,7 +21,7 @@ class DumyDataIO(BaseDataIO):
     def __init__(self):
         super().__init__()
 
-    def create_dataset(self, file_paths, mode: str = "train", **kwargs):
+    def create_dataset(self, data_path: str, mode: str = "train", **kwargs):
         dt = DumyDataset()
         return dt
 
@@ -32,7 +32,7 @@ dirname = os.path.dirname(__file__)
 def test_dataio():
 
     dataio = DumyDataIO()
-    loader = dataio.create_data_loader(file_paths=None, batch_size=5)
+    loader = dataio.create_data_loader(data_path=None, batch_size=5)
     sampled_data = list(iter(loader))
     assert len(sampled_data) == 20
 
@@ -42,7 +42,7 @@ def test_masked_text_dataio():
 
     dataio = MaskedTextDataIO(tokenizer_name="bert-base-cased")
     loader = dataio.create_data_loader(
-        file_paths=os.path.join(dirname, "sonnets.txt"), batch_size=5
+        data_path=os.path.join(dirname, "sonnets.txt"), batch_size=5
     )
 
 
@@ -61,8 +61,10 @@ def test_aishell_dataio():
     }
     kwargs = {}
     kwargs["audio_config"] = config
-    kwargs[
-        "data_path"
-    ] = "/workspace/project-nas-10251-sz/open_speech_data/Aishell/data_aishell"
+    
+    # kwargs[
+    #     "data_path"
+    # ] = "/workspace/project-nas-10251-sz/open_speech_data/Aishell/data_aishell"
+
     dataio = AiShellDataIO(tokenizer_name_or_path="bert-base-chinese", **kwargs)
-    loader = dataio.create_data_loader(file_paths=None, batch_size=5)
+    # loader = dataio.create_data_loader(data_path=None, batch_size=5)

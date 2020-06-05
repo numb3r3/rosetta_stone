@@ -1,9 +1,8 @@
 import argparse
+from datetime import datetime
 import importlib
 import os
 from typing import Dict, Iterable
-from datetime import datetime
-
 
 # from runx.logx import logx
 from rosetta import __version__, helper
@@ -79,6 +78,7 @@ def main(args, unused_argv):
     )
 
     from coolname import generate_slug
+
     log_name = datetime.now().strftime("%Y-%m-%d") + "-" + generate_slug(2)
     logx.initialize(
         logdir=os.path.join(log_dir, log_name),

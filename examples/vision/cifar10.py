@@ -1,10 +1,11 @@
+import os
 from typing import Dict, List, Tuple
 
+from rosetta.core.dataio import BaseDataIO
 import torch
 from torch.nn.utils.rnn import pad_sequence
 from torchvision import datasets, transforms
 
-from rosetta.core.dataio import BaseDataIO
 
 class CIFAR10(BaseDataIO):
     def __init__(self, **kwargs):

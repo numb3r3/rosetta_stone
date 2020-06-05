@@ -47,7 +47,7 @@ class AiShellDataIO(BaseDataIO):
             url="http://www.openslr.org/resources/33/data_aishell.tgz",
             md5sum="2f494334227864a8a8fec932999db9d8",
         )
-        
+
         # if get_global_rank() <= 0:
         #     self.create_manifest()
 

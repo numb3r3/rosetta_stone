@@ -43,7 +43,7 @@ $ python app.py resnet56
 - overrides parameters defined in yaml file
 
 ```bash
-$ python app.py resnet56 --batch_size 125
+$ python app.py resnet56 --batch_size=125
 ```
 
 - training using automatic mixture precision (amp)

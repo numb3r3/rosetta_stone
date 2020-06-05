@@ -41,16 +41,18 @@ dssm_bert: &dssm_bert
 
   max_contexts_length: 128
   max_response_length: 64
-  max_history: 10
+  max_history: 4
 
-  tokenizer_name_or_path: bert-base-cased
-  bert_config_file: ./examples/bert/config.json
+  tokenizer_name_or_path: /workspace/cpfs-data/models/all_bert_models/uncased_L-12_H-768_A-12/vocab.txt
+  bert_pretrained_model_path: /workspace/cpfs-data/models/all_bert_models/uncased_L-12_H-768_A-12/
+  # bert_config_file: /workspace/cpfs-data/models/all_bert_models/uncased_L-12_H-768_A-12/config.json
   bert_hidden_size: 768
 
   fc_hidden_size: 64
 
   num_epochs: 100
   batch_size: 128
+  learning_rate: 5e-5
 
 lasnet: &lasnet
   model_package: examples.speech.las_model

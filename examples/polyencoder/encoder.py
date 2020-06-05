@@ -8,7 +8,9 @@ class DSSMBert(nn.Module):
     def __init__(self, **kwargs):
         super().__init__()
 
-        self.bert_lm = BertLM(**kwargs)
+        bert_pretrained_model_path = kwargs.pop("bert_pretrained_model_path")
+        
+        self.bert_lm = BertLM(pretrained_model_path=bert_pretrained_model_path, from_tf=True)
 
         self.dropout = nn.Dropout(kwargs["dropout_rate"])
         self.context_fc = nn.Linear(kwargs["bert_hidden_size"], kwargs["fc_hidden_size"])

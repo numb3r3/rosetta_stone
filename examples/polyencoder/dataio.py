@@ -41,10 +41,10 @@ class SelectionDataset(Dataset):
             if len(group["responses"]) > 0:
                 self.data_source.append(group)
 
-            for idx in tqdm(range(len(self.data_source))):
-                self.__get_single_item__(idx)
+            # for idx in tqdm(range(len(self.data_source))):
+            #     self.__get_single_item__(idx)
 
-            self.data_source = [0] * len(self.transformed_data)
+            # self.data_source = [0] * len(self.transformed_data)
 
     def __len__(self):
         return len(self.data_source)

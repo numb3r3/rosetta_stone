@@ -31,7 +31,6 @@ def run_train(
         )
     else:
         optimizer = {
-            "SGD": optimizers.SGD,
             "Adam": optimizers.Adam,
             "AdamW": optimizers.AdamW,
         }.get(optim)(

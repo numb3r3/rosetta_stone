@@ -125,7 +125,7 @@ class AiShellDataIO(BaseDataIO):
 
     def create_dataset(
         self,
-        file_paths: List[str],
+        data_path: str,
         mode: str = "train",
         download: bool = True,
         **kwargs,

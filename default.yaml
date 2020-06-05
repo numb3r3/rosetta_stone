@@ -15,7 +15,7 @@ default: &default
   checkpoint_selector:
     eval_set: eval
     eval_metric: accuracy
-    compare_fn: less
+    higher_better: true
   
   dataloader_workers: 0
   

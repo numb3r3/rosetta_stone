@@ -1,11 +1,9 @@
 import argparse
+from datetime import datetime
 import importlib
 import os
 from typing import Dict, Iterable
-from datetime import datetime
 
-
-# from runx.logx import logx
 from rosetta import __version__, helper
 from rosetta.core import lr_schedulers, optimizers, trainers
 from rosetta.utils.distribute import get_global_rank, init_distributed, is_distributed
@@ -57,8 +55,32 @@ def run_train(
         **hparams,
     )
 
+    eval_metric = hparams["checkpoint_selector"]["eval_metric"]
+    higher_better = hparams["checkpoint_selector"]["higher_better"]
+    best_metric = -100 if higher_better else 100
+
     for epoch in range(hparams["num_epochs"]):
+        # train for one epoch
         trainer.train(data_loader, epoch=epoch, **hparams)
+
+        # evaluate on validation set
+        _, _, metrics = trainer.eval(eval_loader, epoch=epoch, **hparams)
+
+        metric = metrics["eval_metric"]
+
+        best_metric = max(best_metric, metric) if higher_better else min(best_metric, metric)
+
+        # checkpoint saving
+        save_dict = {
+            'epoch': epoch + 1,
+            'state_dict': model.state_dict(),
+            'metrics': metrics,
+            'optimizer': optimizer.state_dict()}
+        logx.save_model(
+            save_dict,
+            metric=best_metric,
+            epoch=epoch,
+            higher_better=higher_better)
 
 
 def main(args, unused_argv):
@@ -120,6 +142,24 @@ def main(args, unused_argv):
     dataio_cls_ = getattr(dataio_pkg, hparams.get("dataio_class", "DataIO"))
     dataio = dataio_cls_(**hparams)
 
+    
+
+    # TODO: optionally reuse from a checkpoint
+    if args.resume:
+        if os.path.isfile(args.resume):
+            logx.msg("=> loading checkpoint '{}'".format(args.resume))
+            checkpoint = torch.load(args.resume)
+            args.start_epoch = checkpoint['epoch']
+            best_acc1 = checkpoint['best_acc1']
+            model.load_state_dict(checkpoint['state_dict'])
+            optimizer.load_state_dict(checkpoint['optimizer'])
+            logx.msg("=> loaded checkpoint '{}' (epoch {})"
+                     .format(args.resume, checkpoint['epoch']))
+        else:
+            logx.msg("=> no checkpoint found at '{}'".format(args.resume))
+
+    
+    # Data loading code
     train_loader = dataio.create_data_loader(
         hparams["train_files"],
         batch_size=hparams["batch_size"],
@@ -170,6 +210,10 @@ def parse_args():
         choices=["train", "eval", "test"],
         help="the running command",
     )
+
+    parser.add_argument('--resume', default='', type=str, metavar='PATH',
+                    help='path to latest checkpoint (default: none)')
+
     parser.add_argument(
         "--no-cuda", action="store_true", default=False, help="disables CUDA training"
     )

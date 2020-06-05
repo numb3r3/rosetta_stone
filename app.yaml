@@ -19,11 +19,8 @@ bert: &bert
   dataio_package: rosetta.datasets.text.masked_text
   dataio_class: MaskedTextDataIO
 
-  train_files:
-    - ./tests/test_data/sonnets.txt
-  
-  eval_files:
-    - ./tests/test_data/sonnets.txt
+  train_data_path: ./tests/test_data/sonnets.txt
+  eval_data_path: ./tests/test_data/sonnets.txt
 
   bert_config_file: ./examples/bert/config.json
   tokenizer_name: bert-base-cased
@@ -32,6 +29,28 @@ bert: &bert
   vocab_size: 30522
   
   num_epochs: 100
+
+dssm_bert: &dssm_bert
+  model_package: examples.polyencoder.encoder
+  model_class: DSSMBert
+  dataio_package: examples.polyencoder.dataio
+  dataio_class: ConversationDataIO
+
+  train_data_path: /workspace/cpfs-data/datasets/open_dialog_data/ubuntu_data/train.txt
+  eval_data_path: /workspace/cpfs-data/datasets/open_dialog_data/ubuntu_data/valid.txt
+
+  max_contexts_length: 128
+  max_response_length: 64
+  max_history: 10
+
+  tokenizer_name_or_path: bert-base-cased
+  bert_config_file: ./examples/bert/config.json
+  bert_hidden_size: 768
+
+  fc_hidden_size: 64
+
+  num_epochs: 100
+  batch_size: 128
 
 lasnet: &lasnet
   model_package: examples.speech.las_model

@@ -80,13 +80,13 @@ class SelectionDataset(Dataset):
 class ConversationDataIO(BaseDataIO):
     def __init__(
         self,
-        tokenizer_name: str = "bert",
+        tokenizer_name_or_path: str = "bert-base-cased",
         max_contexts_length: int = 256,
         max_response_length: int = 64,
         max_history: int = 10,
         **kwargs,
     ):
-        tokenizer = Tokenizer.load(tokenizer_name, do_lower_case=True)
+        tokenizer = Tokenizer.load(tokenizer_name_or_path, do_lower_case=True)
 
         self.context_transform = SelectionJoinTransform(
             tokenizer=tokenizer, max_len=max_contexts_length, max_history=max_history

@@ -121,14 +121,14 @@ def main(args, unused_argv):
     dataio = dataio_cls_(**hparams)
 
     train_loader = dataio.create_data_loader(
-        hparams["train_files"],
+        hparams["train_data_path"],
         batch_size=hparams["batch_size"],
         mode="train",
         num_workers=hparams["dataloader_workers"],
     )
 
     eval_loader = dataio.create_data_loader(
-        hparams["eval_files"],
+        hparams["eval_data_path"],
         batch_size=hparams["batch_size"],
         mode="eval",
         num_workers=hparams["dataloader_workers"],

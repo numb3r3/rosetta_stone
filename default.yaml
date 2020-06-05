@@ -5,10 +5,8 @@ path:
         
 default: &default
   <<: *local
-  train_files: 
-    - './datas/train_dataset'
-  eval_files: 
-    - './data/eval_dataset'
+  train_data_path: './datas/train_dataset'
+  eval_data_path: './data/eval_dataset'
   batch_size: 32
   num_epochs: 10
   

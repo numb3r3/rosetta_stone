@@ -11,8 +11,8 @@ class DSSMBert(nn.Module):
         self.bert_lm = BertLM(**kwargs)
 
         self.dropout = nn.Dropout(kwargs["dropout_rate"])
-        self.context_fc = nn.Linear(kwargs["bert_dim"], kwargs["fc_hidden_size"])
-        self.response_fc = nn.Linear(kwargs["bert_dim"], kwargs["fc_hidden_size"])
+        self.context_fc = nn.Linear(kwargs["bert_hidden_size"], kwargs["fc_hidden_size"])
+        self.response_fc = nn.Linear(kwargs["bert_hidden_size"], kwargs["fc_hidden_size"])
 
     def forward(
         self,

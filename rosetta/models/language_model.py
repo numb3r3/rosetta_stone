@@ -25,7 +25,7 @@ class BertLM(nn.Module):
 
         if "pretrained_model_path" in kwargs:
             pretrained_model_path = kwargs.pop("pretrained_model_path")
-            self._restore_from_pretrained(pretrained_model_path, **kwargs) 
+            self._restore_from_pretrained(pretrained_model_path, **kwargs)
         elif "bert_config_file" in kwargs:
             config_path = kwargs["bert_config_file"]
             config = modeling_bert.BertConfig.from_pretrained(config_path)

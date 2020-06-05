@@ -61,7 +61,7 @@ def test_aishell_dataio():
     }
     kwargs = {}
     kwargs["audio_config"] = config
-    
+
     # kwargs[
     #     "data_path"
     # ] = "/workspace/project-nas-10251-sz/open_speech_data/Aishell/data_aishell"

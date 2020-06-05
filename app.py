@@ -30,10 +30,7 @@ def run_train(
             dampening=hparams.get("dampening", 0),
         )
     else:
-        optimizer = {
-            "Adam": optimizers.Adam,
-            "AdamW": optimizers.AdamW,
-        }.get(optim)(
+        optimizer = {"Adam": optimizers.Adam, "AdamW": optimizers.AdamW}.get(optim)(
             lr=hparams["learning_rate"],
             weight_decay=hparams["weight_decay_rate"],
             betas=(hparams.get("adam_beta1", 0.9), hparams.get("adam_beta2", 0.999)),

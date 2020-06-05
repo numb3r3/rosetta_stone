@@ -124,11 +124,7 @@ class AiShellDataIO(BaseDataIO):
             )
 
     def create_dataset(
-        self,
-        data_path: str,
-        mode: str = "train",
-        download: bool = True,
-        **kwargs,
+        self, data_path: str, mode: str = "train", download: bool = True, **kwargs
     ):
         # assert not download, "Download dataset by yourself!"
         assert download or os.path.exists(self.data_path), "cache path does not exist"

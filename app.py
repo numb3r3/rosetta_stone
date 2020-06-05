@@ -71,6 +71,7 @@ def run_train(
         best_metric = max(best_metric, metric) if higher_better else min(best_metric, metric)
 
         # checkpoint saving
+        # TODO: save amp states when using amp
         save_dict = {
             'epoch': epoch + 1,
             'state_dict': model.state_dict(),

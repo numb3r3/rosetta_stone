@@ -5,6 +5,10 @@
 - Speech-Transformer
 - Unsupervised pretraining
 
+
+## References
+
+- [pychain_example](https://github.com/YiwenShaoStephen/pychain_example): Examples of using PyChain to do ASR.
 - [End-to-end-ASR-Pytorch](https://github.com/Alexander-H-Liu/End-to-end-ASR-Pytorch): formerly named Listen, Attend and Spell - PyTorch Implementation
 - [neural_sp](https://github.com/hirofumi0810/neural_sp): End-to-end ASR/LM implementation with pytorch.
 - [streaming-attention](https://github.com/HaoranMiao/streaming-attention): streaming attention networks for end-to-end automatic speech recognition

@@ -36,6 +36,8 @@ dssm_bert: &dssm_bert
   dataio_package: examples.polyencoder.dataio
   dataio_class: ConversationDataIO
 
+  log_dir_prefix: /workspace/cpfs-data/logs
+
   train_data_path: /workspace/cpfs-data/datasets/open_dialog_data/ubuntu_data/train.txt
   eval_data_path: /workspace/cpfs-data/datasets/open_dialog_data/ubuntu_data/valid.txt
 

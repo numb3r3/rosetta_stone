@@ -73,9 +73,12 @@ def main(args, unused_argv):
         "log_dir", os.path.join(hparams["log_dir_prefix"], args.model_name)
     )
 
-    from coolname import generate_slug
 
-    log_name = datetime.now().strftime("%Y-%m-%d") + "-" + generate_slug(2)
+    # from coolname import generate_slug
+
+    args_str = "use_amp:%d-use_horovod:%d" % (args.use_amp, args.use_horovod)
+
+    log_name = args_str + "-" + datetime.now().strftime("%Y-%m-%d")
     logx.initialize(
         logdir=os.path.join(log_dir, log_name),
         coolname=True,

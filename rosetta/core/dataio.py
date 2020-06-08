@@ -37,12 +37,12 @@ class BaseDataIO:
 
         return ret
 
-    def create_dataset(self, file_paths: List[str], mode: str = "train", **kwargs):
+    def create_dataset(self, data_path: str, mode: str = "train", **kwargs):
         raise NotImplementedError
 
     def create_data_loader(
         self,
-        file_paths: List[str],
+        data_path: str,
         batch_size: int,
         mode: str = "train",
         pin_memory: bool = True,
@@ -62,7 +62,7 @@ class BaseDataIO:
         :type pin_memory: bool
         :return: A DataLoader that wraps the input Dataset.
         """
-        dataset = self.create_dataset(file_paths, mode, **kwargs)
+        dataset = self.create_dataset(data_path, mode, **kwargs)
         is_train = True if mode == "train" else False
         tensor_names = None
         if type(dataset).__name__ == "_StreamingDataSet":

@@ -21,11 +21,7 @@ class CIFAR10(BaseDataIO):
         ]
 
     def create_dataset(
-        self,
-        file_paths: List[str],
-        mode: str = "train",
-        download: bool = True,
-        **kwargs,
+        self, data_path: str, mode: str = "train", download: bool = True, **kwargs
     ):
         # assert not download, "Download dataset by yourself!"
         assert download or os.path.exists(self.cache_path), "cache path does not exist"

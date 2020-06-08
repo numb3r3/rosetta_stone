@@ -1,10 +1,11 @@
+import os
 from typing import Dict, List, Tuple
 
+from rosetta.core.dataio import BaseDataIO
 import torch
 from torch.nn.utils.rnn import pad_sequence
 from torchvision import datasets, transforms
 
-from rosetta.core.dataio import BaseDataIO
 
 class CIFAR10(BaseDataIO):
     def __init__(self, **kwargs):
@@ -20,11 +21,7 @@ class CIFAR10(BaseDataIO):
         ]
 
     def create_dataset(
-        self,
-        file_paths: List[str],
-        mode: str = "train",
-        download: bool = True,
-        **kwargs,
+        self, data_path: str, mode: str = "train", download: bool = True, **kwargs
     ):
         # assert not download, "Download dataset by yourself!"
         assert download or os.path.exists(self.cache_path), "cache path does not exist"

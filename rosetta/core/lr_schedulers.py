@@ -118,7 +118,7 @@ def _exponential_decay(factor_rate, step, decay_steps=20000, decay_rate=0.5):
     ```
     """
 
-    factor_rate *= factor_rate ** (step // decay_steps)
+    factor_rate *= decay_rate ** (step // decay_steps)
     return factor_rate
 
 

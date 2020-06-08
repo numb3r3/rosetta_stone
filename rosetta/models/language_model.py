@@ -24,8 +24,8 @@ class BertLM(nn.Module):
         self.logger = helper.get_logger(__name__)
 
         if "pretrained_model_path" in kwargs:
-            pretrained_model_path = kwargs["pretrained_model_path"]
-            self._restore_from_pretrained(pretrained_model_path)
+            pretrained_model_path = kwargs.pop("pretrained_model_path")
+            self._restore_from_pretrained(pretrained_model_path, **kwargs)
         elif "bert_config_file" in kwargs:
             config_path = kwargs["bert_config_file"]
             config = modeling_bert.BertConfig.from_pretrained(config_path)
@@ -40,10 +40,10 @@ class BertLM(nn.Module):
         if os.path.exists(config_path):
             bert_config = modeling_bert.BertConfig.from_pretrained(config_path)
 
-            model_path = os.path.join(pretrained_model_path, "bert_model.bin")
-            self.model = modeling_bert.BertModel.from_pretrained(
+            model_path = os.path.join(pretrained_model_path, "bert_model.ckpt.index")
+            self.model = modeling_bert.BertForPreTraining.from_pretrained(
                 model_path, config=bert_config, **kwargs
-            )
+            ).bert
         else:
             # Pytorch-transformer Style
             self.model = modeling_bert.BertModel.from_pretrained(

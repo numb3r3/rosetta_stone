@@ -29,11 +29,7 @@ def run_train(
             dampening=hparams.get("dampening", 0),
         )
     else:
-        optimizer = {
-            "SGD": optimizers.SGD,
-            "Adam": optimizers.Adam,
-            "AdamW": optimizers.AdamW,
-        }.get(optim)(
+        optimizer = {"Adam": optimizers.Adam, "AdamW": optimizers.AdamW}.get(optim)(
             lr=hparams["learning_rate"],
             weight_decay=hparams["weight_decay_rate"],
             betas=(hparams.get("adam_beta1", 0.9), hparams.get("adam_beta2", 0.999)),
@@ -101,8 +97,12 @@ def main(args, unused_argv):
         "log_dir", os.path.join(hparams["log_dir_prefix"], args.model_name)
     )
 
-    from coolname import generate_slug
-    log_name = datetime.now().strftime("%Y-%m-%d") + "-" + generate_slug(2)
+
+    # from coolname import generate_slug
+
+    args_str = "use_amp:%d-use_horovod:%d" % (args.use_amp, args.use_horovod)
+
+    log_name = args_str + "-" + datetime.now().strftime("%Y-%m-%d")
     logx.initialize(
         logdir=os.path.join(log_dir, log_name),
         coolname=True,
@@ -162,14 +162,14 @@ def main(args, unused_argv):
     
     # Data loading code
     train_loader = dataio.create_data_loader(
-        hparams["train_files"],
+        hparams["train_data_path"],
         batch_size=hparams["batch_size"],
         mode="train",
         num_workers=hparams["dataloader_workers"],
     )
 
     eval_loader = dataio.create_data_loader(
-        hparams["eval_files"],
+        hparams["eval_data_path"],
         batch_size=hparams["batch_size"],
         mode="eval",
         num_workers=hparams["dataloader_workers"],

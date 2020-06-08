@@ -47,7 +47,7 @@ class AiShellDataIO(BaseDataIO):
             url="http://www.openslr.org/resources/33/data_aishell.tgz",
             md5sum="2f494334227864a8a8fec932999db9d8",
         )
-        
+
         # if get_global_rank() <= 0:
         #     self.create_manifest()
 
@@ -124,11 +124,7 @@ class AiShellDataIO(BaseDataIO):
             )
 
     def create_dataset(
-        self,
-        file_paths: List[str],
-        mode: str = "train",
-        download: bool = True,
-        **kwargs,
+        self, data_path: str, mode: str = "train", download: bool = True, **kwargs
     ):
         # assert not download, "Download dataset by yourself!"
         assert download or os.path.exists(self.data_path), "cache path does not exist"

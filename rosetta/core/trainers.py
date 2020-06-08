@@ -113,7 +113,7 @@ class Trainer(object):
         # else:
         #     self.accessible_model = self.model
 
-        # # TODO: fix learning rate issue 
+        # # TODO: fix learning rate issue
         # if is_distributed():
         #     # scale the learning rate by the number of workers to account for
         #     # increased total batch size
@@ -213,8 +213,11 @@ class Trainer(object):
                 with amp.scale_loss(loss, self.optimizer) as scaled_loss:
                     scaled_loss.backward()
                     if self.kwargs.get("gradient_clip", None):
-                        torch.nn.utils.clip_grad_norm_(amp.master_params(self.optimizer), self.kwargs["gradient_max_norm"])
-                    
+                        torch.nn.utils.clip_grad_norm_(
+                            amp.master_params(self.optimizer),
+                            self.kwargs["gradient_max_norm"],
+                        )
+
                     if self._use_horovod:
                         self.optimizer.synchronize()
 
@@ -231,7 +234,9 @@ class Trainer(object):
             else:
                 loss.backward()
                 if self.kwargs.get("gradient_clip", None):
-                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.kwargs["gradient_max_norm"])
+                    torch.nn.utils.clip_grad_norm_(
+                        self.model.parameters(), self.kwargs["gradient_max_norm"]
+                    )
                 self.optimizer.step()
 
             # update step for lr_scheduler

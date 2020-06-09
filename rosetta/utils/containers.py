@@ -1,10 +1,60 @@
+from collections import defaultdict
 from collections.abc import MutableMapping
 from copy import deepcopy
 
 import torch
 
 
-__all__ = ["TensorMap", "TensorTuple"]
+class AverageMeter(object):
+    """Computes and stores the average and current value"""
+
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.val = 0
+        self.sum = 0
+        self.count = 0
+
+    def update(self, val, n=1):
+        self.val = val
+        self.sum += val * n
+        self.count += n
+
+    @property
+    def avg(self):
+        return self.sum / self.count
+
+
+class AverageDictMeter(dict):
+    """ Computes and stores the average and current dict like object
+    """
+
+    def __init__(self):
+        self._data = defaultdict(AverageMeter)
+
+    def update(self, val_dict, n=1):
+        for k, v in val_dict.items():
+            self._data[k].update(v, n)
+
+    @property
+    def avg(self):
+        return {k: v.avg for k, v in self._dict_meters.keys()}
+
+    def __getitem__(self, item):
+        return self._data[item]
+
+    def __setitem__(self, key, value):
+        self._data[key] = value
+
+    def __len__(self):
+        return len(self._data)
+
+    def __delitem__(self, key):
+        del self._data[key]
+
+    def __iter__(self):
+        return iter(self._data)
 
 
 class TensorMap(MutableMapping, dict):

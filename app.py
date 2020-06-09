@@ -53,7 +53,7 @@ def run_train(
 
     eval_metric = hparams["checkpoint_selector"]["eval_metric"]
     higher_better = hparams["checkpoint_selector"]["higher_better"]
-    best_metric = -100 if higher_better else 100
+    best_metric = -float("inf") if higher_better else float("inf")
 
     for epoch in range(hparams["num_epochs"]):
         # train for one epoch
@@ -64,20 +64,22 @@ def run_train(
 
         metric = metrics["eval_metric"]
 
-        best_metric = max(best_metric, metric) if higher_better else min(best_metric, metric)
+        best_metric = (
+            max(best_metric, metric) if higher_better else min(best_metric, metric)
+        )
 
         # checkpoint saving
         # TODO: save amp states when using amp
         save_dict = {
-            'epoch': epoch + 1,
-            'state_dict': model.state_dict(),
-            'metrics': metrics,
-            'optimizer': optimizer.state_dict()}
+            "epoch": epoch + 1,
+            "state_dict": model.state_dict(),
+            "metrics": metrics,
+            "optimizer": optimizer.state_dict(),
+            "lr_scheduler_state": lr_scheduler.state_dict(),
+        }
         logx.save_model(
-            save_dict,
-            metric=best_metric,
-            epoch=epoch,
-            higher_better=higher_better)
+            save_dict, metric=best_metric, epoch=epoch, higher_better=higher_better
+        )
 
 
 def main(args, unused_argv):
@@ -96,7 +98,6 @@ def main(args, unused_argv):
     log_dir = hparams.get(
         "log_dir", os.path.join(hparams["log_dir_prefix"], args.model_name)
     )
-
 
     # from coolname import generate_slug
 
@@ -143,23 +144,23 @@ def main(args, unused_argv):
     dataio_cls_ = getattr(dataio_pkg, hparams.get("dataio_class", "DataIO"))
     dataio = dataio_cls_(**hparams)
 
-    
-
     # TODO: optionally reuse from a checkpoint
     if args.resume:
         if os.path.isfile(args.resume):
             logx.msg("=> loading checkpoint '{}'".format(args.resume))
             checkpoint = torch.load(args.resume)
-            args.start_epoch = checkpoint['epoch']
-            best_acc1 = checkpoint['best_acc1']
-            model.load_state_dict(checkpoint['state_dict'])
-            optimizer.load_state_dict(checkpoint['optimizer'])
-            logx.msg("=> loaded checkpoint '{}' (epoch {})"
-                     .format(args.resume, checkpoint['epoch']))
+            args.start_epoch = checkpoint["epoch"]
+            best_acc1 = checkpoint["best_acc1"]
+            model.load_state_dict(checkpoint["state_dict"])
+            optimizer.load_state_dict(checkpoint["optimizer"])
+            logx.msg(
+                "=> loaded checkpoint '{}' (epoch {})".format(
+                    args.resume, checkpoint["epoch"]
+                )
+            )
         else:
             logx.msg("=> no checkpoint found at '{}'".format(args.resume))
 
-    
     # Data loading code
     train_loader = dataio.create_data_loader(
         hparams["train_data_path"],
@@ -212,8 +213,13 @@ def parse_args():
         help="the running command",
     )
 
-    parser.add_argument('--resume', default='', type=str, metavar='PATH',
-                    help='path to latest checkpoint (default: none)')
+    parser.add_argument(
+        "--resume",
+        default="",
+        type=str,
+        metavar="PATH",
+        help="path to latest checkpoint (default: none)",
+    )
 
     parser.add_argument(
         "--no-cuda", action="store_true", default=False, help="disables CUDA training"

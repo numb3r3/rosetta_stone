@@ -1,4 +1,5 @@
 from functools import partial as Partial
+import os
 from typing import Dict, Iterable, Mapping, Optional, Tuple
 
 import torch
@@ -129,8 +130,9 @@ class Trainer(object):
         self.optimizer = optimizer
         self.set_optimizer()
 
+        # reload the state dict of optimizer
         if resume_checkpoint:
-            self.optimizer.load_state_dict(checkpoint["optimizer"])
+            self.optimizer.load_state_dict(resume_checkpoint["optimizer"])
 
         # if isinstance(self.model, nn.parallel.DistributedDataParallel) or isinstance(
         #     self.model, nn.DataParallel
@@ -171,8 +173,9 @@ class Trainer(object):
         self.lr_scheduler = lr_scheduler
         self.set_scheduler()
 
+        # reload the state of the scheduler
         if resume_checkpoint and not reset_lr_scheduler:
-            lr_scheduler_state_dict = checkpoint["lr_scheduler"]
+            lr_scheduler_state_dict = resume_checkpoint["lr_scheduler"]
             if lr_scheduler_state_dict:
                 self.lr_scheduler.load_state_dict(lr_scheduler_state_dict)
 
@@ -286,10 +289,11 @@ class Trainer(object):
             else (len(data_loader), len(data_loader))
         )
 
+        # keep tracking the model's metric
         avg_metrics = AverageDictMeter()
 
         for batch_idx, batch_data in enumerate(data_loader):
-            # Move batch of samples to device
+            # move batch of samples to device
             batch_data = [
                 x.to(self.device) if isinstance(x, torch.Tensor) else x
                 for x in batch_data
@@ -325,7 +329,7 @@ class Trainer(object):
                             loss.item(),
                         )
                     )
-            return avg_metrics
+        return avg_metrics
 
     def train(self, data_loader: Iterable or DataLoader, **kwargs):
         """ Perform the training procedure for an epoch.
@@ -368,12 +372,12 @@ class Trainer(object):
         with torch.no_grad():
             avg_metrics = self._loop(data_loader, mode="eval", **kwargs)
 
-        metric = avg_metrics[self._eval_metric]
+        cur_metric = avg_metrics[self._eval_metric].item()
 
         self._best_metric = (
-            max(self.best_metric, metric)
+            max(self.best_metric, cur_metric)
             if self._higher_better
-            else min(self.best_metric, metric)
+            else min(self.best_metric, cur_metric)
         )
         return avg_metrics
 
@@ -442,15 +446,15 @@ class Trainer(object):
         }
         logx.save_model(
             save_dict,
-            metric=sekf.best_metric,
+            metric=self.best_metric,
             epoch=self.epoch,
             higher_better=self._higher_better,
         )
 
     def load_checkpoint(self, resume_file: str, **kwargs):
         if os.path.isfile(resume_file):
-            logx.msg("=> loading checkpoint '{}'".format(resume_file))
-            checkpoint = torch.load(resume_file)
+            # logx.msg("=> loading checkpoint '{}'".format(resume_file))
+            checkpoint = torch.load(resume_file, map_location=torch.device("cpu"))
 
             self._epoch = checkpoint["epoch"]
             self._best_metric = checkpoint["best_metric"]

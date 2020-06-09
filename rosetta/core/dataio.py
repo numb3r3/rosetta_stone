@@ -23,8 +23,7 @@ class BaseDataIO:
         self, batch, tensor_names=None, mode: str = "train", **kwargs
     ) -> Dict[str, torch.Tensor]:
         """
-        A custom collate function that formats the batch as a dictionary where the key is
-        the name of the tensor and the value is the tensor itself
+        A custom collate function for data loading that formats the batch as a tuple tensors
         """
         assert isinstance(batch, list)
 

@@ -1,5 +1,5 @@
 """
-Copyright (c) Facebook, Inc. and its affiliates.
+adapt from fairseq 
 https://github.com/mit-han-lab/lite-transformer/blob/master/fairseq/modules/adaptive_softmax.py
 """
 

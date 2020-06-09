@@ -18,6 +18,7 @@ def run_train(
     eval_loader: Iterable or DataLoader = None,
     use_horovod: bool = False,
     use_amp: bool = False,
+    resume: str = None,
     hparams: Dict = {},
 ):
     optim = hparams.pop("optimizer")
@@ -48,6 +49,7 @@ def run_train(
         lr_scheduler=lr_scheduler,
         use_horovod=use_horovod,
         use_amp=use_amp,
+        resume=resume,
         **hparams,
     )
 
@@ -81,7 +83,7 @@ def main(args, unused_argv):
 
     # from coolname import generate_slug
 
-    args_str = "use_amp:%d-use_horovod:%d" % (args.use_amp, args.use_horovod)
+    args_str = "use_amp-%d-use_horovod-%d" % (args.use_amp, args.use_horovod)
 
     log_name = args_str + "-" + datetime.now().strftime("%Y-%m-%d")
     logx.initialize(
@@ -145,6 +147,7 @@ def main(args, unused_argv):
         eval_loader,
         use_horovod=args.use_horovod,
         use_amp=args.use_amp,
+        resume=args.resume,
         hparams=hparams,
     )
 

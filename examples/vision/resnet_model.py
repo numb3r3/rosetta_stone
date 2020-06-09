@@ -2,6 +2,23 @@ import torch
 from torch import nn
 
 
+def accuracy(output, target, topk=(1,)):
+    """Computes the accuracy over the k top predictions for the specified values of k"""
+    with torch.no_grad():
+        maxk = max(topk)
+        batch_size = target.size(0)
+
+        _, pred = output.topk(maxk, 1, True, True)
+        pred = pred.t()
+        correct = pred.eq(target.view(1, -1).expand_as(pred))
+
+        res = []
+        for k in topk:
+            correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
+            res.append(correct_k.mul_(100.0 / batch_size))
+        return res
+
+
 def initialization(module: nn.Module, use_zero_init: bool):
     """initialize parameters using kaiming normal"""
     for m in module.modules():
@@ -111,5 +128,11 @@ class ResNet(nn.Module):
         predicts = {"logits": logits}
 
         metrics = {}
+
+        # measure accuracy and record loss
+        acc1, acc5 = accuracy(logits, labels, topk=(1, 5))
+        metrics["accuracy"] = acc1
+        metrics["acc1"] = acc1
+        metrics["acc5"] = acc5
 
         return predicts, loss, metrics

@@ -31,6 +31,7 @@ class AverageDictMeter(dict):
     """
 
     def __init__(self):
+        super().__init__()
         self._data = defaultdict(AverageMeter)
 
     def update(self, val_dict, n=1):
@@ -42,10 +43,10 @@ class AverageDictMeter(dict):
         return {k: v.avg for k, v in self._dict_meters.keys()}
 
     def __getitem__(self, item):
-        return self._data[item]
+        return self._data[item].avg
 
     def __setitem__(self, key, value):
-        self._data[key] = value
+        self._data[key].update(value)
 
     def __len__(self):
         return len(self._data)

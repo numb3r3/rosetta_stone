@@ -8,6 +8,7 @@ from torch.optim.lr_scheduler import _LRScheduler as Scheduler
 from torch.utils.data import DataLoader, DistributedSampler
 
 from .. import helper
+from ..utils.containers import AverageDictMeter
 from ..utils.distribute import (
     get_global_rank,
     get_local_rank,
@@ -40,9 +41,23 @@ class Trainer(object):
         use_horovod: bool = False,
         use_amp: bool = False,
         verbose: bool = True,
+        resume: str = None,
+        reset_lr_scheduler: bool = False,
         **kwargs,
     ):
         self.logger = helper.get_logger(__name__)
+
+        self._eval_metric = kwargs["checkpoint_selector"]["eval_metric"]
+        self._higher_better = kwargs["checkpoint_selector"]["higher_better"]
+        self._best_metric = -float("inf") if self._higher_better else float("inf")
+
+        self._log_interval = log_interval
+        self._verbose = verbose
+        self._global_step = -1
+        self._epoch = -1
+        self._is_train = None
+
+        self.kwargs = kwargs
 
         if isinstance(model, nn.Module):
             self.model = model
@@ -87,6 +102,14 @@ class Trainer(object):
                 # to avoid overwriting
                 verbose = False
 
+        # optionally resume from a checkpoint
+        resume_checkpoint = None
+        if resume:
+            resume_checkpoint = self.load_checkpoint(resume)
+
+            # resume model
+            self.model.load_state_dict(resume_checkpoint["state_dict"])
+
         if "cuda" in str(self.device):
             # self.model.to(self.device)
             self.model = self.model.to(self.device)
@@ -105,6 +128,9 @@ class Trainer(object):
 
         self.optimizer = optimizer
         self.set_optimizer()
+
+        if resume_checkpoint:
+            self.optimizer.load_state_dict(checkpoint["optimizer"])
 
         # if isinstance(self.model, nn.parallel.DistributedDataParallel) or isinstance(
         #     self.model, nn.DataParallel
@@ -145,13 +171,10 @@ class Trainer(object):
         self.lr_scheduler = lr_scheduler
         self.set_scheduler()
 
-        self._log_interval = log_interval
-        self._verbose = verbose
-        self._global_step = -1
-        self._epoch = -1
-        self._is_train = None
-
-        self.kwargs = kwargs
+        if resume_checkpoint and not reset_lr_scheduler:
+            lr_scheduler_state_dict = checkpoint["lr_scheduler"]
+            if lr_scheduler_state_dict:
+                self.lr_scheduler.load_state_dict(lr_scheduler_state_dict)
 
         # self._use_amp = use_amp
         # if use_amp:
@@ -172,6 +195,10 @@ class Trainer(object):
     @property
     def epoch(self):
         return self._epoch
+
+    @property
+    def best_metric(self):
+        return self._best_metric
 
     @property
     def is_train(self):
@@ -259,6 +286,8 @@ class Trainer(object):
             else (len(data_loader), len(data_loader))
         )
 
+        avg_metrics = AverageDictMeter()
+
         for batch_idx, batch_data in enumerate(data_loader):
             # Move batch of samples to device
             batch_data = [
@@ -268,9 +297,13 @@ class Trainer(object):
 
             output, loss, metrics = self._iteration(batch_data, mode)
 
-            if mode == "train" and batch_idx % self.log_interval == 0:
+            if loss is not None:
                 # capture metrics
                 metrics.update({"loss": loss.item()})
+
+            avg_metrics.update(metrics)
+
+            if mode == "train" and batch_idx % self.log_interval == 0:
                 if logx.initialized:
                     logx.msg(
                         "Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
@@ -292,6 +325,7 @@ class Trainer(object):
                             loss.item(),
                         )
                     )
+            return avg_metrics
 
     def train(self, data_loader: Iterable or DataLoader, **kwargs):
         """ Perform the training procedure for an epoch.
@@ -306,16 +340,18 @@ class Trainer(object):
         # Turn on the train mode
         self.model.train()
 
+        avg_metrics = None
         with torch.enable_grad():
-            self._loop(data_loader, mode="train", **kwargs)
+            avg_metrics = self._loop(data_loader, mode="train", **kwargs)
             # logx.info(f"epoch {self.epoch} finished")
 
         if isinstance(data_loader, DataLoader) and isinstance(
             data_loader.sampler, DistributedSampler
         ):
             data_loader.sampler.set_epoch(self.epoch)
+        return avg_metrics
 
-    def eval(self, data_loader: Iterable or DataLoader, set_name: str = None, **kwargs):
+    def eval(self, data_loader: Iterable or DataLoader, **kwargs):
         """ Evaluate the model.
 
         :param data_loader:
@@ -328,8 +364,18 @@ class Trainer(object):
         # Turn on the evaluation mode
         self.model.eval()
 
+        avg_metrics = None
         with torch.no_grad():
-            self._loop(data_loader, mode="eval", **kwargs)
+            avg_metrics = self._loop(data_loader, mode="eval", **kwargs)
+
+        metric = avg_metrics[self._eval_metric]
+
+        self._best_metric = (
+            max(self.best_metric, metric)
+            if self._higher_better
+            else min(self.best_metric, metric)
+        )
+        return avg_metrics
 
     def run(
         self,
@@ -380,6 +426,45 @@ class Trainer(object):
                 train_loader.loader.sampler.set_epoch(self.epoch)
             for name, loader in eval_loaders.items():
                 self.eval(loader, name)
+
+    def save_checkpoint(self, eval_metrics, **kwargs):
+        """ checkpoint saving """
+        # TODO: save amp states when using amp
+        save_dict = {
+            "epoch": self.epoch,
+            "state_dict": self.model.state_dict(),
+            "metrics": eval_metrics,
+            "best_metric": self.best_metric,
+            "optimizer": self.optimizer.state_dict(),
+            "lr_scheduler": self.lr_scheduler.state_dict()
+            if self.lr_scheduler
+            else None,
+        }
+        logx.save_model(
+            save_dict,
+            metric=sekf.best_metric,
+            epoch=self.epoch,
+            higher_better=self._higher_better,
+        )
+
+    def load_checkpoint(self, resume_file: str, **kwargs):
+        if os.path.isfile(resume_file):
+            logx.msg("=> loading checkpoint '{}'".format(resume_file))
+            checkpoint = torch.load(resume_file)
+
+            self._epoch = checkpoint["epoch"]
+            self._best_metric = checkpoint["best_metric"]
+            # self.model.load_state_dict(checkpoint['state_dict'])
+            # self.optimizer.load_state_dict(checkpoint['optimizer'])
+            logx.msg(
+                "=> loaded checkpoint '{}' (epoch {})".format(
+                    resume_file, checkpoint["epoch"]
+                )
+            )
+            return checkpoint
+        else:
+            logx.msg("=> no checkpoint found at '{}'".format(resume_file))
+            return None
 
     def set_optimizer(self):
         """ Set optimizer(s) for model(s). You can override as ::

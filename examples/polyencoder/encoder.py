@@ -93,8 +93,6 @@ class DSSMBert(nn.Module):
             mask = torch.eye(context_input_ids.size(0)).to(context_input_ids.device)
             loss = F.log_softmax(dot_product * 5, dim=-1) * mask
             loss = (-loss.sum(dim=1)).mean()
-
-            metrics["loss"] = loss
         else:
             context_vec = context_vec.unsqueeze(1)
             dot_product = torch.matmul(

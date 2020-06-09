@@ -1,5 +1,10 @@
 import pytest
-from rosetta.utils.containers import TensorMap, TensorTuple, AverageMeter, AverageDictMeter
+from rosetta.utils.containers import (
+    AverageDictMeter,
+    AverageMeter,
+    TensorMap,
+    TensorTuple,
+)
 import torch
 
 
@@ -33,6 +38,7 @@ def test_average_meter():
     avg_meter.update(12)
     assert avg_meter.avg == 4
 
+
 def test_average_dict_meter():
     avg_dict_meter = AverageDictMeter()
     avg_dict_meter.update({"a": 1, "b": 2, "c": 3})
@@ -44,4 +50,3 @@ def test_average_dict_meter():
     assert avg_dict_meter["c"].avg == 2.1
 
     assert len(avg_dict_meter) == 3
-

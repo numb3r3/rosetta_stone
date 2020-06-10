@@ -127,18 +127,25 @@ def main(args, unused_argv):
     dataio = dataio_cls_(**hparams)
 
     # Data loading code
+    train_data_path = hparams.pop("train_data_path")
+    eval_data_path = hparams.pop("eval_data_path")
+    num_workers = hparams.pop("dataloader_workers")
+    batch_size = hparams.pop("batch_size")
+
     train_loader = dataio.create_data_loader(
-        hparams["train_data_path"],
-        batch_size=hparams["batch_size"],
+        train_data_path,
+        batch_size=batch_size,
         mode="train",
-        num_workers=hparams["dataloader_workers"],
+        num_workers=num_workers,
+        **hparams,
     )
 
     eval_loader = dataio.create_data_loader(
-        hparams["eval_data_path"],
-        batch_size=hparams["batch_size"],
+        eval_data_path,
+        batch_size=batch_size,
         mode="eval",
-        num_workers=hparams["dataloader_workers"],
+        num_workers=num_workers,
+        **hparams,
     )
 
     run_train(

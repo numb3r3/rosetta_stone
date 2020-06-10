@@ -56,42 +56,52 @@ dssm_bert: &dssm_bert
   batch_size: 128
   learning_rate: 5e-5
 
-lasnet: &lasnet
-  model_package: examples.speech.las_model
-  model_class: LASNet
+speech2text: &speech2text
+  model_package: examples.speech.speech2text
+  model_class: Speech2TextModel
 
-  dataio_package: rosetta.datasets.speech.aishell
-  dataio_class: AiShellDataIO
+  dataio_package: examples.speech.dataio
+  dataio_class: SpeechDataIO
 
-  data_path: /workspace/cpfs-data/datasets/open_speech_data/aishell/data_aishell
+  train_data_path: /workspace/cpfs-data/datasets/open_speech_data/aishell/data_aishell/manifest.train
+  eval_data_path: /workspace/cpfs-data/datasets/open_speech_data/aishell/data_aishell/manifest.dev
   # tokenizer_name_or_path: bert-base-chinese
   tokenizer_name_or_path: /workspace/cpfs-data/models/reberta_zh_l12_pytorch/vocab.txt
 
   log_dir_prefix: /workspace/cpfs-data/logs
 
-  audio_config: # Attributes of audio feature
+  max_seq_len: 64
+
+  audio_conf: # Attributes of audio feature
+    sample_rate: 16000
     feat_type: 'fbank'
-    feat_dim:  40
+    num_mel_bins:  40
     frame_length: 25                      # ms
     frame_shift: 10                       # ms
     dither: 0                             # random dither audio, 0: no dither
     apply_cmvn: True
     delta_order: 2                        # 0: do nothing, 1: add delta, 2: add delta and accelerate
-    delta_window_size: 2
+    delta_window_size: 5
   
-  encoder_config:
-    prenet: 'vgg'                         # 'vgg'/'cnn'/''
+  encoder_conf:
+    # prenet: 'vgg'                         # 'vgg'/'cnn'/''
     # vgg: True                             # 4x reduction on time feature extraction
-    module: 'GRU'                        # 'LSTM'/'GRU'/'Transformer'
-    bidirection: True
-    dim: [512,512,512]
-    dropout: [0.1,0.1,0.1]
-    layer_norm: [False,False,False]
-    proj: [True,True,True]      # Linear projection + Tanh after each rnn layer
-    sample_rate: [1,1,1]
-    sample_style: 'drop'                  # 'drop'/'concat'
+    d_model: 512
+    nhead: 8
+    num_layers: 3
+    dim_feedforward: 2048
+    dropout: 0.1
+    activation: "relu"
 
-  attention_config:
+  decoder_conf:
+    d_model: 512
+    nhead: 8
+    num_layers: 3
+    dim_feedforward: 2048
+    dropout: 0.1
+    activation: "relu"
+
+  attention_conf:
     mode: 'loc'                           # 'dot'/'loc'
     dim: 300
     num_head: 1
@@ -99,13 +109,8 @@ lasnet: &lasnet
     temperature: 0.5                      # scaling factor for attention
     loc_kernel_size: 100                  # just for mode=='loc'
     loc_kernel_num: 10                    # just for mode=='loc'
-
-  decoder_config:
-    module: 'LSTM'                        # 'LSTM'/'GRU'/'Transformer'
-    dim: 512
-    layer: 1
-    dropout: 0.1
-
+  
+  input_dim: 120
   ctc_weight: 0.3
   input_size: 120
   batch_size: 32

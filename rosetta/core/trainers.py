@@ -1,5 +1,6 @@
 from functools import partial as Partial
 import os
+import time
 from typing import Dict, Iterable, Mapping, Optional, Tuple
 
 import torch
@@ -288,10 +289,10 @@ class Trainer(object):
             if isinstance(data_loader, DataLoader)
             else (len(data_loader), len(data_loader))
         )
-
+        total_batchs = total_size // batch_size
         # keep tracking the model's metric
         avg_metrics = AverageDictMeter()
-
+        start_time = time.time()
         for batch_idx, batch_data in enumerate(data_loader):
             # move batch of samples to device
             batch_data = [
@@ -308,27 +309,43 @@ class Trainer(object):
             avg_metrics.update(metrics)
 
             if mode == "train" and batch_idx % self.log_interval == 0:
-                if logx.initialized:
-                    logx.msg(
-                        "Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
-                            self.epoch,
-                            batch_idx * batch_size,
-                            total_size,
-                            100.0 * batch_idx * batch_size / total_size,
-                            loss.item(),
-                        )
+                elapsed = time.time() - start_time
+
+                logx.msg(
+                    "| epoch {:3d} | {:5d}/{:5d} batches | "
+                    "lr {:02.6f} | ms/batch {:5.2f} | "
+                    "loss {:5.3f}".format(
+                        self.epoch,
+                        batch_idx * get_world_size(),
+                        total_batchs,
+                        self.lr_scheduler.get_lr()[0],
+                        elapsed * 1000 / (self.log_interval * get_world_size()),
+                        loss.item(),
                     )
-                    logx.metric(mode, metrics, self.global_step)
-                else:
-                    self.logger.info(
-                        "Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
-                            self.epoch,
-                            batch_idx * batch_size,
-                            total_size,
-                            100.0 * batch_idx * batch_size / total_size,
-                            loss.item(),
-                        )
-                    )
+                )
+
+                start_time = time.time()
+                # if logx.initialized:
+                #     logx.msg(
+                #         "Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
+                #             self.epoch,
+                #             batch_idx * batch_size,
+                #             total_size,
+                #             100.0 * batch_idx * batch_size / total_size,
+                #             loss.item(),
+                #         )
+                #     )
+                #     logx.metric(mode, metrics, self.global_step)
+                # else:
+                #     self.logger.info(
+                #         "Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
+                #             self.epoch,
+                #             batch_idx * batch_size,
+                #             total_size,
+                #             100.0 * batch_idx * batch_size / total_size,
+                #             loss.item(),
+                #         )
+                #     )
         return avg_metrics
 
     def train(self, data_loader: Iterable or DataLoader, **kwargs):

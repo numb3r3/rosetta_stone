@@ -2,6 +2,7 @@ import argparse
 from datetime import datetime
 import importlib
 import os
+import time
 from typing import Dict, Iterable
 
 from rosetta import __version__, helper
@@ -54,6 +55,8 @@ def run_train(
     )
 
     for epoch in range(hparams["num_epochs"]):
+        epoch_start_time = time.time()
+
         # train for one epoch
         trainer.train(data_loader, **hparams)
 
@@ -62,6 +65,14 @@ def run_train(
 
         # save checkpoint at each epoch
         trainer.save_checkpoint(eval_metrics, **hparams)
+
+        logx.msg("-" * 89)
+        logx.msg(
+            "| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.3f}".format(
+                epoch, (time.time() - epoch_start_time), eval_metrics["loss"]
+            )
+        )
+        logx.msg("-" * 89)
 
 
 def main(args, unused_argv):
@@ -101,22 +112,22 @@ def main(args, unused_argv):
     if cli_args:
         # useful when changing params defined in YAML
         # logger.info("override parameters with cli args ...")
-        logx.info("override parameters with cli args ...")
+        logx.msg("override parameters with cli args ...")
         for k, v in cli_args.items():
             if k in hparams and hparams.get(k) != v:
                 # logger.info("%20s: %20s -> %20s" % (k, hparams.get(k), v))
-                logx.info("%20s: %20s -> %20s" % (k, hparams.get(k), v))
+                logx.msg("%20s: %20s -> %20s" % (k, hparams.get(k), v))
                 hparams[k] = v
             elif k not in hparams:
                 # logger.warning("%s is not a valid attribute! ignore!" % k)
-                logx.warning("%s is not a valid attribute! ignore!" % k)
+                logx.msg("%s is not a valid attribute! ignore!" % k)
 
     # logger.info("current parameters")
-    logx.info("current parameters")
+    logx.msg("current parameters")
     for k, v in sorted(hparams.items()):
         if not k.startswith("_"):
             # logger.info("%20s = %-20s" % (k, v))
-            logx.info("%20s = %-20s" % (k, v))
+            logx.msg("%20s = %-20s" % (k, v))
 
     model_pkg = importlib.import_module(hparams["model_package"])
     model_cls_ = getattr(model_pkg, hparams.get("model_class", "Model"))

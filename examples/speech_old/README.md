@@ -19,3 +19,5 @@
 
 - [end2end](https://github.com/artbataev/end2end): Losses and decoders for end-to-end ASR and OCR
 - [fast-ctc-decode](https://github.com/nanoporetech/fast-ctc-decode): https://github.com/nanoporetech/fast-ctc-decode
+
+- [pytorch-seq2seq](https://github.com/bentrevett/pytorch-seq2seq)

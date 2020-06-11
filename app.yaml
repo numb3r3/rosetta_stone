@@ -30,6 +30,41 @@ bert: &bert
   
   num_epochs: 100
 
+dialog_gpt2: &dialog_gpt2
+  model_package: examples.dialog_gpt.dialog_gpt2
+  model_class: DialogGPT2
+  dataio_package: examples.dialog_gpt.dataio
+  dataio_class: DialogDataIO
+
+  train_data_path: /workspace/cpfs-data/datasets/open_dialog_data/lccc/lccc-base/cleanwb.json
+  eval_data_path: /workspace/cpfs-data/datasets/open_dialog_data/lccc/lccc-base/cleanwb.json
+
+  gpt2_model_conf:
+    afn: "gelu"
+    attn_pdrop: 0.1
+    embd_pdrop: 0.1
+    resid_pdrop: 0.1
+    initializer_range: 0.02
+    layer_norm_epsilon: 1e-05
+    n_ctx: 512
+    n_embd: 768
+    n_head: 12
+    n_layer: 12
+    n_positions: 513
+    n_special: 0
+    vocab_size": 21128
+
+  tokenizer_name_or_path: /workspace/cpfs-data/models/reberta_zh_l12_pytorch/vocab.txt
+
+  vocab_size: 21128
+  max_contexts_length: 128
+  max_response_length: 64
+  max_history: 5
+
+  num_epochs: 100
+  batch_size: 64
+  learning_rate: 5e-5
+
 dssm_bert: &dssm_bert
   model_package: examples.polyencoder.encoder
   model_class: DSSMBert
@@ -70,9 +105,7 @@ speech2text: &speech2text
 
   log_dir_prefix: /workspace/cpfs-data/logs
 
-  max_seq_len: 64
-
-  audio_conf: # Attributes of audio feature
+  audio_conf:
     sample_rate: 16000
     feat_type: 'fbank'
     num_mel_bins:  40
@@ -110,9 +143,13 @@ speech2text: &speech2text
     loc_kernel_size: 100                  # just for mode=='loc'
     loc_kernel_num: 10                    # just for mode=='loc'
   
-  input_dim: 120
+  prenet_name: cnn
+
+  max_seq_len: 64
+  feature_dim: 120
+  vocab_size: 21128
+
   ctc_weight: 0.3
-  input_size: 120
   batch_size: 32
 
   learning_rate: 5e-5

@@ -14,4 +14,3 @@ def test_sinusoidal_embedding():
     # position_ids = position_ids.unsqueeze(0).expand(input_shape)
 
     embeds = encoder(x)
-    

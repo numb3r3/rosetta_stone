@@ -57,7 +57,7 @@ dialog_gpt2: &dialog_gpt2
   tokenizer_name_or_path: /workspace/cpfs-data/models/reberta_zh_l12_pytorch/vocab.txt
 
   vocab_size: 21128
-  max_contexts_length: 128
+  max_contexts_length: 64
   max_response_length: 64
   max_history: 5
 

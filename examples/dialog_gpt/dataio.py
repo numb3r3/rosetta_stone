@@ -1,3 +1,4 @@
+from functools import reduce
 import json
 from typing import Tuple
 
@@ -13,15 +14,17 @@ class ContextTransform(object):
         self.max_len = max_len
         self.max_history = max_history
 
-        self.cls_id = self.tokenizer.convert_tokens_to_ids(["[CLS]"])[0]
-        self.sep_id = self.tokenizer.convert_tokens_to_ids(["[SEP]"])[0]
-        self.pad_id = 0
+        self.cls_id, self.sep_id, self.pad_id = self.tokenizer.convert_tokens_to_ids(
+            ["[CLS]", "[SEP]", "[PAD]"]
+        )
 
     def __call__(self, texts):
         input_ids_list, segment_ids_list, input_masks_list = [], [], []
 
         # the expected sequence is "[CLS]utterance1[SEP]utterance2[SEP]utterance3[SEP]"
-        for i, text in enumerate(texts[-self.max_history :]):
+        for text in texts[::-1][
+            : self.max_history
+        ]:  # make sure to keep the last utterence
             tokenized_dict = self.tokenizer.encode_plus(
                 text,
                 text_pair=None,
@@ -38,14 +41,15 @@ class ContextTransform(object):
                 input_ids = input_ids[1:]
                 segment_ids = segment_ids[1:]
                 input_masks = input_masks[1:]
-            input_ids_list.extend(input_ids)
-            segment_ids_list.extend(segment_ids)
-            input_masks_list.extend(input_masks)
+
+            input_ids_list = input_ids + input_ids_list
+            segment_ids_list = segment_ids + segment_ids_list
+            input_masks_list = input_masks + input_masks_list
 
             if len(input_ids_list) >= self.max_len:
-                input_ids_list = input_ids_list[: self.max_len - 1] + [self.sep_id]
-                segment_ids_list = segment_ids_list[: self.max_len]
-                input_masks_list = input_masks_list[: self.max_len]
+                input_ids_list = input_ids_list[-self.max_len :]
+                segment_ids_list = segment_ids_list[-self.max_len :]
+                input_masks_list = input_masks_list[-self.max_len :]
                 break
 
         input_ids_list += [self.pad_id] * (self.max_len - len(input_ids_list))

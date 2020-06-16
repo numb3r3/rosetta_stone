@@ -274,9 +274,8 @@ class Trainer(object):
             if self.lr_scheduler:
                 self.lr_scheduler.step()
 
-            if logx.initialized:
                 logx.add_scalar(
-                    "train/learning_rate",
+                    "%s/learning_rate" % mode,
                     self.lr_scheduler.get_lr()[0],
                     self.global_step,
                 )
@@ -306,7 +305,7 @@ class Trainer(object):
                 # capture metrics
                 metrics.update({"loss": loss.item()})
 
-            avg_metrics.update(metrics)
+            avg_metrics.update(metrics)            
 
             if mode == "train" and batch_idx % self.log_interval == 0:
                 elapsed = time.time() - start_time
@@ -324,28 +323,10 @@ class Trainer(object):
                     )
                 )
 
+                logx.metric(mode, metrics, self.global_step)
+
                 start_time = time.time()
-                # if logx.initialized:
-                #     logx.msg(
-                #         "Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
-                #             self.epoch,
-                #             batch_idx * batch_size,
-                #             total_size,
-                #             100.0 * batch_idx * batch_size / total_size,
-                #             loss.item(),
-                #         )
-                #     )
-                #     logx.metric(mode, metrics, self.global_step)
-                # else:
-                #     self.logger.info(
-                #         "Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
-                #             self.epoch,
-                #             batch_idx * batch_size,
-                #             total_size,
-                #             100.0 * batch_idx * batch_size / total_size,
-                #             loss.item(),
-                #         )
-                #     )
+                
         return avg_metrics
 
     def train(self, data_loader: Iterable or DataLoader, **kwargs):
@@ -453,6 +434,7 @@ class Trainer(object):
         # TODO: save amp states when using amp
         save_dict = {
             "epoch": self.epoch,
+            "global_step": self.global_step,
             "state_dict": self.model.state_dict(),
             "metrics": eval_metrics,
             "best_metric": self.best_metric,
@@ -474,9 +456,13 @@ class Trainer(object):
             checkpoint = torch.load(resume_file, map_location=torch.device("cpu"))
 
             self._epoch = checkpoint["epoch"]
+            self._global_step = checkpoint["global_step"]
             self._best_metric = checkpoint["best_metric"]
+
             # self.model.load_state_dict(checkpoint['state_dict'])
             # self.optimizer.load_state_dict(checkpoint['optimizer'])
+            # self.lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
+
             logx.msg(
                 "=> loaded checkpoint '{}' (epoch {})".format(
                     resume_file, checkpoint["epoch"]

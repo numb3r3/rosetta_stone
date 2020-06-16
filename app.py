@@ -7,7 +7,12 @@ from typing import Dict, Iterable
 
 from rosetta import __version__, helper
 from rosetta.core import lr_schedulers, optimizers, trainers
-from rosetta.utils.distribute import get_world_size, get_global_rank, init_distributed, is_distributed
+from rosetta.utils.distribute import (
+    get_global_rank,
+    get_world_size,
+    init_distributed,
+    is_distributed,
+)
 from rosetta.utils.logx import logx
 from termcolor import colored
 from torch.utils.data import DataLoader

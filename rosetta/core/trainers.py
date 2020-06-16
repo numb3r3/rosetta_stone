@@ -131,7 +131,7 @@ class Trainer(object):
         self.optimizer = optimizer
         self.set_optimizer()
 
-        # reload the state dict of optimizer
+        # resume optimizer
         if resume_checkpoint:
             self.optimizer.load_state_dict(resume_checkpoint["optimizer"])
 
@@ -174,7 +174,7 @@ class Trainer(object):
         self.lr_scheduler = lr_scheduler
         self.set_scheduler()
 
-        # reload the state of the scheduler
+        # resume lr_scheduler
         if resume_checkpoint and not reset_lr_scheduler:
             lr_scheduler_state_dict = resume_checkpoint["lr_scheduler"]
             if lr_scheduler_state_dict:
@@ -210,7 +210,7 @@ class Trainer(object):
 
     def _iteration(
         self, batch_data: Tuple[torch.Tensor], mode: str = "eval"
-    ) -> Mapping[str, torch.Tensor]:
+    ) -> Tuple[torch.Tensor]:
         """ Iteration part, user can override via duck typing or override_iteration ::
             def iteration(self, feed_dict: Dict[str, torch.Tensor]) -> Mapping[str, torch.Tensor]:
                 input, labels = data
@@ -274,12 +274,6 @@ class Trainer(object):
             if self.lr_scheduler:
                 self.lr_scheduler.step()
 
-                logx.add_scalar(
-                    "%s/learning_rate" % mode,
-                    self.lr_scheduler.get_lr()[0],
-                    self.global_step,
-                )
-
         return output, loss, metrics
 
     def _loop(self, data_loader: Iterable or DataLoader, mode: str, **kwargs):
@@ -305,28 +299,34 @@ class Trainer(object):
                 # capture metrics
                 metrics.update({"loss": loss.item()})
 
-            avg_metrics.update(metrics)            
+            avg_metrics.update(metrics)
 
-            if mode == "train" and batch_idx % self.log_interval == 0:
-                elapsed = time.time() - start_time
+            if (batch_idx + 1) % self.log_interval == 0:
+                if mode == "train":
+                    elapsed = time.time() - start_time
 
-                logx.msg(
-                    "| epoch {:3d} | {:5d}/{:5d} batches | "
-                    "lr {:02.6f} | ms/batch {:5.2f} | "
-                    "loss {:5.3f}".format(
-                        self.epoch,
-                        batch_idx * get_world_size(),
-                        total_batchs,
-                        self.lr_scheduler.get_lr()[0],
-                        elapsed * 1000 / (self.log_interval * get_world_size()),
-                        loss.item(),
+                    logx.msg(
+                        "| epoch {:3d} | {:5d}/{:5d} batches | "
+                        "lr {:02.6f} | ms/batch {:5.2f} | "
+                        "loss {:5.3f}".format(
+                            self.epoch,
+                            (batch_idx + 1) * get_world_size(),
+                            total_batchs,
+                            self.lr_scheduler.get_lr()[0],
+                            elapsed * 1000 / (self.log_interval * get_world_size()),
+                            loss.item(),
+                        )
                     )
-                )
 
+                    start_time = time.time()
+
+                logx.add_scalar(
+                    "%s/learning_rate" % mode,
+                    self.lr_scheduler.get_lr()[0],
+                    self.global_step,
+                )
                 logx.metric(mode, metrics, self.global_step)
 
-                start_time = time.time()
-                
         return avg_metrics
 
     def train(self, data_loader: Iterable or DataLoader, **kwargs):
@@ -343,7 +343,7 @@ class Trainer(object):
         self.model.train()
 
         avg_metrics = None
-        with torch.enable_grad():            
+        with torch.enable_grad():
             avg_metrics = self._loop(data_loader, mode="train", **kwargs)
 
         if isinstance(data_loader, DataLoader) and isinstance(

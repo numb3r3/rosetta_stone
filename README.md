@@ -70,5 +70,6 @@ Before making a contribution, please confirm that:
 - [homura](https://github.com/moskomule/homura): PyTorch utilities including trainer, reporter, etc.
 - [FARM](https://github.com/deepset-ai/FARM): Fast & easy transfer learning for NLP. Harvesting language models for the industry. 
 - [kotonoha](https://github.com/moskomule/kotonoha): NLP utilities for research
+- [padertorch](https://github.com/fgnt/padertorch): A collection of common functionality to simplify the design, training and evaluation of machine learning models based on pytorch with an emphasis on speech processing.
 - [Tips, tricks and gotchas in PyTorch](https://coolnesss.github.io/2019-02-05/pytorch-gotchas)
 - [给训练踩踩油门 —— Pytorch 加速数据读取](https://zhuanlan.zhihu.com/p/80695364)

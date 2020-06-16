@@ -7,7 +7,7 @@ from typing import Dict, Iterable
 
 from rosetta import __version__, helper
 from rosetta.core import lr_schedulers, optimizers, trainers
-from rosetta.utils.distribute import get_global_rank, init_distributed, is_distributed
+from rosetta.utils.distribute import get_world_size, get_global_rank, init_distributed, is_distributed
 from rosetta.utils.logx import logx
 from termcolor import colored
 from torch.utils.data import DataLoader
@@ -25,7 +25,7 @@ def run_train(
     optim = hparams.pop("optimizer")
     if optim == "SGD":
         optimizer = optimizers.SGD(
-            lr=hparams["learning_rate"],
+            lr=hparams["learning_rate"] * get_world_size(),
             weight_decay=hparams["weight_decay_rate"],
             momentum=hparams.get("momentum", 0),
             dampening=hparams.get("dampening", 0),

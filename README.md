@@ -71,3 +71,4 @@ Before making a contribution, please confirm that:
 - [FARM](https://github.com/deepset-ai/FARM): Fast & easy transfer learning for NLP. Harvesting language models for the industry. 
 - [kotonoha](https://github.com/moskomule/kotonoha): NLP utilities for research
 - [Tips, tricks and gotchas in PyTorch](https://coolnesss.github.io/2019-02-05/pytorch-gotchas)
+- [给训练踩踩油门 —— Pytorch 加速数据读取](https://zhuanlan.zhihu.com/p/80695364)

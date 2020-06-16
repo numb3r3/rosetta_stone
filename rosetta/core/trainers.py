@@ -343,9 +343,8 @@ class Trainer(object):
         self.model.train()
 
         avg_metrics = None
-        with torch.enable_grad():
+        with torch.enable_grad():            
             avg_metrics = self._loop(data_loader, mode="train", **kwargs)
-            # logx.info(f"epoch {self.epoch} finished")
 
         if isinstance(data_loader, DataLoader) and isinstance(
             data_loader.sampler, DistributedSampler

@@ -25,7 +25,7 @@ class DialogGPT2(nn.Module):
         super().__init__()
         if pretrained_model:
             # resume from a pretrained model
-            self.gpt2_model = GPT2LMHeadModel.from_pretrained(args.pretrained_model)
+            self.gpt2_model = GPT2LMHeadModel.from_pretrained(pretrained_model)
         else:
             # start from scratch
             model_config = GPT2Config(**kwargs["gpt2_model_conf"])
@@ -35,25 +35,39 @@ class DialogGPT2(nn.Module):
             self.gpt2_model.resize_token_embeddings(vocab_size)
 
     def forward(
-        self, context_input_ids, context_segment_ids, context_masks, lm_labels, **kwargs
+        self,
+        context_input_ids,
+        context_segment_ids=None,
+        context_masks=None,
+        lm_labels=None,
+        **kwargs
     ):
-
-        loss, logits, *_ = self.gpt2_model(
-            context_input_ids,
-            labels=lm_labels,
-            token_type_ids=context_segment_ids,
-            attention_mask=context_masks,
-        )
+        loss = None
+        if lm_labels:
+            # train mode
+            loss, logits, *_ = self.gpt2_model(
+                context_input_ids,
+                labels=lm_labels,
+                token_type_ids=context_segment_ids,
+                attention_mask=context_masks,
+            )
+        else:
+            logits, *_ = self.gpt2_model(
+                context_input_ids,
+                token_type_ids=context_segment_ids,
+                attention_mask=context_masks,
+            )
 
         predicts = {"logits": logits}
         metrics = {}
 
-        # measure accuracy and record loss
-        acc1, acc5 = accuracy(
-            logits.view(-1, logits.shape[-1]), lm_labels.view(-1), topk=(1, 5)
-        )
-        metrics["accuracy"] = acc1
-        metrics["acc1"] = acc1
-        metrics["acc5"] = acc5
+        if lm_labels:
+            # measure accuracy and record loss
+            acc1, acc5 = accuracy(
+                logits.view(-1, logits.shape[-1]), lm_labels.view(-1), topk=(1, 5)
+            )
+            metrics["accuracy"] = acc1
+            metrics["acc1"] = acc1
+            metrics["acc5"] = acc5
 
         return predicts, loss, metrics

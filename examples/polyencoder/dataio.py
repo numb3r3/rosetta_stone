@@ -1,7 +1,8 @@
-from typing import Dict
+from typing import Dict, Tuple
 
 from rosetta.core.dataio import BaseDataIO
 from rosetta.data.tokenization import Tokenizer
+from rosetta.utils.distribute import get_global_rank
 import torch
 from torch.utils.data import Dataset
 from tqdm import tqdm
@@ -38,13 +39,19 @@ class SelectionDataset(Dataset):
                 group["responses"].append(response)
                 group["labels"].append(lbl)
                 group["context"] = context
+
             if len(group["responses"]) > 0:
                 self.data_source.append(group)
 
-            # for idx in tqdm(range(len(self.data_source))):
-            #     self.__get_single_item__(idx)
+        # if get_global_rank() <= 0:
+        #     self.prepare()
 
-            # self.data_source = [0] * len(self.transformed_data)
+    def prepare(self):
+        print("prepare datasets ...")
+        for idx in tqdm(range(len(self.data_source))):
+            self.__get_single_item__(idx)
+
+        self.data_source = [0] * len(self.transformed_data)
 
     def __len__(self):
         return len(self.data_source)
@@ -71,10 +78,10 @@ class SelectionDataset(Dataset):
             transformed_responses = self.response_transform(
                 responses
             )  # [token_ids],[seg_ids],[masks]
-            key_data = transformed_context, transformed_responses, labels
-            self.transformed_data[index] = key_data
+            _tranformed_data = transformed_context, transformed_responses, labels
+            self.transformed_data[index] = _tranformed_data
 
-            return key_data
+            return _tranformed_data
 
 
 class ConversationDataIO(BaseDataIO):
@@ -87,14 +94,17 @@ class ConversationDataIO(BaseDataIO):
         **kwargs,
     ):
         tokenizer = Tokenizer.load(tokenizer_name_or_path, do_lower_case=True)
+        self.pad_id = 0
 
         self.context_transform = SelectionJoinTransform(
-            tokenizer=tokenizer, max_len=max_contexts_length, max_history=max_history
+            tokenizer=tokenizer,
+            max_seq_len=max_contexts_length,
+            max_history=max_history,
         )
 
         self.response_transform = SelectionSequentialTransform(
             tokenizer=tokenizer,
-            max_len=max_response_length,
+            max_seq_len=max_response_length,
             max_history=None,
             pair_last=False,
         )
@@ -108,7 +118,7 @@ class ConversationDataIO(BaseDataIO):
 
     def collate_fn(
         self, batch, tensor_names=None, mode: str = "train", **kwargs
-    ) -> Dict[str, torch.Tensor]:
+    ) -> Tuple[torch.Tensor]:
 
         contexts_token_ids_list_batch, contexts_segment_ids_list_batch, contexts_input_masks_list_batch, responses_token_ids_list_batch, responses_segment_ids_list_batch, responses_input_masks_list_batch = (
             [],
@@ -119,30 +129,68 @@ class ConversationDataIO(BaseDataIO):
             [],
         )
 
+        batch_size = len(batch)
         labels_batch = []
+        max_ctx_seq_len = 0
+        max_resp_seq_len = 0
         for sample in batch:
-            (
-                contexts_token_ids_list,
-                contexts_segment_ids_list,
-                contexts_input_masks_list,
-            ), (
+            (contexts_token_ids, contexts_segment_ids, contexts_input_masks), (
                 responses_token_ids_list,
                 responses_segment_ids_list,
                 responses_input_masks_list,
                 _,
-            ) = sample[
-                :2
-            ]
+            ) = sample[:2]
 
-            contexts_token_ids_list_batch.append(contexts_token_ids_list)
-            contexts_segment_ids_list_batch.append(contexts_segment_ids_list)
-            contexts_input_masks_list_batch.append(contexts_input_masks_list)
+            if len(contexts_token_ids) > max_ctx_seq_len:
+                max_ctx_seq_len = len(contexts_token_ids)
+
+            contexts_token_ids_list_batch.append(contexts_token_ids)
+            contexts_segment_ids_list_batch.append(contexts_segment_ids)
+            contexts_input_masks_list_batch.append(contexts_input_masks)
+
+            _max_resp_seq_len = max([len(_) for _ in responses_token_ids_list])
+            if _max_resp_seq_len > max_resp_seq_len:
+                max_resp_seq_len = _max_resp_seq_len
 
             responses_token_ids_list_batch.append(responses_token_ids_list)
             responses_segment_ids_list_batch.append(responses_segment_ids_list)
             responses_input_masks_list_batch.append(responses_input_masks_list)
 
             labels_batch.append(sample[-1])
+
+        for i in range(batch_size):
+            input_ids = contexts_token_ids_list_batch[i]
+            segment_ids = contexts_segment_ids_list_batch[i]
+            input_mask_ids = contexts_input_masks_list_batch[i]
+
+            contexts_token_ids_list_batch[i] += [self.pad_id] * (
+                max_ctx_seq_len - len(input_ids)
+            )
+            contexts_segment_ids_list_batch[i] += [0] * (
+                max_ctx_seq_len - len(segment_ids)
+            )
+            contexts_input_masks_list_batch[i] += [0] * (
+                max_ctx_seq_len - len(input_mask_ids)
+            )
+
+            responses_token_ids_list = responses_token_ids_list_batch[i]
+            responses_segment_ids_list = responses_segment_ids_list_batch[i]
+            responses_input_masks_list = responses_input_masks_list_batch[i]
+
+            for _ in range(len(responses_token_ids_list)):
+                input_ids = responses_token_ids_list[_]
+                segment_ids = responses_segment_ids_list[_]
+                input_mask_ids = responses_input_masks_list[_]
+
+                responses_token_ids_list[_] += [self.pad_id] * (
+                    max_resp_seq_len - len(input_ids)
+                )
+                responses_segment_ids_list[_] += [0] * (
+                    max_resp_seq_len - len(segment_ids)
+                )
+                responses_input_masks_list[_] += [0] * (
+                    max_resp_seq_len - len(input_mask_ids)
+                )
 
         long_tensors = [
             contexts_token_ids_list_batch,

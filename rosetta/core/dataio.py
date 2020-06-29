@@ -1,5 +1,5 @@
 import functools
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import torch
 import torch.multiprocessing as mp
@@ -21,7 +21,7 @@ class BaseDataIO:
 
     def collate_fn(
         self, batch, tensor_names=None, mode: str = "train", **kwargs
-    ) -> Dict[str, torch.Tensor]:
+    ) -> Tuple[torch.Tensor]:
         """
         A custom collate function for data loading that formats the batch as a tuple tensors
         """
@@ -69,11 +69,12 @@ class BaseDataIO:
 
         sampler = None
         if is_distributed():
-            kwargs = dict(num_replicas=get_world_size(), rank=get_global_rank())
-            sampler = DistributedSampler(dataset, **kwargs)
+            sampler_kwargs = dict(num_replicas=get_world_size(), rank=get_global_rank())
+            sampler = DistributedSampler(dataset, **sampler_kwargs)
         elif is_train:
             sampler = RandomSampler(dataset, True)
 
+        loader_kwargs = dict()
         # When supported, use 'forkserver' to spawn dataloader workers instead of 'fork' to prevent
         # issues with Infiniband implementations that are not fork-safe
         if (
@@ -82,7 +83,7 @@ class BaseDataIO:
             and mp._supports_context
             and "forkserver" in mp.get_all_start_methods()
         ):
-            kwargs["multiprocessing_context"] = "forkserver"
+            loader_kwargs["multiprocessing_context"] = "forkserver"
 
         return DataLoader(
             dataset,
@@ -97,4 +98,5 @@ class BaseDataIO:
             ),
             pin_memory=pin_memory,
             num_workers=num_workers,
+            **loader_kwargs
         )

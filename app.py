@@ -90,7 +90,7 @@ def main(args, unused_argv):
     if is_distributed() or args.use_horovod:
         init_distributed(use_horovod=args.use_horovod)
 
-    # hacks: get_global_rank() would return -1 for standalone training
+    # NOTE: get_global_rank() would return -1 for standalone training
     global_rank = max(0, get_global_rank())
 
     log_dir = hparams.get(

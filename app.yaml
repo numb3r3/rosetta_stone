@@ -186,6 +186,11 @@ dssm_bert: &dssm_bert
   batch_size: 128
   learning_rate: 5e-5
 
+  checkpoint_selector:
+    eval_set: eval
+    eval_metric: loss
+    higher_better: false
+
 speech2text: &speech2text
   model_package: examples.speech.speech2text
   model_class: Speech2TextModel

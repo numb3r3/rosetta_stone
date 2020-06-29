@@ -27,7 +27,7 @@ default: &default
   lr_constant_steps: 1000
   lr_decay_method: exponential
   lr_decay_steps: 1000
-  lr_decay_rate: 0.5
+  lr_decay_rate: 0.8
   
   weight_decay_rate: 0.01
   weight_averaging_decay: 0.9

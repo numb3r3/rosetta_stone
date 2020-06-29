@@ -320,12 +320,12 @@ class Trainer(object):
 
                     start_time = time.time()
 
-                logx.add_scalar(
-                    "%s/learning_rate" % mode,
-                    self.lr_scheduler.get_lr()[0],
-                    self.global_step,
-                )
-                logx.metric(mode, metrics, self.global_step)
+                    logx.add_scalar(
+                        "%s/learning_rate" % mode,
+                        self.lr_scheduler.get_lr()[0],
+                        self.global_step,
+                    )
+                    logx.metric(mode, metrics, self.global_step)
 
         return avg_metrics
 
@@ -368,6 +368,8 @@ class Trainer(object):
         avg_metrics = None
         with torch.no_grad():
             avg_metrics = self._loop(data_loader, mode="eval", **kwargs)
+
+        logx.metric("validate", avg_metrics, self.global_step)
 
         cur_metric = avg_metrics[self._eval_metric].item()
 

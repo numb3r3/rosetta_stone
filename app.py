@@ -71,10 +71,16 @@ def run_train(
         # save checkpoint at each epoch
         trainer.save_checkpoint(eval_metrics, **hparams)
 
+        eval_metric_key = hparams["checkpoint_selector"]["eval_metric"]
+
         logx.msg("-" * 89)
         logx.msg(
-            "| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.3f}".format(
-                epoch, (time.time() - epoch_start_time), eval_metrics["loss"]
+            "| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.3f} | valid metric {} {:5.3f}".format(
+                epoch,
+                (time.time() - epoch_start_time),
+                eval_metrics["loss"],
+                eval_metric_key,
+                eval_metrics[eval_metric_key],
             )
         )
         logx.msg("-" * 89)
@@ -97,11 +103,13 @@ def main(args, unused_argv):
         "log_dir", os.path.join(hparams["log_dir_prefix"], args.model_name)
     )
 
-    # from coolname import generate_slug
+    from coolname import generate_slug
 
     args_str = "use_amp-%d-use_horovod-%d" % (args.use_amp, args.use_horovod)
 
-    log_name = args_str + "-" + datetime.now().strftime("%Y-%m-%d")
+    # log_name = datetime.now().strftime("%Y-%m-%d") + "-" + args_str
+    log_name = generate_slug(2) + "-" + args_str
+
     logx.initialize(
         logdir=os.path.join(log_dir, log_name),
         coolname=True,

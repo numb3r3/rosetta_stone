@@ -112,8 +112,8 @@ class DialogDataIO(BaseDataIO):
 
     def create_dataset(self, data_path: str, mode: str = "train", **kwargs):
         sample_cnt = -1
-        if mode != "train":
-            sample_cnt = 1000
+        # if mode != "train":
+        #     sample_cnt = 1000
         return DialogDataset(
             self.tokenizer,
             data_path,

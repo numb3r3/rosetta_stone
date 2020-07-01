@@ -297,7 +297,7 @@ class Trainer(object):
 
             if loss is not None:
                 # capture metrics
-                metrics.update({"loss": loss.item()})
+                metrics.update({"loss": loss})
 
             avg_metrics.update(metrics)
 
@@ -369,9 +369,9 @@ class Trainer(object):
         with torch.no_grad():
             avg_metrics = self._loop(data_loader, mode="eval", **kwargs)
 
-        logx.metric("validate", avg_metrics, self.global_step)
+        logx.metric("validate", avg_metrics, self.epoch)
 
-        cur_metric = avg_metrics[self._eval_metric].item()
+        cur_metric = avg_metrics[self._eval_metric]
 
         self._best_metric = (
             max(self.best_metric, cur_metric)

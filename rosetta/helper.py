@@ -59,6 +59,8 @@ def parse_cli_args(args: List[str]):
                 cli_args[k] = parsed_v
             if len(parsed_v) == 1:
                 cli_args[k] = parsed_v[0]
+            if len(parsed_v) == 0:
+                cli_args[k] = None
     return cli_args
 
 

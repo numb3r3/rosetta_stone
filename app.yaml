@@ -90,6 +90,7 @@ gpt2_chitchat: &gpt2_chitchat
   decode_topk: 8
   decode_topp: 0
 
+
 gpt2_lccc_base: &gpt2_lccc_base
   <<: *dialog_gpt2
   gpt2_model_conf:
@@ -150,6 +151,12 @@ gpt2_huya_speech: &gpt2_huya_speech
   pretrained_model: /workspace/project-nas-10251-sh/models/gpt2_chitchat/
   max_contexts_length: 128
   batch_size: 64
+
+gpt2_chitchat_local: &gpt2_chitchat_local
+  <<: *gpt2_chitchat
+
+  pretrained_model: /Users/fengwang/huya/data/models/gpt2_chitchat/
+  tokenizer_name_or_path: /Users/fengwang/huya/data/models/gpt2_chitchat/vocab.txt
 
   
 dssm_bert: &dssm_bert

@@ -67,11 +67,10 @@ class Tokenizer:
                 tokenizer_class = "EmbeddingTokenizer"
             else:
                 raise ValueError(
-                    "Could not infer tokenizer_class from name"
-                    # f"Could not infer tokenizer_class from name '{pretrained_model_name_or_path}'. Set "
-                    # f"arg `tokenizer_class` in Tokenizer.load() to one of: AlbertTokenizer, "
-                    # f"XLMRobertaTokenizer, RobertaTokenizer, DistilBertTokenizer, BertTokenizer, or "
-                    # f"XLNetTokenizer."
+                    f"Could not infer tokenizer_class from name '{pretrained_model_name_or_path}'. Set "
+                    f"arg `tokenizer_class` in Tokenizer.load() to one of: AlbertTokenizer, "
+                    f"XLMRobertaTokenizer, RobertaTokenizer, DistilBertTokenizer, BertTokenizer, or "
+                    f"XLNetTokenizer."
                 )
             logger.info("Loading tokenizer of type '%s'" % tokenizer_class)
         # return appropriate tokenizer object
@@ -120,7 +119,7 @@ class EmbeddingTokenizer(PreTrainedTokenizer):
         pad_token="[PAD]",
         cls_token="[CLS]",
         mask_token="[MASK]",
-        **kwargs
+        **kwargs,
     ):
         """
         :param vocab_file: Path to a one-word-per-line vocabulary file
@@ -136,7 +135,7 @@ class EmbeddingTokenizer(PreTrainedTokenizer):
             pad_token=pad_token,
             cls_token=cls_token,
             mask_token=mask_token,
-            **kwargs
+            **kwargs,
         )
 
         if not os.path.isfile(vocab_file):

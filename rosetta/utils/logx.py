@@ -25,3 +25,12 @@ def debug(self, msg):
 logx.info = lambda msg: info(logx, msg)
 logx.debug = lambda msg: debug(logx, msg)
 logx.warning = lambda msg: warning(logx, msg)
+
+
+def summary_model(self, model):
+    model_parameters = filter(lambda p: p.requires_grad, model.parameters())
+    total_params = sum([np.prod(p.size()) for p in model_parameters])
+    print("Number of parameter = {}".format(total_params))
+
+
+logx.summary_model = lambda m: summary_model(logx, m)

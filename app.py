@@ -99,33 +99,9 @@ def main(args, unused_argv):
     # NOTE: get_global_rank() would return -1 for standalone training
     global_rank = max(0, get_global_rank())
 
-    log_dir = hparams.get(
-        "log_dir", os.path.join(hparams["log_dir_prefix"], args.model_name)
-    )
-
-    from coolname import generate_slug
-
-    args_str = "use_amp-%d-use_horovod-%d" % (args.use_amp, args.use_horovod)
-
-    # log_name = datetime.now().strftime("%Y-%m-%d") + "-" + args_str
-    log_name = generate_slug(2) + "-" + args_str
-
-    logx.initialize(
-        logdir=os.path.join(log_dir, log_name),
-        coolname=True,
-        tensorboard=True,
-        global_rank=global_rank,
-        eager_flush=True,
-        hparams=hparams,
-    )
-
-    # attach logger to logx
-    logx.logger = logger
-
     if cli_args:
         # useful when changing params defined in YAML
-        # logger.info("override parameters with cli args ...")
-        logx.msg("override parameters with cli args ...")
+        logger.info("override parameters with cli args ...")
         for k, v in cli_args.items():
             if k in hparams and hparams.get(k) != v:
                 # logger.info("%20s: %20s -> %20s" % (k, hparams.get(k), v))
@@ -135,12 +111,10 @@ def main(args, unused_argv):
                 # logger.warning("%s is not a valid attribute! ignore!" % k)
                 logx.msg("%s is not a valid attribute! ignore!" % k)
 
-    # logger.info("current parameters")
-    logx.msg("current parameters")
+    logger.info("current parameters")
     for k, v in sorted(hparams.items()):
         if not k.startswith("_"):
-            # logger.info("%20s = %-20s" % (k, v))
-            logx.msg("%20s = %-20s" % (k, v))
+            logger.info("%20s = %-20s" % (k, v))
 
     model_pkg = importlib.import_module(hparams["model_package"])
     model_cls_ = getattr(model_pkg, hparams.get("model_class", "Model"))
@@ -170,6 +144,28 @@ def main(args, unused_argv):
         mode="eval",
         num_workers=num_workers,
         **hparams,
+    )
+
+    log_dir = hparams.get(
+        "log_dir", os.path.join(hparams["log_dir_prefix"], args.model_name)
+    )
+
+    from coolname import generate_slug
+
+    # log_name = datetime.now().strftime("%Y-%m-%d") + "-" + args_str
+      
+    if hparams["suffix_model_id"]:
+        log_name = hparams["suffix_model_id"] + "-" + generate_slug(2)
+    else:
+        log_name = generate_slug(2)
+
+    logx.initialize(
+        logdir=os.path.join(log_dir, log_name),
+        coolname=True,
+        tensorboard=True,
+        global_rank=global_rank,
+        eager_flush=True,
+        hparams=hparams,
     )
 
     run_train(

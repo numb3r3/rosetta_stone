@@ -193,9 +193,11 @@ dssm_bert: &dssm_bert
 speech2text: &speech2text
   model_package: examples.speech.speech2text
   model_class: Speech2TextModel
+  model_module: examples.speech.speech2text:Speech2TextModel
 
   dataio_package: examples.speech.dataio
   dataio_class: SpeechDataIO
+  dataio_module: examples.speech.dataio:SpeechDataIO
 
   train_data_path: /workspace/cpfs-data/datasets/open_speech_data/aishell/data_aishell/manifest.train
   eval_data_path: /workspace/cpfs-data/datasets/open_speech_data/aishell/data_aishell/manifest.dev

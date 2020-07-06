@@ -1,27 +1,37 @@
+import sys  # isort:skip
+import streamlit as st  # isort:skip
+
+
+@st.cache
+def _set_sys_path():
+    print("set sysm path ...")
+    sys.path.append(".")
+
+
+_set_sys_path()
+
 import argparse
 import importlib
 from itertools import chain
 import os
-import sys
-import streamlit as st
+
+from rosetta import __version__, helper
 import torch
 import torch.nn.functional as F
 
-@st.cache
-def _set_sys_path():
-    print('set sysm path ...')
-    sys.path.append(".")
-
-_set_sys_path()
-
-from rosetta import __version__, helper
-
-# from termcolor import colored
-# import torch
-# import torch.nn.functional as F
-
 
 MODEL_NAMES = ["gpt2_chitchat"]
+
+
+MODELS = [
+    {"model_label": "基础预训练模型", "model_name": "gpt2_chitchat", "resume_from": None},
+    {
+        "model_label": "正恒YJ-画心",
+        "model_name": "gpt2_chitchat",
+        "resume_from": "/workspace/project-nas-10251-sh/models/gpt2_chitchat_20200630",
+    },
+]
+
 
 SPECIAL_TOKENS = ["[CLS]", "[SEP]", "[PAD]", "[speaker1]", "[speaker2]"]
 
@@ -135,6 +145,7 @@ def sample_sequence(
 
     return generated
 
+
 class ChatBot:
     def __init__(self):
         self.history = []
@@ -151,12 +162,12 @@ class ChatBot:
         self.hparams = hparams
 
     def get_bot_response(self, input_query: str, model_name: str):
-        
+
         self.inputs.append(input_query)
 
         self.history.append(self.tokenizer.encode(input_query))
 
-        history = self.history[-(2 * self.hparams["max_history"] + 1) :]
+        history = self.history[-(self.hparams["max_history"] + 1) :]
 
         with torch.no_grad():
             response_ids = sample_sequence(
@@ -173,19 +184,43 @@ class ChatBot:
     def clear_history(self):
         self.inputs.clear()
         self.responses.clear()
+        self.history.clear()
+
 
 def main():
-    # logger = helper.set_logger("dialog_gpt2", verbose=True)
+    logger = helper.set_logger("dialog_gpt2", verbose=True)
 
-    st.sidebar.title("智能对话")
-    model_name = st.sidebar.selectbox("选择模型", MODEL_NAMES)
+    st.title(":tv: &nbsp; 虚拟主播直播间")
+
+    st.sidebar.title("虚拟主播对话模型")
+    seleted_model = st.sidebar.selectbox(
+        "选择模型", MODELS, format_func=lambda m: m["model_label"]
+    )
+    model_name = seleted_model["model_name"]
+    model_label = seleted_model["model_label"]
+    resume_from = seleted_model["resume_from"]
+
+    # live_mode = st.sidebar.checkbox("直播模式", False)
+    # dialog_mode = st.sidebar.checkbox("对话模式", True)
+
+    st.sidebar.title("使用说明")
+    st.sidebar.info(
+        ":airplane: &nbsp; **目前支持的模型**\n"
+        "- :one: &nbsp; **基础预训练模型**: 公开通用领域对话模型\n"
+        "- :two: &nbsp; **正恒YJ-画心**: 御姐型人格对话模型\n"
+        "\n:bulb: &nbsp; **注意事项**\n"
+        "- :icecream: &nbsp; **单例模式**: 目前该系统只支持单例模式，不同用户同时访问时会看到其他用户的输入内容\n"
+        "- :beers: &nbsp; **多轮对话**：目前默认记录最近**20轮**的对话信息\n"
+        "- :clap: &nbsp; **清空按钮**: 点击该按钮后会清空所有对话记录，重新开启对话。\n"
+        "&nbsp;&nbsp;&nbsp;&nbsp; :warning: 点击清空按钮后，**用户第一次的输入系统不会响应**，第二次输入才能正常工作 (这是一个 :bug:，后边会修复)。"
+    )
 
     @st.cache(allow_output_mutation=True)
     def create_chatbot():
         return ChatBot()
 
     @st.cache(allow_output_mutation=True)
-    def load_model(model_name):
+    def load_model(model_name, resume_from=None):
         from transformers import BertTokenizer
 
         print("loding model: %s" % model_name)
@@ -194,29 +229,52 @@ def main():
         model_cls_ = getattr(model_pkg, hparams.get("model_class", "Model"))
 
         model = model_cls_(**hparams)
+
+        # restore model
+        if resume_from:
+            if os.path.isfile(resume_from):
+                logger.info("=> loading checkpoint '{}'".format(resume_from))
+                checkpoint = torch.load(resume_from, map_location=torch.device("cpu"))
+                model.load_state_dict(checkpoint["state_dict"])
+            else:
+                logger.error("=> no checkpoint found at '{}'".format(resume_from))
+                # sys.exit(1)
+
         model.eval()
 
-        tokenizer = BertTokenizer(vocab_file=hparams["tokenizer_name_or_path"])        
+        tokenizer = BertTokenizer(vocab_file=hparams["tokenizer_name_or_path"])
 
         return model, tokenizer, hparams
 
     bot = create_chatbot()
 
-    model, tokenizer, hparams = load_model(model_name)
+    model, tokenizer, hparams = load_model(model_name, resume_from)
     bot.set_model(model, tokenizer, hparams)
 
-    chat_container = st.markdown("## 开始和 [%s] 对话 ..." % model_name)
+    chat_container = st.markdown("### :rocket: 正在和 [%s] 聊天 ..." % model_label)
 
-    chat_placeholder = st.empty()
-    user_query = chat_placeholder.text_input("input_query", "")
-    user_query = user_query.strip()
+    # chat_placeholder = st.empty()
+    # user_query = chat_placeholder.text_input("input_query", "")
+    # user_query = user_query.strip()
+
+    chat_input_ = st.empty()
+    input_value = ""
+    if st.button("清空历史"):
+        input_value = " "
+        bot.clear_history()
+
+    user_query = chat_input_.text_input("请输入 ...", input_value)
+    user_query = str(user_query.strip())
 
     if user_query != "":
+
         resp = bot.get_bot_response(user_query, "chitchat")
+        print("query: %s" % user_query)
+        print("resp: %s" % resp)
 
         for i in range(len(bot.inputs) - 1, -1, -1):
-            st.markdown(f"**Bot**: {bot.responses[i]}")
-            st.markdown(f"**You**: {bot.inputs[i]} \n ---")
+            st.markdown(f":space_invader:  **机器人**: {bot.responses[i]}")
+            st.markdown(f":santa:  **用户** : {bot.inputs[i]} \n ---")
 
     # if app_mode == "Show instructions":
     #     st.sidebar.success('To continue select "Run the app".')

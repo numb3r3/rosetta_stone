@@ -3,6 +3,22 @@ from os import path
 from setuptools import find_packages, setup
 
 
+PY36 = "py36"
+PY37 = "py37"
+PY38 = "py38"
+
+if sys.version_info >= (3, 6, 8):
+    py_tag = PY36
+elif sys.version_info >= (3, 8, 0):
+    py_tag = PY38
+elif sys.version_info >= (3, 7, 0):
+    py_tag = PY37
+else:
+    raise OSError(
+        "Rosetta requires Python 3.6.8 and above, but yours is %s" % sys.version
+    )
+
+
 try:
     pkg_name = "rosetta"
     libinfo_py = path.join(pkg_name, "__init__.py")
@@ -61,6 +77,7 @@ setup(
     ],
     tests_require=["pytest"],
     python_requires=">=3.6",
+    entry_points={"console_scripts": ["rosetta=rosetta.main.__main__:main"]},
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",

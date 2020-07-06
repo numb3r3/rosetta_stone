@@ -4,13 +4,16 @@ from itertools import chain
 import os
 import sys
 
+sys.path.append(".")
+
+
+from rosetta import __version__, helper
 from termcolor import colored
 import torch
 import torch.nn.functional as F
 from transformers import BertTokenizer
 
-sys.path.append(".")
-from rosetta import __version__, helper
+
 
 
 SPECIAL_TOKENS = ["[CLS]", "[SEP]", "[PAD]", "[speaker1]", "[speaker2]"]

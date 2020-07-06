@@ -1,5 +1,7 @@
 import collections
 import logging
+import os
+import sys
 from typing import List
 
 from ruamel.yaml import YAML
@@ -88,8 +90,13 @@ def parse_arg(v: str):
     return v
 
 
-def parse_args(yaml_path: str, model_name: str, default_set=None):
-    with open("default.yaml") as fp:
+def parse_args(
+    yaml_path: str,
+    model_name: str,
+    default_set: str = None,
+    default_yaml_file: str = None,
+):
+    with open(default_yaml_file or "default.yaml") as fp:
         configs = YAML().load(fp)
         default_cfg = configs[default_set]
 
@@ -104,3 +111,35 @@ def parse_args(yaml_path: str, model_name: str, default_set=None):
                 hparams.update(model_params)
 
     return hparams
+
+
+class PathImporter:
+    @staticmethod
+    def _get_module_name(absolute_path):
+        module_name = os.path.basename(absolute_path)
+        module_name = module_name.replace(".py", "")
+        return module_name
+
+    @staticmethod
+    def add_modules(*paths):
+        for p in paths:
+            if not os.path.exists(p):
+                raise FileNotFoundError(
+                    "cannot import module from %s, file not exist", p
+                )
+            module, spec = PathImporter._path_import(p)
+        return module
+
+    @staticmethod
+    def _path_import(absolute_path):
+        import importlib.util
+
+        module_name = PathImporter._get_module_name(absolute_path)
+        spec = importlib.util.spec_from_file_location(module_name, absolute_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        sys.modules[spec.name] = module
+        return module, spec
+
+
+default_logger = get_logger("rosetta")  #: a logger at the global-level

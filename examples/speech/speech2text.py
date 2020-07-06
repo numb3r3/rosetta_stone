@@ -1,7 +1,7 @@
 import math
 from typing import Dict
 
-from rosetta.modules.nn import LayerNorm
+# from rosetta.modules.nn import LayerNorm
 from rosetta.modules.positional_embedding import SinusoidalPositionalEncoder
 import torch
 import torch.nn as nn
@@ -39,9 +39,6 @@ class Speech2TextModel(nn.Module):
         elif prenet_name == "cnn":
             self.prenet = CNNExtractor(feature_dim, self.encoder_dim)
 
-        self.embedding_scale = torch.sqrt(
-            torch.FloatTensor([self.encoder_dim], device=audio_frame_feats.device)
-        )
         self.position_encoder = SinusoidalPositionalEncoder(self.encoder_dim)
         self.pos_dropout = nn.Dropout(p=dropout_rate)
 
@@ -70,8 +67,11 @@ class Speech2TextModel(nn.Module):
 
         # inspired from "Attention is All You Need"
         # (https://arxiv.org/abs/1706.03762)
+        embedding_scale = torch.sqrt(torch.FloatTensor([self.encoder_dim])).to(
+            audio_frame_feats.device
+        )
 
-        audio_frame_feats = audio_frame_feats * self.embedding_scale
+        audio_frame_feats = audio_frame_feats * embedding_scale
 
         audio_frame_feats += self.position_encoder(audio_frame_feats)
         audio_frame_feats = self.pos_dropout(audio_frame_feats)

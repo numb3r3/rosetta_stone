@@ -1,0 +1,2 @@
+recursive-include rosetta/resources *
+prune tests/

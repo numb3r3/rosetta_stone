@@ -104,12 +104,10 @@ def main(args, unused_argv):
         logger.info("override parameters with cli args ...")
         for k, v in cli_args.items():
             if k in hparams and hparams.get(k) != v:
-                # logger.info("%20s: %20s -> %20s" % (k, hparams.get(k), v))
-                logx.msg("%20s: %20s -> %20s" % (k, hparams.get(k), v))
+                logger.info("%20s: %20s -> %20s" % (k, hparams.get(k), v))
                 hparams[k] = v
             elif k not in hparams:
-                # logger.warning("%s is not a valid attribute! ignore!" % k)
-                logx.msg("%s is not a valid attribute! ignore!" % k)
+                logger.warning("%s is not a valid attribute! ignore!" % k)
 
     logger.info("current parameters")
     for k, v in sorted(hparams.items()):
@@ -146,18 +144,13 @@ def main(args, unused_argv):
         **hparams,
     )
 
+    from coolname import generate_slug
+
     log_dir = hparams.get(
         "log_dir", os.path.join(hparams["log_dir_prefix"], args.model_name)
     )
-
-    from coolname import generate_slug
-
-    # log_name = datetime.now().strftime("%Y-%m-%d") + "-" + args_str
-      
-    if hparams["suffix_model_id"]:
-        log_name = hparams["suffix_model_id"] + "-" + generate_slug(2)
-    else:
-        log_name = generate_slug(2)
+    suffix_model_id = hparams["suffix_model_id"]
+    log_name = suffix_model_id + ("-" if suffix_model_id else "") + generate_slug(2)
 
     logx.initialize(
         logdir=os.path.join(log_dir, log_name),

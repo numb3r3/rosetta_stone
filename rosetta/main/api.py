@@ -1,65 +1,6 @@
-import importlib
 import os
 import sys
 import time
-
-
-def _parse_hparams(args, unused_argv = None):
-    from .. import helper
-    from pkg_resources import resource_filename
-
-    cli_args = helper.parse_cli_args(unused_argv) if unused_argv else None
-    default_yaml_file = resource_filename(
-        "rosetta", "/".join(("resources", "default.yaml"))
-    )
-    hparams = helper.parse_args(
-        args.yaml_path, args.model_name, "default", default_yaml_file
-    )
-
-    if cli_args:
-        # useful when changing params defined in YAML
-        print("override parameters with cli args ...")
-        for k, v in cli_args.items():
-            if k in hparams and hparams.get(k) != v:
-                print("%20s: %20s -> %20s" % (k, hparams.get(k), v))
-                hparams[k] = v
-            elif k not in hparams:
-                print("%s is not a valid attribute! ignore!" % k)
-
-    print("current parameters")
-    for k, v in sorted(hparams.items()):
-        if not k.startswith("_"):
-            print("%20s = %-20s" % (k, v))
-    return hparams
-
-
-def _create_model(hparams):
-    from ..utils.pathlib import import_path
-
-    model_pkg_name, model_cls_name = hparams["model_module"].split(":")
-    model_pkg_path = os.path.join(*model_pkg_name.split(".")) + ".py"
-    model_pkg = import_path(model_pkg_path)
-    model_cls_ = getattr(model_pkg, model_cls_name)
-    model = model_cls_(**hparams)
-
-    # model_pkg_name, model_cls_name = hparams["model_module"].split(':')
-    # model_pkg = importlib.import_module(model_pkg_name)
-    # model_cls_ = getattr(model_pkg, model_cls_name)
-    # model = model_cls_(**hparams)
-
-    return model
-
-
-def _create_dataio(hparams):
-    from ..utils.pathlib import import_path
-
-    dataio_pkg_name, dataio_cls_name = hparams["dataio_module"].split(":")
-    dataio_pkg_path = os.path.join(*dataio_pkg_name.split(".")) + ".py"
-    dataio_pkg = import_path(dataio_pkg_path)
-    dataio_cls_ = getattr(dataio_pkg, dataio_cls_name)
-    dataio = dataio_cls_(**hparams)
-
-    return dataio
 
 
 def _create_optimizer(hparams):
@@ -104,11 +45,12 @@ def train(args, unused_argv):
     )
     from ..utils.logx import logx
     from ..core import trainers
+    from ..helper import load_yaml_params, create_model, create_dataio
     from coolname import generate_slug
 
-    hparams = _parse_hparams(args, unused_argv)
-    model = _create_model(hparams)
-    dataio = _create_dataio(hparams)
+    hparams = load_yaml_params(args.yaml_path, args.model_name, cli_args=unused_argv)
+    model = create_model(hparams)
+    dataio = create_dataio(hparams)
 
     # setup distributed training env
     if is_distributed() or args.use_horovod:

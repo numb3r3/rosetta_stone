@@ -114,7 +114,7 @@ def parse_args(
 
 
 
-def parse_hparams(yaml_path: str, model_name: str, cli_args = None):
+def load_yaml_params(yaml_path: str, model_name: str, cli_args = None):
     from pkg_resources import resource_filename
 
     cli_args = parse_cli_args(cli_args) if cli_args else None
@@ -140,6 +140,38 @@ def parse_hparams(yaml_path: str, model_name: str, cli_args = None):
         if not k.startswith("_"):
             print("%20s = %-20s" % (k, v))
     return hparams
+
+
+
+
+def create_model(hparams):
+    from .utils.pathlib import import_path
+
+    model_pkg_name, model_cls_name = hparams["model_module"].split(":")
+    model_pkg_path = os.path.join(*model_pkg_name.split(".")) + ".py"
+    model_pkg = import_path(model_pkg_path)
+    model_cls_ = getattr(model_pkg, model_cls_name)
+    model = model_cls_(**hparams)
+
+    # model_pkg_name, model_cls_name = hparams["model_module"].split(':')
+    # model_pkg = importlib.import_module(model_pkg_name)
+    # model_cls_ = getattr(model_pkg, model_cls_name)
+    # model = model_cls_(**hparams)
+
+    return model
+
+
+
+def create_dataio(hparams):
+    from .utils.pathlib import import_path
+
+    dataio_pkg_name, dataio_cls_name = hparams["dataio_module"].split(":")
+    dataio_pkg_path = os.path.join(*dataio_pkg_name.split(".")) + ".py"
+    dataio_pkg = import_path(dataio_pkg_path)
+    dataio_cls_ = getattr(dataio_pkg, dataio_cls_name)
+    dataio = dataio_cls_(**hparams)
+
+    return dataio
 
 
 class PathImporter:

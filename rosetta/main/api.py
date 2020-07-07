@@ -4,7 +4,7 @@ import sys
 import time
 
 
-def _parse_hparams(args, unused_argv):
+def _parse_hparams(args, unused_argv = None):
     from .. import helper
     from pkg_resources import resource_filename
 

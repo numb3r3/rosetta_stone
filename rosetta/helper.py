@@ -113,6 +113,36 @@ def parse_args(
     return hparams
 
 
+
+def parse_hparams(yaml_path: str, model_name: str, cli_args = None):
+    from .. import helper
+    from pkg_resources import resource_filename
+
+    cli_args = helper.parse_cli_args(cli_args) if cli_args else None
+    default_yaml_file = resource_filename(
+        "rosetta", "/".join(("resources", "default.yaml"))
+    )
+    hparams = helper.parse_args(
+        yaml_path, model_name, "default", default_yaml_file
+    )
+
+    if cli_args:
+        # useful when changing params defined in YAML
+        print("override parameters with cli args ...")
+        for k, v in cli_args.items():
+            if k in hparams and hparams.get(k) != v:
+                print("%20s: %20s -> %20s" % (k, hparams.get(k), v))
+                hparams[k] = v
+            elif k not in hparams:
+                print("%s is not a valid attribute! ignore!" % k)
+
+    print("current parameters")
+    for k, v in sorted(hparams.items()):
+        if not k.startswith("_"):
+            print("%20s = %-20s" % (k, v))
+    return hparams
+
+
 class PathImporter:
     @staticmethod
     def _get_module_name(absolute_path):

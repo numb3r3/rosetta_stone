@@ -115,14 +115,13 @@ def parse_args(
 
 
 def parse_hparams(yaml_path: str, model_name: str, cli_args = None):
-    from .. import helper
     from pkg_resources import resource_filename
 
-    cli_args = helper.parse_cli_args(cli_args) if cli_args else None
+    cli_args = parse_cli_args(cli_args) if cli_args else None
     default_yaml_file = resource_filename(
         "rosetta", "/".join(("resources", "default.yaml"))
     )
-    hparams = helper.parse_args(
+    hparams = parse_args(
         yaml_path, model_name, "default", default_yaml_file
     )
 

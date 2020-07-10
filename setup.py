@@ -21,7 +21,7 @@ else:
 
 
 try:
-    pkg_name = "rosetta-stone"
+    pkg_name = "rosetta_stone"
     libinfo_py = path.join(pkg_name, "__init__.py")
     libinfo_content = open(libinfo_py, "r", encoding="utf8").readlines()
     version_line = [l.strip() for l in libinfo_content if l.startswith("__version__")][

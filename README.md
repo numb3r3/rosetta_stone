@@ -8,7 +8,7 @@ make your deep learning life easier
 
 The key features are:
 
-- yaml-styled model construction and hyper parameters setting
+- yaml-styled model for elegantly configuring complex applications
 - best practice
 - Unified design for various applications
 - Pre-trained models

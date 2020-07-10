@@ -365,16 +365,16 @@ class Trainer(object):
         # Turn on the evaluation mode
         self.model.eval()
 
-        avg_metrics = None
+        eval_metrics = None
         with torch.no_grad():
-            avg_metrics = self._loop(data_loader, mode="eval", **kwargs)
+            eval_metrics = self._loop(data_loader, mode="eval", **kwargs)
 
-        logx.metric("validate", avg_metrics.avg, self.epoch)
+        logx.metric("validate", eval_metrics.avg, self.epoch)
 
         # save checkpoint at each epoch
         self.save_checkpoint(eval_metrics, **hparams)
 
-        return avg_metrics
+        return eval_metrics
 
     def run(
         self,

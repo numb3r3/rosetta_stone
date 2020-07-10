@@ -81,7 +81,7 @@ setup(
     python_requires=">=3.6",
     entry_points={"console_scripts": ["rosetta=rosetta.main.__main__:main"]},
     classifiers=[
-        "Development Status :: 2 - Beta",
+        "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: Apache Software License",

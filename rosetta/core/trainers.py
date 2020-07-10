@@ -369,7 +369,7 @@ class Trainer(object):
         with torch.no_grad():
             avg_metrics = self._loop(data_loader, mode="eval", **kwargs)
 
-        logx.metric("validate", avg_metrics, self.epoch)
+        logx.metric("validate", avg_metrics.avg, self.epoch)
 
         cur_metric = avg_metrics[self._eval_metric]
 

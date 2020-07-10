@@ -21,7 +21,7 @@ else:
 
 
 try:
-    pkg_name = "rosetta"
+    pkg_name = "rosetta-stone"
     libinfo_py = path.join(pkg_name, "__init__.py")
     libinfo_content = open(libinfo_py, "r", encoding="utf8").readlines()
     version_line = [l.strip() for l in libinfo_content if l.startswith("__version__")][
@@ -67,7 +67,7 @@ setup(
     description="make research work more friendly",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://git.huya.com/wangfeng2/rosetta_stone",
+    url="https://github.com/numb3r3/rosetta_stone",
     install_requires=base_dep,
     extras_require=extras_dep,
     setup_requires=[

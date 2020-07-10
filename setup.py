@@ -22,7 +22,8 @@ else:
 
 try:
     pkg_name = "rosetta_stone"
-    libinfo_py = path.join(pkg_name, "__init__.py")
+    pkg_slug = "rosetta"
+    libinfo_py = path.join(pkg_slug, "__init__.py")
     libinfo_content = open(libinfo_py, "r", encoding="utf8").readlines()
     version_line = [l.strip() for l in libinfo_content if l.startswith("__version__")][
         0
@@ -80,7 +81,7 @@ setup(
     python_requires=">=3.6",
     entry_points={"console_scripts": ["rosetta=rosetta.main.__main__:main"]},
     classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 2 - Beta",
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: Apache Software License",

@@ -107,12 +107,15 @@ def train(args, unused_argv):
         # evaluate on validation set
         eval_metrics = trainer.eval(eval_loader, **hparams)
 
+        # save checkpoint at each epoch
+        trainer.save_checkpoint(eval_metrics, **hparams)
+
         eval_metric_key = hparams["checkpoint_selector"]["eval_metric"]
 
         logx.msg("-" * 89)
         logx.msg(
             "| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.3f} | valid metric {} {:5.3f}".format(
-                epoch,
+                trainer.epoch,
                 (time.time() - epoch_start_time),
                 eval_metrics["loss"],
                 eval_metric_key,

@@ -371,9 +371,6 @@ class Trainer(object):
 
         logx.metric("validate", eval_metrics.avg, self.epoch)
 
-        # save checkpoint at each epoch
-        self.save_checkpoint(eval_metrics, **hparams)
-
         return eval_metrics
 
     def run(

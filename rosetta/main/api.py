@@ -107,9 +107,6 @@ def train(args, unused_argv):
         # evaluate on validation set
         eval_metrics = trainer.eval(eval_loader, **hparams)
 
-        # save checkpoint at each epoch
-        trainer.save_checkpoint(eval_metrics, **hparams)
-
         eval_metric_key = hparams["checkpoint_selector"]["eval_metric"]
 
         logx.msg("-" * 89)

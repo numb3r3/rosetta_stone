@@ -371,13 +371,9 @@ class Trainer(object):
 
         logx.metric("validate", avg_metrics.avg, self.epoch)
 
-        cur_metric = avg_metrics[self._eval_metric]
+        # save checkpoint at each epoch
+        self.save_checkpoint(eval_metrics, **hparams)
 
-        self._best_metric = (
-            max(self.best_metric, cur_metric)
-            if self._higher_better
-            else min(self.best_metric, cur_metric)
-        )
         return avg_metrics
 
     def run(
@@ -432,6 +428,14 @@ class Trainer(object):
 
     def save_checkpoint(self, eval_metrics, **kwargs):
         """ checkpoint saving """
+        metric = eval_metrics[self._eval_metric]
+
+        self._best_metric = (
+            max(self.best_metric, metric)
+            if self._higher_better
+            else min(self.best_metric, metric)
+        )
+
         # TODO: save amp states when using amp
         save_dict = {
             "epoch": self.epoch,
@@ -444,9 +448,10 @@ class Trainer(object):
             if self.lr_scheduler
             else None,
         }
+
         logx.save_model(
             save_dict,
-            metric=self.best_metric,
+            metric=metric,
             epoch=self.epoch,
             higher_better=self._higher_better,
         )

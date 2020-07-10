@@ -56,6 +56,24 @@ def train(args, unused_argv):
     if is_distributed() or args.use_horovod:
         init_distributed(use_horovod=args.use_horovod)
 
+    # NOTE: get_global_rank() would return -1 for standalone training
+    global_rank = max(0, get_global_rank())
+
+    log_dir = hparams.get(
+        "log_dir", os.path.join(hparams["log_dir_prefix"], args.model_name)
+    )
+    suffix_model_id = hparams["suffix_model_id"]
+    log_name = suffix_model_id + ("-" if suffix_model_id else "") + generate_slug(2)
+
+    logx.initialize(
+        logdir=os.path.join(log_dir, log_name),
+        coolname=True,
+        tensorboard=True,
+        global_rank=global_rank,
+        eager_flush=True,
+        hparams=hparams,
+    )
+
     # data loading code
     train_data_path = hparams.pop("train_data_path")
     eval_data_path = hparams.pop("eval_data_path")
@@ -78,24 +96,6 @@ def train(args, unused_argv):
         use_amp=args.use_amp,
         resume=args.resume_from,
         **hparams,
-    )
-
-    # NOTE: get_global_rank() would return -1 for standalone training
-    global_rank = max(0, get_global_rank())
-
-    log_dir = hparams.get(
-        "log_dir", os.path.join(hparams["log_dir_prefix"], args.model_name)
-    )
-    suffix_model_id = hparams["suffix_model_id"]
-    log_name = suffix_model_id + ("-" if suffix_model_id else "") + generate_slug(2)
-
-    logx.initialize(
-        logdir=os.path.join(log_dir, log_name),
-        coolname=True,
-        tensorboard=True,
-        global_rank=global_rank,
-        eager_flush=True,
-        hparams=hparams,
     )
 
     for epoch in range(hparams["num_epochs"]):

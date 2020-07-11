@@ -56,7 +56,7 @@ function make_chore_pr {
     git add $INIT_FILE
     git commit -m "chore(changelog): update change log to $1"
     git push $SOURCE_ORIGIN chore-bumping-version --force
-    hub pull-request -m "chore(changelog): update change log to $1" --no-edit -l new-release
+    # hub pull-request -m "chore(changelog): update change log to $1" --no-edit -l new-release
 
     rm ./CHANGELOG.tmp
     git checkout master

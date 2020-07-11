@@ -105,12 +105,11 @@ class Trainer(object):
                 verbose = False
 
         # optionally resume from a checkpoint
-        resume_checkpoint = None
         if resume:
-            resume_checkpoint = self.load_checkpoint(resume)
+            state_dict, checkpoint_metas = self.load_checkpoint(resume)
 
             # resume model
-            self.model.load_state_dict(resume_checkpoint["state_dict"])
+            self.model.load_state_dict(state_dict)
 
         if "cuda" in str(self.device):
             # self.model.to(self.device)
@@ -131,9 +130,9 @@ class Trainer(object):
         self.optimizer = optimizer
         self.set_optimizer()
 
-        # resume optimizer
-        if resume_checkpoint:
-            self.optimizer.load_state_dict(resume_checkpoint["optimizer"])
+        # # resume optimizer
+        # if resume_checkpoint:
+        #     self.optimizer.load_state_dict(resume_checkpoint["optimizer"])
 
         # if isinstance(self.model, nn.parallel.DistributedDataParallel) or isinstance(
         #     self.model, nn.DataParallel
@@ -174,11 +173,11 @@ class Trainer(object):
         self.lr_scheduler = lr_scheduler
         self.set_scheduler()
 
-        # resume lr_scheduler
-        if resume_checkpoint and not reset_lr_scheduler:
-            lr_scheduler_state_dict = resume_checkpoint["lr_scheduler"]
-            if lr_scheduler_state_dict:
-                self.lr_scheduler.load_state_dict(lr_scheduler_state_dict)
+        # # resume lr_scheduler
+        # if resume_checkpoint and not reset_lr_scheduler:
+        #     lr_scheduler_state_dict = resume_checkpoint["lr_scheduler"]
+        #     if lr_scheduler_state_dict:
+        #         self.lr_scheduler.load_state_dict(lr_scheduler_state_dict)
 
         # self._use_amp = use_amp
         # if use_amp:
@@ -369,7 +368,7 @@ class Trainer(object):
         with torch.no_grad():
             eval_metrics = self._loop(data_loader, mode="eval", **kwargs)
 
-        logx.metric("validate", eval_metrics.avg, self.epoch)
+        logx.metric("validate", eval_metrics, self.epoch)
 
         return eval_metrics
 
@@ -454,13 +453,16 @@ class Trainer(object):
         )
 
     def load_checkpoint(self, resume_file: str, **kwargs):
+        """Restore a model and return a dict with any meta data included in
+        the snapshot
+        """
         if os.path.isfile(resume_file):
             # logx.msg("=> loading checkpoint '{}'".format(resume_file))
             checkpoint = torch.load(resume_file, map_location=torch.device("cpu"))
 
-            self._epoch = checkpoint["epoch"]
-            self._global_step = checkpoint["global_step"]
-            self._best_metric = checkpoint["best_metric"]
+            # self._epoch = checkpoint["epoch"]
+            # self._global_step = checkpoint["global_step"]
+            # self._best_metric = checkpoint["best_metric"]
 
             # self.model.load_state_dict(checkpoint['state_dict'])
             # self.optimizer.load_state_dict(checkpoint['optimizer'])
@@ -471,7 +473,9 @@ class Trainer(object):
                     resume_file, checkpoint["epoch"]
                 )
             )
-            return checkpoint
+            state_dict = checkpoint['state_dict']
+            meta = {k: v for k, v in checkpoint.items() if k != 'state_dict'}
+            return (state_dict, meta)
         else:
             logx.msg("=> no checkpoint found at '{}'".format(resume_file))
             return None

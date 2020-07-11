@@ -97,7 +97,7 @@ printf "current version:\t\e[1;33m$OLDVER\e[0m\n"
 VER=$(echo $OLDVER | awk -F. -v OFS=. 'NF==1{print ++$NF}; NF>1{$NF=sprintf("%0*d", length($NF), ($NF+1)); print}')
 printf "bump version to:\t\e[1;32m$VER\e[0m\n"
 
-# make_release_note $OLDVER $VER
+make_release_note $OLDVER $VER
 
 head -n10 ./CHANGELOG.md
 

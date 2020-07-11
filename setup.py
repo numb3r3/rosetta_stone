@@ -81,6 +81,7 @@ setup(
     python_requires=">=3.6",
     entry_points={"console_scripts": ["rosetta=rosetta.main.__main__:main"]},
     classifiers=[
+        "Programming Language :: Python :: 3",
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",

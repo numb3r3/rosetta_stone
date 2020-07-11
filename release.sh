@@ -60,6 +60,8 @@ function make_chore_pr {
 
     rm ./CHANGELOG.tmp
     git checkout master
+    # merge chore-bumping locally
+    git merge chore-bumping-version
 }
 
 

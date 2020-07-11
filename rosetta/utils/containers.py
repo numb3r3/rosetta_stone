@@ -24,7 +24,7 @@ class AverageMeter(object):
         self.count += n
 
     @property
-    def avg(self):
+    def average(self):
         return self.sum / self.count
 
 
@@ -45,11 +45,11 @@ class AverageDictMeter(dict):
             self._data[k].update(v, n)
 
     @property
-    def avg(self):
-        return {k: v.avg for k, v in self._data.items()}
+    def average(self):
+        return {k: v.average for k, v in self._data.items()}
 
     def __getitem__(self, item):
-        return self._data[item].avg
+        return self._data[item].average
 
     def __setitem__(self, key, value):
         self._data[key].update(value)
@@ -61,7 +61,10 @@ class AverageDictMeter(dict):
         del self._data[key]
 
     def __iter__(self):
-        return iter(self._data)
+        return iter({k: v.average for k, v in self._data.items()})
+
+    def values(self):
+        return [v.average for v in self._data.values()]
 
 
 class TensorMap(MutableMapping, dict):

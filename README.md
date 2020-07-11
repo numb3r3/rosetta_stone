@@ -74,3 +74,4 @@ Before making a contribution, please confirm that:
 - [Tips, tricks and gotchas in PyTorch](https://coolnesss.github.io/2019-02-05/pytorch-gotchas)
 - [给训练踩踩油门 —— Pytorch 加速数据读取](https://zhuanlan.zhihu.com/p/80695364)
 - [高性能PyTorch是如何炼成的？](https://mp.weixin.qq.com/s/x7u26Ok7O4xMOETmUYROJQ)
+- [service-streamer](https://github.com/ShannonAI/service-streamer): Boosting your Web Services of Deep Learning Applications.

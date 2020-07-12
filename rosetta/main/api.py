@@ -112,14 +112,19 @@ def train(args, unused_argv):
 
         eval_metric_key = hparams["checkpoint_selector"]["eval_metric"]
 
-        logx.msg("-" * 89)
-        logx.msg(
-            "| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.3f} | valid metric {} {:5.3f}".format(
-                trainer.epoch,
-                (time.time() - epoch_start_time),
-                eval_metrics["loss"],
-                eval_metric_key,
-                eval_metrics[eval_metric_key],
-            )
+        report_msg = "| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.3f} | valid {} {:5.3f}".format(
+            trainer.epoch,
+            (time.time() - epoch_start_time),
+            eval_metrics["loss"],
+            eval_metric_key,
+            eval_metrics[eval_metric_key],
         )
+
+        for k in eval_metrics.keys():
+            if k in ["loss", eval_metric_key]:
+                continue
+            report_msg += " | {} {:5.3}f".format(k, eval_metrics[k])
+
+        logx.msg("-" * 89)
+        logx.msg(report_msg)
         logx.msg("-" * 89)

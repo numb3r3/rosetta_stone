@@ -1,4 +1,4 @@
 termcolor==1.1.0
 ruamel.yaml==0.16.10
 tensorboard==2.2.2
-runx @ git+https://github.com/numb3r3/runx@master#egg=runx
+runx

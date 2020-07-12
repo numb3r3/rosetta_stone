@@ -1,4 +1,21 @@
 
+# Release Note (`v1.1.8`)
+> Release time: 2020-07-12 20:59:22
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🐞 Bug fixes
+ - [[```82407570```](https://github.com/numb3r3/rosetta_stone/commit/82407570d8ec25071b8d999318450ad2151bcca8)] __-__ __setup__: add missing package pytest (*wangfeng*)
+
+### 🚧 Code Refactoring
+ - [[```a9c3bf22```](https://github.com/numb3r3/rosetta_stone/commit/a9c3bf22bfeabdb5e10189f0338c72ed3a98ed62)] __-__ report all valid metrics after each epoch (*wangfeng*)
+
+### 🍹 Other Improvements
+ - [[```5a8cb688```](https://github.com/numb3r3/rosetta_stone/commit/5a8cb688412ed8097131d4d11080dc4da31d6698)] __-__ __changelog__: update change log to v1.1.7 (*wangfeng*)
+
 # Release Note (`v1.1.7`)
 > Release time: 2020-07-12 18:00:43
 

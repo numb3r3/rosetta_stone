@@ -1,4 +1,5 @@
 termcolor==1.1.0
 ruamel.yaml==0.16.10
 tensorboard==2.2.2
+pytest
 runx

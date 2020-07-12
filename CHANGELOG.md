@@ -1,4 +1,18 @@
 
+# Release Note (`v1.1.9`)
+> Release time: 2020-07-12 21:23:35
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🐞 Bug fixes
+ - [[```0a63e115```](https://github.com/numb3r3/rosetta_stone/commit/0a63e115eef11cc00b712e055aadd3ca25e2eb49)] __-__ __core__: fix reporting error (*wangfeng*)
+
+### 🍹 Other Improvements
+ - [[```bd3fccef```](https://github.com/numb3r3/rosetta_stone/commit/bd3fccef9bd5e8d2bfde4e945334ebad3850e118)] __-__ __changelog__: update change log to v1.1.8 (*wangfeng*)
+
 # Release Note (`v1.1.8`)
 > Release time: 2020-07-12 20:59:22
 

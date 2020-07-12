@@ -473,8 +473,8 @@ class Trainer(object):
                     resume_file, checkpoint["epoch"]
                 )
             )
-            state_dict = checkpoint['state_dict']
-            meta = {k: v for k, v in checkpoint.items() if k != 'state_dict'}
+            state_dict = checkpoint["state_dict"]
+            meta = {k: v for k, v in checkpoint.items() if k != "state_dict"}
             return (state_dict, meta)
         else:
             logx.msg("=> no checkpoint found at '{}'".format(resume_file))

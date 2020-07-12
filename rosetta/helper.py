@@ -113,17 +113,14 @@ def parse_args(
     return hparams
 
 
-
-def load_yaml_params(yaml_path: str, model_name: str, cli_args = None):
+def load_yaml_params(yaml_path: str, model_name: str, cli_args=None):
     from pkg_resources import resource_filename
 
     cli_args = parse_cli_args(cli_args) if cli_args else None
     default_yaml_file = resource_filename(
         "rosetta", "/".join(("resources", "default.yaml"))
     )
-    hparams = parse_args(
-        yaml_path, model_name, "default", default_yaml_file
-    )
+    hparams = parse_args(yaml_path, model_name, "default", default_yaml_file)
 
     if cli_args:
         # useful when changing params defined in YAML
@@ -142,8 +139,6 @@ def load_yaml_params(yaml_path: str, model_name: str, cli_args = None):
     return hparams
 
 
-
-
 def create_model(hparams):
     from .utils.pathlib import import_path
 
@@ -159,7 +154,6 @@ def create_model(hparams):
     # model = model_cls_(**hparams)
 
     return model
-
 
 
 def create_dataio(hparams):

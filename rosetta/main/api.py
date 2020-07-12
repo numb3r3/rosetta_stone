@@ -123,7 +123,7 @@ def train(args, unused_argv):
         for k in eval_metrics.keys():
             if k in ["loss", eval_metric_key]:
                 continue
-            report_msg += " | {} {:5.3}f".format(k, eval_metrics[k])
+            report_msg += " | {} {:5.3f}".format(k, eval_metrics[k])
 
         logx.msg("-" * 89)
         logx.msg(report_msg)

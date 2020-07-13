@@ -40,7 +40,7 @@ The key features are:
     2. run the docker container
 
     ```bash
-    $ docker run --rm -it -v $(PWD):/tmp/rosetta --name rosetta huya_ai:rosetta bash
+    $ docker run --rm -it -v $(PWD):/rosetta --name rosetta huya_ai:rosetta bash
     ```
 
 # 🚀 Usage of `rosetta-stone`

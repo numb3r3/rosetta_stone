@@ -1,4 +1,26 @@
 
+# Release Note (`v1.1.10`)
+> Release time: 2020-07-13 17:42:17
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🆕 New Features
+ - [[```1f76af9c```](https://github.com/numb3r3/rosetta_stone/commit/1f76af9cd381d9b4a5e707e02cfbc5ec53df0965)] __-__ __evaluator__: add evaluate command, support standalone model only by now (*wangfeng*)
+
+### 🐞 Bug fixes
+ - [[```c9ca9514```](https://github.com/numb3r3/rosetta_stone/commit/c9ca9514498a643ef4ba5f256b8093d2f2661336)] __-__ __avg_meter__: overides keys() func (*wangfeng*)
+ - [[```ea7e1c37```](https://github.com/numb3r3/rosetta_stone/commit/ea7e1c3756cf752c3768de1b26287d26191667a2)] __-__ __trainer__: revise logx printing (*wangfeng*)
+
+### 📗 Documentation
+ - [[```144625b7```](https://github.com/numb3r3/rosetta_stone/commit/144625b76308b676b9b82c4b60bbada52d7473dd)] __-__ minor revision (*wangfeng*)
+ - [[```6dd28ca3```](https://github.com/numb3r3/rosetta_stone/commit/6dd28ca311ce0e50fd6ed72474649a2a78f4bcda)] __-__ update usage instruction (*wangfeng*)
+
+### 🍹 Other Improvements
+ - [[```92704b7e```](https://github.com/numb3r3/rosetta_stone/commit/92704b7e0826127c6544c9fd2addf62c3af0c762)] __-__ __changelog__: update change log to v1.1.9 (*wangfeng*)
+
 # Release Note (`v1.1.9`)
 > Release time: 2020-07-12 21:23:35
 

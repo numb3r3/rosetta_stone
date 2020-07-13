@@ -16,12 +16,12 @@ The key features are:
 
 # 👷‍ Installation
 
-## Requirements
+### Requirements
 
-- Python >= 3.6
-- Pytorch >= 1.4.0
+    - Python >= 3.6
+    - Pytorch >= 1.4.0
 
-## Setup `rosetta-stone`
+### Setup `rosetta-stone`
 
 - **setup with `pip`**
 

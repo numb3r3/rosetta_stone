@@ -29,7 +29,7 @@ class AverageMeter(object):
 
 
 class AverageDictMeter(dict):
-    """ Computes and stores the average and current dict like object
+    """ a grouping of average meters.
     """
 
     def __init__(self):
@@ -62,6 +62,9 @@ class AverageDictMeter(dict):
 
     def __iter__(self):
         return iter({k: v.average for k, v in self._data.items()})
+
+    def keys(self):
+        return self._data.keys()
 
     def values(self):
         return [v.average for v in self._data.values()]

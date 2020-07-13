@@ -128,3 +128,59 @@ def train(args, unused_argv):
         logx.msg("-" * 89)
         logx.msg(report_msg)
         logx.msg("-" * 89)
+
+
+def eval(args, unused_argv):
+    from ..utils.logx import logx
+    from ..core import trainers
+    from ..helper import load_yaml_params, create_model, create_dataio
+    from collections import defaultdict
+    
+    logx.rank0 = True
+    logx.epoch = defaultdict(lambda: 0)
+    logx.no_timestamp = False
+
+    hparams = load_yaml_params(args.yaml_path, args.model_name, cli_args=unused_argv)
+    model = create_model(hparams)
+    dataio = create_dataio(hparams)
+
+    # data loading code
+    eval_data_path = hparams.pop("eval_data_path")
+    num_workers = hparams.pop("dataloader_workers")
+
+    eval_loader = dataio.create_data_loader(
+        eval_data_path, mode="eval", num_workers=num_workers, **hparams
+    )
+
+    optimizer = _create_optimizer(hparams)
+    lr_scheduler = _create_lr_scheduler(hparams)
+    trainer = trainers.Trainer(
+        model,
+        optimizer,
+        lr_scheduler=lr_scheduler,
+        resume=args.resume_from,
+        **hparams,
+    )
+
+    metric_key = hparams["checkpoint_selector"]["eval_metric"]
+
+    start_time = time.time()
+
+    # evaluate on validation set
+    metrics = trainer.eval(eval_loader, **hparams)
+    report_msg = "| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.3f} | valid {} {:5.3f}".format(
+        trainer.epoch,
+        (time.time() - start_time),
+        metrics["loss"],
+        metric_key,
+        metrics[metric_key],
+    )
+
+    for k in metrics.keys():
+        if k in ["loss", metric_key]:
+            continue
+        report_msg += " | {} {:5.3f}".format(k, metrics[k])
+
+    logx.msg("-" * 89)
+    logx.msg(report_msg)
+    logx.msg("-" * 89)

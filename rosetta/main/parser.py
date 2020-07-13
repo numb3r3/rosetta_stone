@@ -78,6 +78,34 @@ def set_trainer_parser(parser=None):
     return parser
 
 
+def set_evaluator_parser(parser=None):
+    if not parser:
+        parser = set_base_parser()
+
+    gp = add_arg_group(parser, "evaluator arguments")
+
+    from pkg_resources import resource_filename
+
+    gp.add_argument("model_name", type=str, help="the model name")
+    gp.add_argument(
+        "--yaml-path", type=str, default="app.yaml", help="a yaml file configs models"
+    )
+
+    gp.add_argument(
+        "--resume-from",
+        default="",
+        type=str,
+        metavar="PATH",
+        help="path to latest checkpoint (default: none)",
+    )
+
+    gp.add_argument(
+        "--no-cuda", action="store_true", default=False, help="disables CUDA training"
+    )
+
+    return parser
+
+
 def get_main_parser():
     # create the top-level parser
     parser = set_base_parser()
@@ -96,6 +124,14 @@ def get_main_parser():
             "train",
             help="👋 train a pytorch model",
             description="Start to train a pytorch model, " "without any extra codes.",
+        )
+    )
+
+    set_evaluator_parser(
+        sp.add_parser(
+            "eval",
+            help="👋 evaluate a pytorch model",
+            description="Start to eval a pytorch model, " "without any extra codes.",
         )
     )
 

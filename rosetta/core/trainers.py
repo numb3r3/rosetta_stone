@@ -118,14 +118,9 @@ class Trainer(object):
         else:
             self._cuda_nonblocking = False
             # usually, this is not expected
-            if logx.initialized:
-                logx.info(
-                    f"cuda: False (torch.cuda.is_available()={torch.cuda.is_available()})"
-                )
-            else:
-                self.logger.info(
-                    f"cuda: False (torch.cuda.is_available()={torch.cuda.is_available()})"
-                )
+            print(
+                f"cuda: False (torch.cuda.is_available()={torch.cuda.is_available()})"
+            )
 
         self.optimizer = optimizer
         self.set_optimizer()

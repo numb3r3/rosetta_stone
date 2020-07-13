@@ -21,38 +21,59 @@ The key features are:
 - Python >= 3.6
 - Pytorch >= 1.4.0
 
-## Setup with Docker
+## Setup `rosetta-stone`
 
-- build docker image
-
-```bash
-$ docker build --tag huya_ai:rosetta .
-```
-
-- run the docker container
+- **setup with `pip`**
 
 ```bash
-$ docker run --rm -it -v $(PWD):/tmp/rosetta --name rosetta huya_ai:rosetta bash
+$ pip install rosetta-stone
 ```
 
-# 🤖 To use `Rosetta`
+- **setup with `Docker`**
+
+    1. build docker image
+
+    ```bash
+    $ docker build --tag huya_ai:rosetta .
+    ```
+
+    2. run the docker container
+
+    ```bash
+    $ docker run --rm -it -v $(PWD):/tmp/rosetta --name rosetta huya_ai:rosetta bash
+    ```
+
+# 🚀 Train model with `rosetta-stone`
 
 - training from scratch
 
 ```bash
-$ python app.py resnet56
+$ rosetta train resnet56 --yaml-path app.yaml
 ```
 
 - overrides parameters defined in yaml file
 
 ```bash
-$ python app.py resnet56 --batch_size=125
+# the paramer of `--yaml-path` has default value `app.yaml`
+$ rosetta train resnet56 --batch_size=125
 ```
 
 - training using automatic mixture precision (amp)
 
 ```bash
-$ python app.py resnet56 --use_amp
+$ rosetta train resnet56 --yaml-path app.yaml --use-amp
+```
+
+- distributed training using `torch.distributed.launch` (recommended)
+
+```bash
+$ python -m torch.distributed.launch --module --nproc_per_node=#{GPU_NUM} rosetta.main train resnet56
+```
+
+- distributed training using `horovod`
+
+```bash
+$ rosetta train resnet56 --yaml-path app.yaml --use-horovod
 ```
 
 
@@ -72,6 +93,7 @@ Before making a contribution, please confirm that:
 - [kotonoha](https://github.com/moskomule/kotonoha): NLP utilities for research
 - [padertorch](https://github.com/fgnt/padertorch): A collection of common functionality to simplify the design, training and evaluation of machine learning models based on pytorch with an emphasis on speech processing.
 - [Tips, tricks and gotchas in PyTorch](https://coolnesss.github.io/2019-02-05/pytorch-gotchas)
+- [PyTorch Parallel Training](https://zhuanlan.zhihu.com/p/145427849): PyTorch Parallel Training（单机多卡并行、混合精度、同步BN训练指南文档）
 - [给训练踩踩油门 —— Pytorch 加速数据读取](https://zhuanlan.zhihu.com/p/80695364)
 - [高性能PyTorch是如何炼成的？](https://mp.weixin.qq.com/s/x7u26Ok7O4xMOETmUYROJQ)
 - [service-streamer](https://github.com/ShannonAI/service-streamer): Boosting your Web Services of Deep Learning Applications.

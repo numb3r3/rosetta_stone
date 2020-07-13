@@ -73,7 +73,7 @@ The key features are:
 - distributed training using `horovod` (not recommended)
 
     ```bash
-    $ rosetta train resnet56 --yaml-path app.yaml --use-horovod
+    $ rosetta train resnet56 --use-horovod
     ```
 
 

@@ -25,9 +25,9 @@ The key features are:
 
 - **setup with `pip`**
 
-```bash
-$ pip install rosetta-stone
-```
+    ```bash
+    $ pip install rosetta-stone
+    ```
 
 - **setup with `Docker`**
 
@@ -47,34 +47,34 @@ $ pip install rosetta-stone
 
 - training from scratch
 
-```bash
-$ rosetta train resnet56 --yaml-path app.yaml
-```
+    ```bash
+    $ rosetta train resnet56 --yaml-path app.yaml
+    ```
 
 - overrides parameters defined in yaml file
 
-```bash
-# the paramer of `--yaml-path` has default value `app.yaml`
-$ rosetta train resnet56 --batch_size=125
-```
+    ```bash
+    # the cli paramer `--yaml-path` has default value `app.yaml`
+    $ rosetta train resnet56 --batch_size=125
+    ```
 
 - training using automatic mixture precision (amp)
 
-```bash
-$ rosetta train resnet56 --yaml-path app.yaml --use-amp
-```
+    ```bash
+    $ rosetta train resnet56 --yaml-path app.yaml --use-amp
+    ```
 
 - distributed training using `torch.distributed.launch` (recommended)
 
-```bash
-$ python -m torch.distributed.launch --module --nproc_per_node=#{GPU_NUM} rosetta.main train resnet56
-```
+    ```bash
+    $ python -m torch.distributed.launch --module --nproc_per_node={GPU_NUM} rosetta.main train resnet56
+    ```
 
-- distributed training using `horovod`
+- distributed training using `horovod` (not recommended)
 
-```bash
-$ rosetta train resnet56 --yaml-path app.yaml --use-horovod
-```
+    ```bash
+    $ rosetta train resnet56 --yaml-path app.yaml --use-horovod
+    ```
 
 
 

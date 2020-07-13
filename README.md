@@ -43,7 +43,7 @@ The key features are:
     $ docker run --rm -it -v $(PWD):/tmp/rosetta --name rosetta huya_ai:rosetta bash
     ```
 
-# 🚀 Train model with `rosetta-stone`
+# 🚀 Usage of `rosetta-stone`
 
 - training from scratch
 
@@ -78,7 +78,7 @@ The key features are:
 
 
 
-# 👋Contribution Guide
+# 👋 Contribution Guide
 You can contribute to this project by sending a merge request. After approval, the merge request will be merged by the reviewer.
 
 Before making a contribution, please confirm that:
@@ -86,7 +86,7 @@ Before making a contribution, please confirm that:
 - Code is covered by unit tests.
 - API is maintainable.
 
-# 👍References
+# 👍 References
 
 - [homura](https://github.com/moskomule/homura): PyTorch utilities including trainer, reporter, etc.
 - [FARM](https://github.com/deepset-ai/FARM): Fast & easy transfer learning for NLP. Harvesting language models for the industry. 

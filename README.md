@@ -25,7 +25,7 @@ make your deep learning life easier
 
 ### Setup
 
-We can install the **latest** develop version from source
+Install the **latest** development version from source
 
 - Clone the rosetta-stone repository
 
@@ -41,9 +41,9 @@ We can install the **latest** develop version from source
 
 or **released** stable version via `pip`:
 
-    ```bash
-    $ pip install --upgrade rosetta-stone
-    ```
+        ```bash
+        $ pip install --upgrade rosetta-stone
+        ```
 
 For ease-of-use, you can also use rosetta with `Docker`:
 

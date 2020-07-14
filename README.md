@@ -42,17 +42,13 @@ $ pip install --upgrade rosetta-stone
 
 For ease-of-use, you can also use rosetta with `Docker`:
 
-1. build docker image
+```bash
+# build docker image
+$ docker build --tag huya_ai:rosetta .
 
-    ```bash
-    $ docker build --tag huya_ai:rosetta .
-    ```
-
-2. run the docker container
-
-    ```bash
-    $ docker run --rm -it -v $(PWD):/rosetta --name rosetta huya_ai:rosetta bash
-    ```
+# run the docker container
+$ docker run --rm -it -v $(PWD):/rosetta --name rosetta huya_ai:rosetta bash
+```
 
 # 📖 Usage
 

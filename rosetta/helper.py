@@ -139,7 +139,7 @@ def load_yaml_params(yaml_path: str, model_name: str, cli_args=None):
     return hparams
 
 
-def create_model(hparams):
+def create_model(hparams, resume_from: str=None):
     from .utils.pathlib import import_path
 
     model_pkg_name, model_cls_name = hparams["model_module"].split(":")
@@ -152,6 +152,15 @@ def create_model(hparams):
     # model_pkg = importlib.import_module(model_pkg_name)
     # model_cls_ = getattr(model_pkg, model_cls_name)
     # model = model_cls_(**hparams)
+
+    if resume_from:
+        if os.path.isfile(resume_from):
+            print("=> loading checkpoint '{}'".format(resume_from))
+            checkpoint = torch.load(resume_from, map_location=torch.device("cpu"))
+            model.load_state_dict(checkpoint["state_dict"])
+        else:
+            print("=> no checkpoint found at '{}'".format(resume_from))
+            sys.exit(1)
 
     return model
 

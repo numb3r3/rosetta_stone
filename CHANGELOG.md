@@ -1,4 +1,26 @@
 
+# Release Note (`v1.1.11`)
+> Release time: 2020-07-14 18:23:52
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🐞 Bug fixes
+ - [[```f268af6a```](https://github.com/numb3r3/rosetta_stone/commit/f268af6a87e2516423a9f4ec473fb331e13c9b3d)] __-__ __docker__: fix docker dev container (*wangfeng*)
+ - [[```cd4c8a1b```](https://github.com/numb3r3/rosetta_stone/commit/cd4c8a1bca22838c1ece7c80e56ac1625c3be2a3)] __-__ add missing release template (*wangfeng*)
+
+### 🚧 Code Refactoring
+ - [[```98794850```](https://github.com/numb3r3/rosetta_stone/commit/987948506e5e6e5181d0930f2ce35e0209b1b88a)] __-__ __model_api__: enable resume from pretrained model in func of create_model (*wangfeng*)
+
+### 📗 Documentation
+ - [[```32de8780```](https://github.com/numb3r3/rosetta_stone/commit/32de8780fe39925a63115247a30bf6af9e7d8fd8)] __-__ update README (*wangfeng*)
+ - [[```4eb1c79e```](https://github.com/numb3r3/rosetta_stone/commit/4eb1c79e8e4ada7330b3e38b605834f7df7278de)] __-__ update readme (*wangfeng*)
+
+### 🍹 Other Improvements
+ - [[```e2ac2f85```](https://github.com/numb3r3/rosetta_stone/commit/e2ac2f8577ee431cb8fd32cf57c028f61cb69dff)] __-__ __changelog__: update change log to v1.1.10 (*wangfeng*)
+
 # Release Note (`v1.1.10`)
 > Release time: 2020-07-13 17:42:17
 

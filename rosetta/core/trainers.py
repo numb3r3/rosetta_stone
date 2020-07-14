@@ -77,6 +77,7 @@ class Trainer(object):
         else:
             self.device = device
 
+
         self._use_amp = use_amp
         if use_amp and not AMP_AVAILABLE:
             raise ImportError(
@@ -117,11 +118,7 @@ class Trainer(object):
             self._cuda_nonblocking = use_cuda_nonblocking
         else:
             self._cuda_nonblocking = False
-            # usually, this is not expected
-            print(
-                f"cuda: False (torch.cuda.is_available()={torch.cuda.is_available()})"
-            )
-
+            
         self.optimizer = optimizer
         self.set_optimizer()
 

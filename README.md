@@ -4,8 +4,9 @@ Rosetta Stone
 # 🏄 Introducton
 make your deep learning life easier
 
-**Rosetta Stone** is a toolkit that aims to make your deep learning life easier. It enables users to performe end-to-end experiment quickly and efficiently. In comparison with the other open source libraries, Rosetta is an alternate low-code toolkit that can be used to perform deep learning tasks with only few lines of code. Rosetta is essentially a wrapper aroud pytorch, apex, tensorboardX and many more. 
+**Rosetta Stone** is a lightweight framework that aims to make your deep learning life easier. It enables users to performe end-to-end experiment quickly and efficiently. In comparison with the other open source libraries, Rosetta is an alternate low-code toolkit that can be used to perform deep learning tasks with only few lines of code. It easy to use and make you focus on designing your models!
 
+***Note: `master` branch is the developing branch. The newest release is `v1.1.11`.**
 
 ## Features
 
@@ -22,22 +23,29 @@ make your deep learning life easier
     - Python >= 3.6
     - Pytorch >= 1.4.0
 
-### Setup `rosetta-stone`
+### Setup
 
-- **setup with source code**
+We can install the **latest** develop version from source
 
-    ```bash
-    # Git clone this repository, and cd into directory for remaining commands
-    $ pip install https://git.huya.com/wangfeng2/rosetta_stone.git && cd rosetta_stone && pip install .
-    ```
-
-- **setup with `pip`**
+    - Clone the rosetta-stone repository
 
     ```bash
-    $ pip install rosetta-stone
+    $ git clone https://git.huya.com/wangfeng2/rosetta_stone.git
     ```
 
-- **setup with `Docker`**
+    - Install rosetta-stone via pip
+
+        ```bash
+        $ cd rosetta_stone && pip install -e .
+        ```
+
+or **released** stable version via `pip`:
+
+    ```bash
+    $ pip install --upgrade rosetta-stone
+    ```
+
+For ease-of-use, you can also use rosetta with `Docker`:
 
     1. build docker image
 
@@ -94,8 +102,6 @@ In `rosetta` you don’t need to specify a training loop, just define the dataLo
         ```bash
         $ rosetta train resnet56 --use-horovod
         ```
-
-
 
 # 👋 Contribution Guide
 You can contribute to this project by sending a merge request. After approval, the merge request will be merged by the reviewer.

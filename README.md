@@ -6,7 +6,8 @@ make your deep learning life easier
 
 **Rosetta Stone** is a toolkit that aims to make your deep learning life easier. It enables users to performe end-to-end experiment quickly and efficiently. In comparison with the other open source libraries, Rosetta is an alternate low-code toolkit that can be used to perform deep learning tasks with only few lines of code. Rosetta is essentially a wrapper aroud pytorch, apex, tensorboardX and many more. 
 
-The key features are:
+
+## Features
 
 - yaml-styled model for elegantly configuring complex applications
 - best practice
@@ -14,7 +15,7 @@ The key features are:
 - Pre-trained models
 - State-of-the-art performance
 
-# 👷‍ Installation
+# 🚀 Installation
 
 ### Requirements
 
@@ -22,6 +23,13 @@ The key features are:
     - Pytorch >= 1.4.0
 
 ### Setup `rosetta-stone`
+
+- **setup with source code**
+
+    ```bash
+    # Git clone this repository, and cd into directory for remaining commands
+    $ pip install https://git.huya.com/wangfeng2/rosetta_stone.git && cd rosetta_stone && pip install .
+    ```
 
 - **setup with `pip`**
 
@@ -43,38 +51,49 @@ The key features are:
     $ docker run --rm -it -v $(PWD):/rosetta --name rosetta huya_ai:rosetta bash
     ```
 
-# 🚀 Usage of `rosetta-stone`
+# 📖 Usage
 
-- training from scratch
+In `rosetta` you don’t need to specify a training loop, just define the dataLoaders and the models. For ResNet example, 
 
-    ```bash
-    $ rosetta train resnet56 --yaml-path app.yaml
-    ```
 
-- overrides parameters defined in yaml file
+- **Step 1**: Define Dataloader
 
-    ```bash
-    # the cli paramer `--yaml-path` has default value `app.yaml`
-    $ rosetta train resnet56 --batch_size=125
-    ```
+- **Step 2**: Define Model
 
-- training using automatic mixture precision (amp)
+- **Step 3**: YAML configuration
 
-    ```bash
-    $ rosetta train resnet56 --yaml-path app.yaml --use-amp
-    ```
+- **Step 4**: Start to train
 
-- distributed training using `torch.distributed.launch` (recommended)
+    - training from scratch
 
-    ```bash
-    $ python -m torch.distributed.launch --module --nproc_per_node={GPU_NUM} rosetta.main train resnet56
-    ```
+        ```bash
+        $ rosetta train resnet56 --yaml-path app.yaml
+        ```
 
-- distributed training using `horovod` (not recommended)
+    - overrides parameters defined in yaml file
 
-    ```bash
-    $ rosetta train resnet56 --use-horovod
-    ```
+        ```bash
+        # the cli paramer `--yaml-path` has default value `app.yaml`
+        $ rosetta train resnet56 --batch_size=125
+        ```
+
+    - training using automatic mixture precision (amp)
+
+        ```bash
+        $ rosetta train resnet56 --yaml-path app.yaml --use-amp
+        ```
+
+    - distributed training using `torch.distributed.launch` (recommended)
+
+        ```bash
+        $ python -m torch.distributed.launch --module --nproc_per_node={GPU_NUM} rosetta.main train resnet56
+        ```
+
+    - distributed training using `horovod` (not recommended)
+
+        ```bash
+        $ rosetta train resnet56 --use-horovod
+        ```
 
 
 

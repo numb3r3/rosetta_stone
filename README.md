@@ -25,7 +25,7 @@ make your deep learning life easier
 
 ### Setup
 
-Install the **latest** development version from source
+Install the **latest** version from source
 
 ```bash
 # clone the project repository, and install via pip

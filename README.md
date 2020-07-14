@@ -27,17 +27,17 @@ make your deep learning life easier
 
 We can install the **latest** develop version from source
 
-    - Clone the rosetta-stone repository
+- Clone the rosetta-stone repository
 
     ```bash
     $ git clone https://git.huya.com/wangfeng2/rosetta_stone.git
     ```
 
-    - Install rosetta-stone via pip
+- Install rosetta-stone via pip
 
-        ```bash
-        $ cd rosetta_stone && pip install -e .
-        ```
+    ```bash
+    $ cd rosetta_stone && pip install -e .
+    ```
 
 or **released** stable version via `pip`:
 
@@ -47,13 +47,13 @@ or **released** stable version via `pip`:
 
 For ease-of-use, you can also use rosetta with `Docker`:
 
-    1. build docker image
+1. build docker image
 
     ```bash
     $ docker build --tag huya_ai:rosetta .
     ```
 
-    2. run the docker container
+2. run the docker container
 
     ```bash
     $ docker run --rm -it -v $(PWD):/rosetta --name rosetta huya_ai:rosetta bash

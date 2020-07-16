@@ -31,7 +31,6 @@ except ImportError:
 
 
 class Trainer(object):
-
     def __init__(
         self,
         model: nn.Module,
@@ -52,8 +51,7 @@ class Trainer(object):
 
         self._eval_metric = kwargs['checkpoint_selector']['eval_metric']
         self._higher_better = kwargs['checkpoint_selector']['higher_better']
-        self._best_metric = -float('inf') if self._higher_better else float(
-            'inf')
+        self._best_metric = -float('inf') if self._higher_better else float('inf')
 
         self._log_interval = log_interval
         self._verbose = verbose
@@ -73,7 +71,9 @@ class Trainer(object):
         if device is None:
             self.device = (
                 torch.device('cuda')
-                if torch.cuda.is_available() else torch.device('cpu'))
+                if torch.cuda.is_available()
+                else torch.device('cpu')
+            )
         else:
             self.device = device
 
@@ -82,7 +82,8 @@ class Trainer(object):
             raise ImportError(
                 f'Got use_amp = {use_amp}, but cannot find apex. '
                 'Please install Apex if you want to make use of automatic mixed precision. '
-                'https://github.com/NVIDIA/apex')
+                'https://github.com/NVIDIA/apex'
+            )
 
         self._use_horovod = use_horovod
         if use_horovod and not is_horovod_available():
@@ -95,8 +96,7 @@ class Trainer(object):
                 self.model = apex.parallel.convert_syncbn_model(self.model)
             elif not use_horovod:
                 # TODO: add sync_batchnorm for horovod
-                self.model = nn.SyncBatchNorm.convert_sync_batchnorm(
-                    self.model)
+                self.model = nn.SyncBatchNorm.convert_sync_batchnorm(self.model)
 
             rank = get_local_rank()
             torch.cuda.set_device(rank)
@@ -148,15 +148,18 @@ class Trainer(object):
 
             # wrap optimizer with DistributedOptimizer.
             self.optimizer = hvd.DistributedOptimizer(
-                self.optimizer, named_parameters=self.model.named_parameters())
+                self.optimizer, named_parameters=self.model.named_parameters()
+            )
 
         if self._use_amp:
             self.model, self.optimizer = amp.initialize(
-                self.model, self.optimizer, opt_level='O1')
+                self.model, self.optimizer, opt_level='O1'
+            )
 
         if not use_horovod and is_distributed():
             self.model = nn.parallel.DistributedDataParallel(
-                self.model, device_ids=[rank])
+                self.model, device_ids=[rank], find_unused_parameters=True
+            )
 
         self.lr_scheduler = lr_scheduler
         self.set_scheduler()
@@ -195,9 +198,9 @@ class Trainer(object):
     def is_train(self):
         return self._is_train
 
-    def _iteration(self,
-                   batch_data: Tuple[torch.Tensor],
-                   mode: str = 'eval') -> Tuple[torch.Tensor]:
+    def _iteration(
+        self, batch_data: Tuple[torch.Tensor], mode: str = 'eval'
+    ) -> Tuple[torch.Tensor]:
         """ Iteration part, user can override via duck typing or override_iteration ::
             def iteration(self, feed_dict: Dict[str, torch.Tensor]) -> Mapping[str, torch.Tensor]:
                 input, labels = data
@@ -253,8 +256,8 @@ class Trainer(object):
                 loss.backward()
                 if self.kwargs.get('gradient_clip', None):
                     torch.nn.utils.clip_grad_norm_(
-                        self.model.parameters(),
-                        self.kwargs['gradient_max_norm'])
+                        self.model.parameters(), self.kwargs['gradient_max_norm']
+                    )
                 self.optimizer.step()
 
             # update step for lr_scheduler
@@ -264,10 +267,11 @@ class Trainer(object):
         return output, loss, metrics
 
     def _loop(self, data_loader: Iterable or DataLoader, mode: str, **kwargs):
-        batch_size, total_size = ((data_loader.batch_size,
-                                   len(data_loader.dataset)) if isinstance(
-                                       data_loader, DataLoader) else
-                                  (len(data_loader), len(data_loader)))
+        batch_size, total_size = (
+            (data_loader.batch_size, len(data_loader.dataset))
+            if isinstance(data_loader, DataLoader)
+            else (len(data_loader), len(data_loader))
+        )
         total_batchs = total_size // batch_size
         # keep tracking the model's metric
         avg_metrics = AverageDictMeter()
@@ -291,17 +295,18 @@ class Trainer(object):
                 if mode == 'train':
                     elapsed = time.time() - start_time
 
-                    logx.msg('| epoch {:3d} | {:5d}/{:5d} batches | '
-                             'lr {:02.6f} | ms/batch {:5.2f} | '
-                             'loss {:5.3f}'.format(
-                                 self.epoch,
-                                 (batch_idx + 1) * get_world_size(),
-                                 total_batchs,
-                                 self.lr_scheduler.get_lr()[0],
-                                 elapsed * 1000 /
-                                 (self.log_interval * get_world_size()),
-                                 loss.item(),
-                             ))
+                    logx.msg(
+                        '| epoch {:3d} | {:5d}/{:5d} batches | '
+                        'lr {:02.6f} | ms/batch {:5.2f} | '
+                        'loss {:5.3f}'.format(
+                            self.epoch,
+                            (batch_idx + 1) * get_world_size(),
+                            total_batchs,
+                            self.lr_scheduler.get_lr()[0],
+                            elapsed * 1000 / (self.log_interval * get_world_size()),
+                            loss.item(),
+                        )
+                    )
 
                     start_time = time.time()
 
@@ -332,7 +337,8 @@ class Trainer(object):
             avg_metrics = self._loop(data_loader, mode='train', **kwargs)
 
         if isinstance(data_loader, DataLoader) and isinstance(
-                data_loader.sampler, DistributedSampler):
+            data_loader.sampler, DistributedSampler
+        ):
             data_loader.sampler.set_epoch(self.epoch)
         return avg_metrics
 
@@ -360,8 +366,7 @@ class Trainer(object):
     def run(
         self,
         train_loader: Iterable or DataLoader,
-        eval_loaders: Iterable or DataLoader
-        or Dict[str, Iterable or DataLoader],
+        eval_loaders: Iterable or DataLoader or Dict[str, Iterable or DataLoader],
         total_steps: int,
         eval_intervals: int,
     ):
@@ -377,7 +382,6 @@ class Trainer(object):
         """
 
         class ProxyLoader(object):
-
             def __init__(self, loader):
                 self.loader = loader
 
@@ -394,15 +398,16 @@ class Trainer(object):
                         counter += 1
 
         train_loader = ProxyLoader(train_loader)
-        if not isinstance(eval_loaders,
-                          Dict) and (isinstance(eval_loaders, Iterable)
-                                     or isinstance(eval_loaders, DataLoader)):
+        if not isinstance(eval_loaders, Dict) and (
+            isinstance(eval_loaders, Iterable) or isinstance(eval_loaders, DataLoader)
+        ):
             eval_loaders = {'eval': eval_loaders}
 
         for ep in range(total_steps // eval_intervals):
             self.train(train_loader)
             if isinstance(train_loader.loader, DataLoader) and isinstance(
-                    train_loader.loader.sampler, DistributedSampler):
+                train_loader.loader.sampler, DistributedSampler
+            ):
                 train_loader.loader.sampler.set_epoch(self.epoch)
             for name, loader in eval_loaders.items():
                 self.eval(loader, name)
@@ -412,25 +417,22 @@ class Trainer(object):
         metric = eval_metrics[self._eval_metric]
 
         self._best_metric = (
-            max(self.best_metric, metric) if self._higher_better else min(
-                self.best_metric, metric))
+            max(self.best_metric, metric)
+            if self._higher_better
+            else min(self.best_metric, metric)
+        )
 
         # TODO: save amp states when using amp
         save_dict = {
-            'epoch':
-            self.epoch,
-            'global_step':
-            self.global_step,
-            'state_dict':
-            self.model.state_dict(),
-            'metrics':
-            eval_metrics,
-            'best_metric':
-            self.best_metric,
-            'optimizer':
-            self.optimizer.state_dict(),
-            'lr_scheduler':
-            self.lr_scheduler.state_dict() if self.lr_scheduler else None,
+            'epoch': self.epoch,
+            'global_step': self.global_step,
+            'state_dict': self.model.state_dict(),
+            'metrics': eval_metrics,
+            'best_metric': self.best_metric,
+            'optimizer': self.optimizer.state_dict(),
+            'lr_scheduler': self.lr_scheduler.state_dict()
+            if self.lr_scheduler
+            else None,
         }
 
         logx.save_model(
@@ -445,8 +447,7 @@ class Trainer(object):
         snapshot."""
         if os.path.isfile(resume_file):
             # logx.msg("=> loading checkpoint '{}'".format(resume_file))
-            checkpoint = torch.load(
-                resume_file, map_location=torch.device('cpu'))
+            checkpoint = torch.load(resume_file, map_location=torch.device('cpu'))
 
             # self._epoch = checkpoint["epoch"]
             # self._global_step = checkpoint["global_step"]
@@ -456,8 +457,11 @@ class Trainer(object):
             # self.optimizer.load_state_dict(checkpoint['optimizer'])
             # self.lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
 
-            logx.msg("=> loaded checkpoint '{}' (epoch {})".format(
-                resume_file, checkpoint['epoch']))
+            logx.msg(
+                "=> loaded checkpoint '{}' (epoch {})".format(
+                    resume_file, checkpoint['epoch']
+                )
+            )
             state_dict = checkpoint['state_dict']
             meta = {k: v for k, v in checkpoint.items() if k != 'state_dict'}
             return (state_dict, meta)
@@ -482,12 +486,12 @@ class Trainer(object):
             if not issubclass(optimizer.func, Optimizer):
                 raise TypeError(
                     f'`optimizer.func` is expected to be subclass of `Optimizer`'
-                    f' but got {type(optimizer.func)}')
+                    f' but got {type(optimizer.func)}'
+                )
             self.optimizer = optimizer(self.model.parameters())
 
         else:
-            raise TypeError(
-                f'Unexpected type {type(optimizer)} for `optimizer`')
+            raise TypeError(f'Unexpected type {type(optimizer)} for `optimizer`')
 
     def set_scheduler(self):
         """Set scheduler(s) for optimizer(s).
@@ -509,9 +513,9 @@ class Trainer(object):
             if not issubclass(lr_scheduler.func, Scheduler):
                 raise TypeError(
                     f'`scheduler.func` is expected to be subclass of `_LRScheduler`'
-                    f' but got {type(lr_scheduler.func)}')
+                    f' but got {type(lr_scheduler.func)}'
+                )
             self.lr_scheduler = lr_scheduler(self.optimizer)
 
         else:
-            raise TypeError(
-                f'Unexpected type {type(lr_scheduler)} for `lr_scheduler`')
+            raise TypeError(f'Unexpected type {type(lr_scheduler)} for `lr_scheduler`')

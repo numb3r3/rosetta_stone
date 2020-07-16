@@ -1,4 +1,16 @@
 
+# Release Note (`v1.1.13`)
+> Release time: 2020-07-16 11:39:10
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🍹 Other Improvements
+ - [[```8a259140```](https://github.com/numb3r3/rosetta_stone/commit/8a25914004324abbe9dfaa97b5e4c004e8bc05ef)] __-__ remove unused requirement (*wangfeng*)
+ - [[```2b3df569```](https://github.com/numb3r3/rosetta_stone/commit/2b3df5692668fed51c8950fa3553de7fc5b6c6b7)] __-__ __changelog__: update change log to v1.1.12 (*wangfeng*)
+
 # Release Note (`v1.1.12`)
 > Release time: 2020-07-16 11:29:58
 

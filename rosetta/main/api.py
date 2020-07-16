@@ -102,8 +102,6 @@ def train(args, unused_argv):
     if hparams["lr_decay_epoch"] > 0:
         hparams["lr_decay_steps"] = hparams["lr_decay_epoch"] * epoch_steps
 
-    print(hparams)
-
     optimizer = _create_optimizer(hparams)
     lr_scheduler = _create_lr_scheduler(hparams)
     trainer = trainers.Trainer(

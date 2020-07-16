@@ -1,5 +1,4 @@
 import os
-import sys
 import time
 
 
@@ -9,7 +8,7 @@ def _create_optimizer(hparams):
     optim = hparams.pop("optimizer")
     if optim == "SGD":
         optimizer = optimizers.SGD(
-            lr=hparams["learning_rate"] * get_world_size(),
+            lr=hparams["learning_rate"],
             weight_decay=hparams["weight_decay_rate"],
             momentum=hparams.get("momentum", 0),
             dampening=hparams.get("dampening", 0),
@@ -86,6 +85,25 @@ def train(args, unused_argv):
         eval_data_path, mode="eval", num_workers=num_workers, **hparams
     )
 
+    # adjust learning rate decay parameter
+    from torch.utils.data import DataLoader
+
+    total_size = (
+        len(train_loader.dataset)
+        if isinstance(train_loader, DataLoader)
+        else len(train_loader)
+    )
+    epoch_steps = total_size // hparams["batch_size"]
+
+    if hparams["lr_warmup_epoch"] > 0:
+        hparams["lr_warmup_steps"] = int(hparams["lr_warmup_epoch"] * epoch_steps)
+    if hparams["lr_constant_epochs"] > 0:
+        hparams["lr_constant_steps"] = int(hparams["lr_constant_epochs"] * epoch_steps)
+    if hparams["lr_decay_epoch"] > 0:
+        hparams["lr_decay_steps"] = hparams["lr_decay_epoch"] * epoch_steps
+
+    print(hparams)
+
     optimizer = _create_optimizer(hparams)
     lr_scheduler = _create_lr_scheduler(hparams)
     trainer = trainers.Trainer(
@@ -135,7 +153,7 @@ def eval(args, unused_argv):
     from ..core import trainers
     from ..helper import load_yaml_params, create_model, create_dataio
     from collections import defaultdict
-    
+
     logx.rank0 = True
     logx.epoch = defaultdict(lambda: 0)
     logx.no_timestamp = False
@@ -155,11 +173,7 @@ def eval(args, unused_argv):
     optimizer = _create_optimizer(hparams)
     lr_scheduler = _create_lr_scheduler(hparams)
     trainer = trainers.Trainer(
-        model,
-        optimizer,
-        lr_scheduler=lr_scheduler,
-        resume=args.resume_from,
-        **hparams,
+        model, optimizer, lr_scheduler=lr_scheduler, resume=args.resume_from, **hparams
     )
 
     metric_key = hparams["checkpoint_selector"]["eval_metric"]

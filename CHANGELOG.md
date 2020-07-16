@@ -1,4 +1,26 @@
 
+# Release Note (`v1.1.12`)
+> Release time: 2020-07-16 11:29:58
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🆕 New Features
+ - [[```f19551d7```](https://github.com/numb3r3/rosetta_stone/commit/f19551d7aa1369eb226c0d7cec25a3df23ae9c02)] __-__ __lr_decay__: enable decay learning rate by epoch (*wangfeng*)
+
+### 🐞 Bug fixes
+ - [[```294b02ca```](https://github.com/numb3r3/rosetta_stone/commit/294b02cad0155a071154b3cb09a863dca6265f54)] __-__ __trainer__: remove mistake logging (*wangfeng*)
+
+### 📗 Documentation
+ - [[```5caa1640```](https://github.com/numb3r3/rosetta_stone/commit/5caa1640d2c177a272e84be01c7683ff6af4cf16)] __-__ format readme (*wangfeng*)
+ - [[```dabe739e```](https://github.com/numb3r3/rosetta_stone/commit/dabe739e67259dc4f95b83897209f061e6c0484a)] __-__ update readme (*wangfeng*)
+
+### 🍹 Other Improvements
+ - [[```88a75de5```](https://github.com/numb3r3/rosetta_stone/commit/88a75de5ceb42d15a0c1860864b51b364f2a0309)] __-__ format codes (*wangfeng*)
+ - [[```240a15cc```](https://github.com/numb3r3/rosetta_stone/commit/240a15ccdcca8dede754e8be89be9f9605842061)] __-__ __changelog__: update change log to v1.1.11 (*wangfeng*)
+
 # Release Note (`v1.1.11`)
 > Release time: 2020-07-14 18:23:52
 

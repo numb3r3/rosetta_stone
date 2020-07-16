@@ -10,13 +10,11 @@ import torch
 
 def test_map():
     map = TensorMap(a=1, b=2)
-    map['c'] = 3
+    map["c"] = 3
     for k, v in map.items():
         assert map[k] == getattr(map, k)
 
-    for k in [
-            'update', 'keys', 'items', 'values', 'clear', 'copy', 'get', 'pop'
-    ]:
+    for k in ["update", "keys", "items", "values", "clear", "copy", "get", "pop"]:
         with pytest.raises(KeyError):
             setattr(map, k, 1)
 
@@ -43,12 +41,12 @@ def test_average_meter():
 
 def test_average_dict_meter():
     avg_dict_meter = AverageDictMeter()
-    avg_dict_meter.update({'a': 1, 'b': 2, 'c': 3})
-    assert avg_dict_meter['a'].avg == 1
+    avg_dict_meter.update({"a": 1, "b": 2, "c": 3})
+    assert avg_dict_meter["a"].avg == 1
 
-    avg_dict_meter.update({'a': 3, 'b': 3, 'c': 1.2})
-    assert avg_dict_meter['a'].avg == 2
-    assert avg_dict_meter['b'].avg == 2.5
-    assert avg_dict_meter['c'].avg == 2.1
+    avg_dict_meter.update({"a": 3, "b": 3, "c": 1.2})
+    assert avg_dict_meter["a"].avg == 2
+    assert avg_dict_meter["b"].avg == 2.5
+    assert avg_dict_meter["c"].avg == 2.1
 
     assert len(avg_dict_meter) == 3

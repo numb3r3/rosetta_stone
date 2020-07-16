@@ -11,25 +11,26 @@ def set_base_parser():
     from .. import __version__
 
     parser = argparse.ArgumentParser(
-        epilog='%s, a toolkit based on pytorch. '
-        'Visit %s for tutorials and documents.' % (
-            colored('rosetta stone v%s' % __version__, 'green'),
+        epilog="%s, a toolkit based on pytorch. "
+        "Visit %s for tutorials and documents."
+        % (
+            colored("rosetta stone v%s" % __version__, "green"),
             colored(
-                'https://git.huya.com/wangfeng2/rosetta_stone',
-                'cyan',
-                attrs=['underline'],
+                "https://git.huya.com/wangfeng2/rosetta_stone",
+                "cyan",
+                attrs=["underline"],
             ),
         ),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        description='Rosetta Stone Line Interface',
+        description="Rosetta Stone Line Interface",
     )
 
     parser.add_argument(
-        '-v',
-        '--version',
-        action='version',
+        "-v",
+        "--version",
+        action="version",
         version=__version__,
-        help='show Rosetta version',
+        help="show Rosetta version",
     )
 
     return parser
@@ -39,41 +40,68 @@ def set_trainer_parser(parser=None):
     if not parser:
         parser = set_base_parser()
 
-    gp = add_arg_group(parser, 'trainer arguments')
+    gp = add_arg_group(parser, "trainer arguments")
 
-    gp.add_argument('model_name', type=str, help='the model name')
+    gp.add_argument("model_name", type=str, help="the model name")
     gp.add_argument(
-        '--yaml-path',
-        type=str,
-        default='app.yaml',
-        help='a yaml file configs models')
-
-    gp.add_argument(
-        '--resume-from',
-        default='',
-        type=str,
-        metavar='PATH',
-        help='path to latest checkpoint (default: none)',
+        "--yaml-path", type=str, default="app.yaml", help="a yaml file configs models"
     )
 
     gp.add_argument(
-        '--no-cuda',
-        action='store_true',
-        default=False,
-        help='disables CUDA training')
-
-    gp.add_argument(
-        '--use-amp',
-        action='store_true',
-        default=False,
-        help='use apex for automatic mixed precision training',
+        "--resume-from",
+        default="",
+        type=str,
+        metavar="PATH",
+        help="path to latest checkpoint (default: none)",
     )
 
     gp.add_argument(
-        '--use-horovod',
-        action='store_true',
+        "--no-cuda", action="store_true", default=False, help="disables CUDA training"
+    )
+
+    gp.add_argument(
+        "--use-amp",
+        action="store_true",
         default=False,
-        help='use horovod for distributed training',
+        help="use apex for automatic mixed precision training",
+    )
+
+    gp.add_argument(
+        "--use-horovod",
+        action="store_true",
+        default=False,
+        help="use horovod for distributed training",
+    )
+
+    return parser
+
+
+def set_xla_trainer_parser(parser=None):
+    if not parser:
+        parser = set_base_parser()
+
+    gp = add_arg_group(parser, "xla trainer arguments")
+
+    gp.add_argument("model_name", type=str, help="the model name")
+    gp.add_argument(
+        "--yaml-path",
+        type=str,
+        default="app.yaml",
+        metavar="PATH",
+        help="a yaml file configs models",
+    )
+
+    gp.add_argument(
+        "--resume-from",
+        default="",
+        type=str,
+        metavar="PATH",
+        help="path to latest checkpoint (default: none)",
+    )
+
+    # Optional arguments for the launch helper
+    gp.add_argument(
+        "--num_cores", type=int, default=1, help="Number of TPU cores to use (1 or 8)."
     )
 
     return parser
@@ -83,28 +111,24 @@ def set_evaluator_parser(parser=None):
     if not parser:
         parser = set_base_parser()
 
-    gp = add_arg_group(parser, 'evaluator arguments')
+    gp = add_arg_group(parser, "evaluator arguments")
 
-    gp.add_argument('model_name', type=str, help='the model name')
+    gp.add_argument("model_name", type=str, help="the model name")
     gp.add_argument(
-        '--yaml-path',
-        type=str,
-        default='app.yaml',
-        help='a yaml file configs models')
-
-    gp.add_argument(
-        '--resume-from',
-        default='',
-        type=str,
-        metavar='PATH',
-        help='path to latest checkpoint (default: none)',
+        "--yaml-path", type=str, default="app.yaml", help="a yaml file configs models"
     )
 
     gp.add_argument(
-        '--no-cuda',
-        action='store_true',
-        default=False,
-        help='disables CUDA training')
+        "--resume-from",
+        default="",
+        type=str,
+        metavar="PATH",
+        help="path to latest checkpoint (default: none)",
+    )
+
+    gp.add_argument(
+        "--no-cuda", action="store_true", default=False, help="disables CUDA training"
+    )
 
     return parser
 
@@ -115,25 +139,34 @@ def get_main_parser():
     import os
 
     sp = parser.add_subparsers(
-        dest='cli',
+        dest="cli",
         description='use "%(prog)-8s [sub-command] --help" '
-        'to get detailed information about each sub-command',
+        "to get detailed information about each sub-command",
     )
 
     set_trainer_parser(
         sp.add_parser(
-            'train',
-            help='👋 train a pytorch model',
-            description='Start to train a pytorch model, '
-            'without any extra codes.',
-        ))
+            "train",
+            help="👋 train a pytorch model",
+            description="Start to train a pytorch model, " "without any extra codes.",
+        )
+    )
+
+    set_xla_trainer_parser(
+        sp.add_parser(
+            "xla_train",
+            help="👋 train a pytorch model with xla supporting",
+            description="Start to train a pytorch model with xla supporting, "
+            "without any extra codes.",
+        )
+    )
 
     set_evaluator_parser(
         sp.add_parser(
-            'eval',
-            help='👋 evaluate a pytorch model',
-            description='Start to eval a pytorch model, '
-            'without any extra codes.',
-        ))
+            "eval",
+            help="👋 evaluate a pytorch model",
+            description="Start to eval a pytorch model, " "without any extra codes.",
+        )
+    )
 
     return parser

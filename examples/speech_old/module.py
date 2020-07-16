@@ -39,15 +39,16 @@ class VGGExtractor(nn.Module):
             return int(input_dim / 40), 40, (40 // 4) * self.hide_dim
         else:
             raise ValueError(
-                'Acoustic feature dimension for VGG should be 13/26/39(MFCC) or 40/80/120(Fbank) but got '
-                + input_dim)
+                "Acoustic feature dimension for VGG should be 13/26/39(MFCC) or 40/80/120(Fbank) but got "
+                + input_dim
+            )
 
     def view_input(self, feature, feat_len):
         # downsample time
         feat_len = feat_len // 4
         # crop sequence s.t. t%4==0
         if feature.shape[1] % 4 != 0:
-            feature = feature[:, :-(feature.shape[1] % 4), :].contiguous()
+            feature = feature[:, : -(feature.shape[1] % 4), :].contiguous()
         bs, ts, ds = feature.shape
         # stack feature according to result of check_dim
         feature = feature.view(bs, ts, self.in_channel, self.freq_dim)
@@ -63,8 +64,9 @@ class VGGExtractor(nn.Module):
         # BSx128xT/4xD/4 -> BSxT/4x128xD/4
         feature = feature.transpose(1, 2)
         #  BS x T/4 x 128 x D/4 -> BS x T/4 x 32D
-        feature = feature.contiguous().view(feature.shape[0], feature.shape[1],
-                                            self.out_dim)
+        feature = feature.contiguous().view(
+            feature.shape[0], feature.shape[1], self.out_dim
+        )
         return feature, feat_len
 
 
@@ -113,23 +115,22 @@ class RNNLayer(nn.Module):
         rnn_out_dim = 2 * dim if bidirection else dim
         self.out_dim = (
             sample_rate * rnn_out_dim
-            if sample_rate > 1 and sample_style == 'concat' else rnn_out_dim)
+            if sample_rate > 1 and sample_style == "concat"
+            else rnn_out_dim
+        )
         self.dropout = dropout
         self.layer_norm = layer_norm
         self.sample_rate = sample_rate
         self.sample_style = sample_style
         self.proj = proj
 
-        if self.sample_style not in ['drop', 'concat']:
-            raise ValueError('Unsupported Sample Style: ' + self.sample_style)
+        if self.sample_style not in ["drop", "concat"]:
+            raise ValueError("Unsupported Sample Style: " + self.sample_style)
 
         # Recurrent layer
         self.layer = getattr(nn, module.upper())(
-            input_dim,
-            dim,
-            bidirectional=bidirection,
-            num_layers=1,
-            batch_first=True)
+            input_dim, dim, bidirectional=bidirection, num_layers=1, batch_first=True
+        )
 
         # Regularizations
         if self.layer_norm:
@@ -161,13 +162,13 @@ class RNNLayer(nn.Module):
             batch_size, timestep, feature_dim = output.shape
             x_len = x_len // self.sample_rate
 
-            if self.sample_style == 'drop':
+            if self.sample_style == "drop":
                 # Drop the unselected timesteps
-                output = output[:, ::self.sample_rate, :].contiguous()
+                output = output[:, :: self.sample_rate, :].contiguous()
             else:
                 # Drop the redundant frames and concat the rest according to sample rate
                 if timestep % self.sample_rate != 0:
-                    output = output[:, :-(timestep % self.sample_rate), :]
+                    output = output[:, : -(timestep % self.sample_rate), :]
                 output = output.contiguous().view(
                     batch_size,
                     int(timestep / self.sample_rate),
@@ -205,15 +206,15 @@ class BaseAttention(nn.Module):
         self.mask = np.zeros((bs, self.num_head, ts))
         for idx, sl in enumerate(k_len):
             self.mask[idx, :, sl:] = 1  # ToDo: more elegant way?
-        self.mask = (torch.from_numpy(self.mask).to(
-            k_len.device, dtype=torch.bool).view(-1, ts))  # BNxT
+        self.mask = (
+            torch.from_numpy(self.mask).to(k_len.device, dtype=torch.bool).view(-1, ts)
+        )  # BNxT
 
     def _attend(self, energy, value):
         attn = energy / self.temperature
         attn = attn.masked_fill(self.mask, -np.inf)
         attn = self.softmax(attn)  # BNxT
-        output = torch.bmm(attn.unsqueeze(1),
-                           value).squeeze(1)  # BNxT x BNxTxD-> BNxD
+        output = torch.bmm(attn.unsqueeze(1), value).squeeze(1)  # BNxT x BNxTxD-> BNxD
         return output, attn
 
 
@@ -225,9 +226,9 @@ class ScaleDotAttention(BaseAttention):
 
     def forward(self, q, k, v):
         ts = k.shape[1]
-        energy = torch.bmm(q.unsqueeze(1),
-                           k.transpose(1,
-                                       2)).squeeze(1)  # BNxD * BNxDxT = BNxT
+        energy = torch.bmm(q.unsqueeze(1), k.transpose(1, 2)).squeeze(
+            1
+        )  # BNxD * BNxDxT = BNxT
         output, attn = self._attend(energy, v)
 
         attn = attn.view(-1, self.num_head, ts)  # BNxT -> BxNxT
@@ -271,16 +272,19 @@ class LocationAwareAttention(BaseAttention):
 
         # Calculate location context
         loc_context = torch.tanh(
-            self.loc_proj(self.loc_conv(self.prev_att).transpose(
-                1, 2)))  # BxNxT->BxTxD
-        loc_context = (loc_context.unsqueeze(1).repeat(
-            1, self.num_head, 1, 1).view(-1, ts,
-                                         self.dim))  # BxNxTxD -> BNxTxD
+            self.loc_proj(self.loc_conv(self.prev_att).transpose(1, 2))
+        )  # BxNxT->BxTxD
+        loc_context = (
+            loc_context.unsqueeze(1)
+            .repeat(1, self.num_head, 1, 1)
+            .view(-1, ts, self.dim)
+        )  # BxNxTxD -> BNxTxD
         q = q.unsqueeze(1)  # BNx1xD
 
         # Compute energy and context
         energy = self.gen_energy(torch.tanh(k + q + loc_context)).squeeze(
-            2)  # BNxTxD -> BNxT
+            2
+        )  # BNxTxD -> BNxT
         output, attn = self._attend(energy, v)
         attn = attn.view(bs, self.num_head, ts)  # BNxT -> BxNxT
         self.prev_att = attn

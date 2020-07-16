@@ -8,6 +8,7 @@ from transformers.tokenization_utils import PreTrainedTokenizer
 
 from . import DataProcessor
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -32,8 +33,7 @@ class InputExample:
 
     def to_json_string(self):
         """Serializes this instance to a JSON string."""
-        return json.dumps(
-            dataclasses.asdict(self), indent=2, ensure_ascii=False) + '\n'
+        return json.dumps(dataclasses.asdict(self), indent=2, ensure_ascii=False) + "\n"
 
 
 @dataclass(frozen=True)
@@ -59,17 +59,15 @@ class InputFeatures:
 
     def to_json_string(self):
         """Serializes this instance to a JSON string."""
-        return json.dumps(dataclasses.asdict(self), indent=2) + '\n'
+        return json.dumps(dataclasses.asdict(self), indent=2) + "\n"
 
 
 class SentenceClassificationProcessor(DataProcessor):
     """Generic processor for a single sentence classification data set."""
 
-    def __init__(self,
-                 examples=None,
-                 labels=None,
-                 mode='classification',
-                 verbose=False):
+    def __init__(
+        self, examples=None, labels=None, mode="classification", verbose=False
+    ):
         self.labels = [] if labels is None else labels
         self.examples = [] if examples is None else examples
         self.mode = mode
@@ -81,13 +79,14 @@ class SentenceClassificationProcessor(DataProcessor):
     def __getitem__(self, idx):
         if isinstance(idx, slice):
             return SingleSentenceClassificationProcessor(
-                labels=self.labels, examples=self.examples[idx])
+                labels=self.labels, examples=self.examples[idx]
+            )
         return self.examples[idx]
 
     def add_examples_from_csv(
         self,
         file_name: str,
-        split_name: str = 'train',
+        split_name: str = "train",
         column_label: int = 0,
         column_text: int = 1,
         ignore_header: bool = False,
@@ -99,9 +98,10 @@ class SentenceClassificationProcessor(DataProcessor):
         for (i, line) in enumerate(lines):
             text = line[column_text]
             label = line[column_label]
-            guid = '%s-%s' % (split_name, i) if split_name else '%s' % i
+            guid = "%s-%s" % (split_name, i) if split_name else "%s" % i
             examples.append(
-                InputExample(guid=guid, text_a=text, text_b=None, label=label))
+                InputExample(guid=guid, text_a=text, text_b=None, label=label)
+            )
 
         return examples
 
@@ -150,56 +150,58 @@ class SentenceClassificationProcessor(DataProcessor):
         batch_length = max(len(input_ids) for input_ids in all_input_ids)
 
         features = []
-        for (ex_index,
-             (input_ids,
-              example)) in enumerate(zip(all_input_ids, self.examples)):
+        for (ex_index, (input_ids, example)) in enumerate(
+            zip(all_input_ids, self.examples)
+        ):
             if ex_index % 10000 == 0:
-                logger.info('Writing example %d/%d' %
-                            (ex_index, len(self.examples)))
+                logger.info("Writing example %d/%d" % (ex_index, len(self.examples)))
 
             # The mask has 1 for real tokens and 0 for padding tokens. Only real
             # tokens are attended to.
-            attention_mask = [1 if mask_padding_with_zero else 0
-                              ] * len(input_ids)
+            attention_mask = [1 if mask_padding_with_zero else 0] * len(input_ids)
 
             # Zero-pad up to the sequence length.
             padding_length = batch_length - len(input_ids)
             if pad_on_left:
                 input_ids = ([pad_token] * padding_length) + input_ids
-                attention_mask = ([0 if mask_padding_with_zero else 1] *
-                                  padding_length) + attention_mask
+                attention_mask = (
+                    [0 if mask_padding_with_zero else 1] * padding_length
+                ) + attention_mask
             else:
                 input_ids = input_ids + ([pad_token] * padding_length)
                 attention_mask = attention_mask + (
-                    [0 if mask_padding_with_zero else 1] * padding_length)
+                    [0 if mask_padding_with_zero else 1] * padding_length
+                )
 
-            assert (len(input_ids) == batch_length
-                    ), 'Error with input length {} vs {}'.format(
-                        len(input_ids), batch_length)
-            assert (len(attention_mask) == batch_length
-                    ), 'Error with input length {} vs {}'.format(
-                        len(attention_mask), batch_length)
+            assert (
+                len(input_ids) == batch_length
+            ), "Error with input length {} vs {}".format(len(input_ids), batch_length)
+            assert (
+                len(attention_mask) == batch_length
+            ), "Error with input length {} vs {}".format(
+                len(attention_mask), batch_length
+            )
 
-            if self.mode == 'classification':
+            if self.mode == "classification":
                 label = label_map[example.label]
-            elif self.mode == 'regression':
+            elif self.mode == "regression":
                 label = float(example.label)
             else:
                 raise ValueError(self.mode)
 
             if ex_index < 5 and self.verbose:
-                logger.info('*** Example ***')
-                logger.info('guid: %s' % (example.guid))
-                logger.info('input_ids: %s' %
-                            ' '.join([str(x) for x in input_ids]))
-                logger.info('attention_mask: %s' %
-                            ' '.join([str(x) for x in attention_mask]))
-                logger.info('label: %s (id = %d)' % (example.label, label))
+                logger.info("*** Example ***")
+                logger.info("guid: %s" % (example.guid))
+                logger.info("input_ids: %s" % " ".join([str(x) for x in input_ids]))
+                logger.info(
+                    "attention_mask: %s" % " ".join([str(x) for x in attention_mask])
+                )
+                logger.info("label: %s (id = %d)" % (example.label, label))
 
             features.append(
                 InputFeatures(
-                    input_ids=input_ids,
-                    attention_mask=attention_mask,
-                    label=label))
+                    input_ids=input_ids, attention_mask=attention_mask, label=label
+                )
+            )
 
         return features

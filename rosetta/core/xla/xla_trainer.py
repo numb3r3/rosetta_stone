@@ -8,29 +8,18 @@ from torch import nn
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler as Scheduler
 from torch.utils.data import DataLoader, DistributedSampler
+import torch_xla
+import torch_xla.core.xla_model as xm
+import torch_xla.distributed.parallel_loader as pl
+import torch_xla.distributed.xla_multiprocessing as xmp
+import torch_xla.utils.utils as xu
 
 from .. import helper
 from ..utils.containers import AverageDictMeter
-from ..utils.distribute import (
-    get_global_rank,
-    get_local_rank,
-    get_world_size,
-    is_distributed,
-    is_horovod_available,
-)
 from ..utils.logx import logx
 
 
-try:
-    import apex
-    from apex import amp
-
-    AMP_AVAILABLE = True
-except ImportError:
-    AMP_AVAILABLE = False
-
-
-class Trainer(object):
+class XLATrainer(object):
     def __init__(
         self,
         model: nn.Module,
@@ -39,9 +28,6 @@ class Trainer(object):
         log_interval: int = 10,
         evaluate_every: int = 100,
         device: Optional[torch.device or str] = None,
-        use_cuda_nonblocking: bool = False,
-        use_horovod: bool = False,
-        use_amp: bool = False,
         verbose: bool = True,
         resume: str = None,
         reset_lr_scheduler: bool = False,
@@ -62,47 +48,18 @@ class Trainer(object):
         self.kwargs = kwargs
 
         if isinstance(model, nn.Module):
-            self.model = model
+            # Only instantiate model weights once in memory.
+            wrapped_model = xmp.MpModelWrapper(model)
+            self.model = wrapped_model
         else:
             raise TypeError(
                 f"Unknown type for `model`. Expected nn.Module but got {type(model)}"
             )
 
         if device is None:
-            self.device = (
-                torch.device("cuda")
-                if torch.cuda.is_available()
-                else torch.device("cpu")
-            )
+            self.device = xm.xla_device()
         else:
             self.device = device
-
-        self._use_amp = use_amp
-        if use_amp and not AMP_AVAILABLE:
-            raise ImportError(
-                f"Got use_amp = {use_amp}, but cannot find apex. "
-                "Please install Apex if you want to make use of automatic mixed precision. "
-                "https://github.com/NVIDIA/apex"
-            )
-
-        self._use_horovod = use_horovod
-        if use_horovod and not is_horovod_available():
-            raise RuntimeError("horovod is not available!")
-
-        # Init distributed settings
-        if is_distributed():
-            # normalization parameters are synchronized across workers during forward pass.
-            if self._use_amp:
-                self.model = apex.parallel.convert_syncbn_model(self.model)
-            elif not use_horovod:
-                # TODO: add sync_batchnorm for horovod
-                self.model = nn.SyncBatchNorm.convert_sync_batchnorm(self.model)
-
-            rank = get_local_rank()
-            torch.cuda.set_device(rank)
-            if get_global_rank() > 0:
-                # to avoid overwriting
-                verbose = False
 
         # optionally resume from a checkpoint
         if resume:
@@ -111,9 +68,8 @@ class Trainer(object):
             # resume model
             self.model.load_state_dict(state_dict)
 
-        if "cuda" in str(self.device):
-            # self.model.to(self.device)
-            self.model = self.model.to(self.device)
+        if "xla" in str(self.device):
+            self.model.to(self.device)
             self._cuda_nonblocking = use_cuda_nonblocking
         else:
             self._cuda_nonblocking = False
@@ -121,62 +77,13 @@ class Trainer(object):
         self.optimizer = optimizer
         self.set_optimizer()
 
-        # # resume optimizer
-        # if resume_checkpoint:
-        #     self.optimizer.load_state_dict(resume_checkpoint["optimizer"])
-
-        # if isinstance(self.model, nn.parallel.DistributedDataParallel) or isinstance(
-        #     self.model, nn.DataParallel
-        # ):
-        #     self.accessible_model = self.model.module
-        # else:
-        #     self.accessible_model = self.model
-
-        # fix learning rate issue
-        if is_distributed():
-            # scale the learning rate by the number of workers to account for
-            # increased total batch size
-            for param_group in self.optimizer.param_groups:
-                param_group["lr"] *= max(1.0, get_world_size() // 2)
-
-        if use_horovod:
-            import horovod.torch as hvd
-
-            # broadcast parameters & optimizer state.
-            hvd.broadcast_parameters(self.model.state_dict(), root_rank=0)
-            hvd.broadcast_optimizer_state(self.optimizer, root_rank=0)
-
-            # wrap optimizer with DistributedOptimizer.
-            self.optimizer = hvd.DistributedOptimizer(
-                self.optimizer, named_parameters=self.model.named_parameters()
-            )
-
-        if self._use_amp:
-            self.model, self.optimizer = amp.initialize(
-                self.model, self.optimizer, opt_level="O1"
-            )
-
-        if not use_horovod and is_distributed():
-            self.model = nn.parallel.DistributedDataParallel(
-                self.model, device_ids=[rank], find_unused_parameters=True
-            )
+        # scale the learning rate by the number of workers to account for
+        # increased total batch size
+        for param_group in self.optimizer.param_groups:
+            param_group["lr"] *= max(1.0, xm.xrt_world_size() // 2)
 
         self.lr_scheduler = lr_scheduler
         self.set_scheduler()
-
-        # # resume lr_scheduler
-        # if resume_checkpoint and not reset_lr_scheduler:
-        #     lr_scheduler_state_dict = resume_checkpoint["lr_scheduler"]
-        #     if lr_scheduler_state_dict:
-        #         self.lr_scheduler.load_state_dict(lr_scheduler_state_dict)
-
-        # self._use_amp = use_amp
-        # if use_amp:
-        #     if not hasattr(torch.cuda, "amp"):
-        #         warnings.warn("amp is not available")
-        #         self._use_amp = False
-        #     else:
-        #         self.scaler = torch.cuda.amp.GradScaler()
 
     @property
     def log_interval(self):
@@ -228,37 +135,12 @@ class Trainer(object):
 
             # compute gradient and do SGD step
             self.optimizer.zero_grad()
-            if self._use_amp:
-                # Horovod with Apex
-                # https://gist.github.com/alsrgv/0713add50fe49a409316832a31612dde
-                with amp.scale_loss(loss, self.optimizer) as scaled_loss:
-                    scaled_loss.backward()
-                    if self.kwargs.get("gradient_clip", None):
-                        torch.nn.utils.clip_grad_norm_(
-                            amp.master_params(self.optimizer),
-                            self.kwargs["gradient_max_norm"],
-                        )
-
-                    if self._use_horovod:
-                        self.optimizer.synchronize()
-
-                if self._use_horovod:
-                    with self.optimizer.skip_synchronize():
-                        self.optimizer.step()
-                else:
-                    self.optimizer.step()
-
-                # TODO: use `torch.cuda.amp` instead
-                # self.scaler(loss).backward()
-                # self.scaler.step(self.optimizer)
-                # self.scaler.update()
-            else:
-                loss.backward()
-                if self.kwargs.get("gradient_clip", None):
-                    torch.nn.utils.clip_grad_norm_(
-                        self.model.parameters(), self.kwargs["gradient_max_norm"]
-                    )
-                self.optimizer.step()
+            loss.backward()
+            if self.kwargs.get("gradient_clip", None):
+                torch.nn.utils.clip_grad_norm_(
+                    self.model.parameters(), self.kwargs["gradient_max_norm"]
+                )
+            xm.optimizer_step(self.optimizer)
 
             # update step for lr_scheduler
             if self.lr_scheduler:
@@ -435,12 +317,66 @@ class Trainer(object):
             else None,
         }
 
-        logx.save_model(
+        self.save_model(
             save_dict,
             metric=metric,
             epoch=self.epoch,
             higher_better=self._higher_better,
         )
+
+    def save_model(
+        self,
+        save_dict,
+        metric,
+        epoch,
+        higher_better=True,
+        delete_old=True,
+        use_xla=False,
+    ):
+        """Saves a model to disk. Keeps a separate copy of latest and best
+        models.
+
+        Arguments:
+            save_dict: dictionary to save to checkpoint
+            epoch: epoch number, used to name checkpoint
+            metric: metric value to be used to evaluate whether this is the
+                    best result
+            higher_better: True if higher valued metric is better, False
+                    otherwise
+            delete_old: Delete prior 'lastest' checkpoints. By setting to
+                    false, you'll get a checkpoint saved every time this
+                    function is called.
+        """
+        if not xm.is_master_ordinal(local=False):
+            return
+
+        save_dict["__metric"] = metric
+
+        if os.path.exists(logx.save_ckpt_fn) and delete_old:
+            os.remove(logx.save_ckpt_fn)
+
+        # Save out current model
+        logx.save_ckpt_fn = os.path.join(
+            logx.logdir, "last_checkpoint_ep{}.pth".format(epoch)
+        )
+
+        # save_func = xm.save if use_xla else torch.save
+        xm.save(save_dict, logx.save_ckpt_fn)
+
+        logx.save_metric = metric
+
+        is_better = logx.is_better(logx.save_metric, logx.best_metric, higher_better)
+        if is_better:
+            from shutil import copyfile
+
+            if os.path.exists(logx.best_ckpt_fn):
+                os.remove(logx.best_ckpt_fn)
+            logx.best_ckpt_fn = os.path.join(
+                logx.logdir, "best_checkpoint_ep{}.pth".format(epoch)
+            )
+            logx.best_metric = logx.save_metric
+            copyfile(logx.save_ckpt_fn, logx.best_ckpt_fn)
+        return is_better
 
     def load_checkpoint(self, resume_file: str, **kwargs):
         """Restore a model and return a dict with any meta data included in the

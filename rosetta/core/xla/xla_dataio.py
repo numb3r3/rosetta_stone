@@ -4,14 +4,13 @@ from typing import Tuple
 import torch
 import torch.multiprocessing as mp
 from torch.utils.data import DataLoader
-from torch.utils.data.distributed import DistributedSampler
-from torch.utils.data.sampler import RandomSampler
 
 from .. import helper
 from ..utils.distribute import get_global_rank, get_world_size, is_distributed
+from ..utils.xla_helper import SERIAL_EXEC, get_tpu_sampler
 
 
-class BaseDataIO:
+class BaseXLADataIO:
     """Generates and stores PyTorch DataLoader objects for the train, dev and
     test datasets."""
 
@@ -59,29 +58,18 @@ class BaseDataIO:
         :type pin_memory: bool
         :return: A DataLoader that wraps the input Dataset.
         """
-        dataset = self.create_dataset(data_path, mode, **kwargs)
+        # dataset = self.create_dataset(data_path, mode, **kwargs)
+
+        # Avoid all cores downloading the same data with the serial executor.
+        dataset = SERIAL_EXEC.run(
+            lambda: self.create_dataset(data_path, mode, **kwargs)
+        )
+
         is_train = True if mode == "train" else False
-        tensor_names = None
-        if type(dataset).__name__ == "_StreamingDataSet":
-            tensor_names = dataset.tensor_names
 
         sampler = None
-        if is_distributed():
-            sampler_kwargs = dict(num_replicas=get_world_size(), rank=get_global_rank())
-            sampler = DistributedSampler(dataset, **sampler_kwargs)
-        elif is_train:
-            sampler = RandomSampler(dataset, True)
-
-        loader_kwargs = dict()
-        # When supported, use 'forkserver' to spawn dataloader workers instead of 'fork' to prevent
-        # issues with Infiniband implementations that are not fork-safe
-        if (
-            num_workers > 0
-            and hasattr(mp, "_supports_context")
-            and mp._supports_context
-            and "forkserver" in mp.get_all_start_methods()
-        ):
-            loader_kwargs["multiprocessing_context"] = "forkserver"
+        if is_train:
+            sampler = get_tpu_sampler(dataset)
 
         return DataLoader(
             dataset,
@@ -90,11 +78,10 @@ class BaseDataIO:
             collate_fn=functools.partial(
                 self.collate_fn,
                 batch_size=batch_size,
-                tensor_names=tensor_names,
+                tensor_names=None,
                 mode=mode,
                 **kwargs
             ),
-            pin_memory=pin_memory,
             num_workers=num_workers,
-            **loader_kwargs
+            drop_last=True,
         )

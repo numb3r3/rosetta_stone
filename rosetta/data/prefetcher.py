@@ -22,8 +22,8 @@ class DataPrefetcher(object):
         if self._cuda_available:
             with torch.cuda.stream(self.stream):
                 self.next_data = [
-                    x.to(device='cuda', non_blocking=True)
-                    if torch.is_tensor(x) else x for x in self.next_data
+                    x.to(device="cuda", non_blocking=True) if torch.is_tensor(x) else x
+                    for x in self.next_data
                 ]
                 # self.next_data = self.next_data.to(device="cuda", non_blocking=True)
 

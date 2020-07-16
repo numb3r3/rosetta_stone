@@ -5,7 +5,6 @@ from .language_model import BertLM
 
 
 class PretrainedBert(torch.nn.Module):
-
     def __init__(self, **kwargs):
         super().__init__()
         self.bert_lm = BertLM(**kwargs)
@@ -13,9 +12,10 @@ class PretrainedBert(torch.nn.Module):
         self.predict_head = BertLMHead(**kwargs)
         # set shared weights for LM finetuning
         self.predict_head.set_shared_weights(
-            self.bert_lm.model.embeddings.word_embeddings.weight)
+            self.bert_lm.model.embeddings.word_embeddings.weight
+        )
 
-        self.dropout = torch.nn.Dropout(kwargs.get('embeds_dropout_prob', 0.1))
+        self.dropout = torch.nn.Dropout(kwargs.get("embeds_dropout_prob", 0.1))
 
     def forward(self, input_ids, masked_lm_labels, **kwargs):
         """Push data through the whole model and returns logits. The data will
@@ -33,7 +33,8 @@ class PretrainedBert(torch.nn.Module):
         logits = self.predict_head(output)
 
         loss_per_sample = self.predict_head.logits_to_loss(
-            logits=logits, labels=masked_lm_labels)
+            logits=logits, labels=masked_lm_labels
+        )
 
         loss = loss_per_sample.mean()
         metrics = {}

@@ -13,10 +13,7 @@ class DataProcessor:
         raise NotImplementedError()
 
     @classmethod
-    def _read_csv(cls,
-                  input_file: str,
-                  delimiter: str = '\t',
-                  quotechar: str = None):
+    def _read_csv(cls, input_file: str, delimiter: str = "\t", quotechar: str = None):
         """Reads a csv formated file."""
-        with open(input_file, 'r') as f:
-            return list(csv.reader(f, delimiter='\t', quotechar=quotechar))
+        with open(input_file, "r") as f:
+            return list(csv.reader(f, delimiter="\t", quotechar=quotechar))

@@ -40,15 +40,16 @@ class VGGExtractor(nn.Module):
             return int(input_dim / 40), 40, (40 // 4) * self.hide_dim
         else:
             raise ValueError(
-                'Acoustic feature dimension for VGG should be 13/26/39(MFCC) or 40/80/120(Fbank) but got '
-                + input_dim)
+                "Acoustic feature dimension for VGG should be 13/26/39(MFCC) or 40/80/120(Fbank) but got "
+                + input_dim
+            )
 
     def view_input(self, feature, feat_len):
         # downsample time
         feat_len = feat_len // 4
         # crop sequence s.t. t%4==0
         if feature.shape[1] % 4 != 0:
-            feature = feature[:, :-(feature.shape[1] % 4), :].contiguous()
+            feature = feature[:, : -(feature.shape[1] % 4), :].contiguous()
         bs, ts, ds = feature.shape
         # stack feature according to result of check_dim
         feature = feature.view(bs, ts, self.in_channel, self.freq_dim)
@@ -64,8 +65,9 @@ class VGGExtractor(nn.Module):
         # BSx128xT/4xD/4 -> BSxT/4x128xD/4
         feature = feature.transpose(1, 2)
         #  BS x T/4 x 128 x D/4 -> BS x T/4 x 32D
-        feature = feature.contiguous().view(feature.shape[0], feature.shape[1],
-                                            self.out_dim)
+        feature = feature.contiguous().view(
+            feature.shape[0], feature.shape[1], self.out_dim
+        )
         return feature, feat_len
 
 

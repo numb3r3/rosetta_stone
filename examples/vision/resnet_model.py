@@ -2,7 +2,7 @@ import torch
 from torch import nn
 
 
-def accuracy(output, target, topk=(1, )):
+def accuracy(output, target, topk=(1,)):
     """Computes the accuracy over the k top predictions for the specified
     values of k."""
     with torch.no_grad():
@@ -25,8 +25,7 @@ def initialization(module: nn.Module, use_zero_init: bool):
     for m in module.modules():
         if isinstance(m, nn.Conv2d):
             # todo: check if fan_out is valid
-            nn.init.kaiming_normal_(
-                m.weight, mode='fan_out', nonlinearity='relu')
+            nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
         elif isinstance(m, nn.BatchNorm2d):
             nn.init.constant_(m.weight, 1)
             nn.init.constant_(m.bias, 0)
@@ -43,16 +42,11 @@ def initialization(module: nn.Module, use_zero_init: bool):
 def conv3x3(in_planes, out_planes, stride=1):
     """3x3 convolution with padding."""
     return nn.Conv2d(
-        in_planes,
-        out_planes,
-        kernel_size=3,
-        stride=stride,
-        padding=1,
-        bias=False)
+        in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False
+    )
 
 
 class BasicBlock(nn.Module):
-
     def __init__(self, inplanes, planes, stride=1):
         super(BasicBlock, self).__init__()
         self.conv1 = conv3x3(inplanes, planes, stride)
@@ -62,9 +56,7 @@ class BasicBlock(nn.Module):
         self.bn2 = nn.BatchNorm2d(planes)
         if inplanes != planes:
             self.downsample = nn.Sequential(
-                nn.Conv2d(
-                    inplanes, planes, kernel_size=1, stride=stride,
-                    bias=False),
+                nn.Conv2d(inplanes, planes, kernel_size=1, stride=stride, bias=False),
                 nn.BatchNorm2d(planes),
             )
         else:
@@ -97,7 +89,8 @@ class ResNet(nn.Module):
 
         self.inplane = 16
         self.conv1 = nn.Conv2d(
-            3, self.inplane, kernel_size=3, stride=1, padding=1, bias=False)
+            3, self.inplane, kernel_size=3, stride=1, padding=1, bias=False
+        )
         self.bn1 = nn.BatchNorm2d(self.inplane)
         self.relu = nn.ReLU(inplace=True)
         self.layer1 = self._make_layer(16, blocks=n_size, stride=1)
@@ -135,14 +128,14 @@ class ResNet(nn.Module):
 
         loss = nn.functional.cross_entropy(logits, labels)
 
-        predicts = {'logits': logits}
+        predicts = {"logits": logits}
 
         metrics = {}
 
         # measure accuracy and record loss
         acc1, acc5 = accuracy(logits, labels, topk=(1, 5))
-        metrics['accuracy'] = acc1
-        metrics['acc1'] = acc1
-        metrics['acc5'] = acc5
+        metrics["accuracy"] = acc1
+        metrics["acc1"] = acc1
+        metrics["acc5"] = acc5
 
         return predicts, loss, metrics

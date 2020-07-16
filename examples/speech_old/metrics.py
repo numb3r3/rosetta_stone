@@ -11,9 +11,9 @@ def edit_distance(ref, hyp):
         h -> the list of words produced by splitting hypothesis sentence.
     """
 
-    dist = np.zeros(
-        (len(ref) + 1) * (len(hyp) + 1), dtype=np.uint8).reshape(
-            (len(ref) + 1, len(hyp) + 1))
+    dist = np.zeros((len(ref) + 1) * (len(hyp) + 1), dtype=np.uint8).reshape(
+        (len(ref) + 1, len(hyp) + 1)
+    )
     for i in range(len(ref) + 1):
         for j in range(len(hyp) + 1):
             if i == 0:
@@ -48,21 +48,25 @@ def get_step_list(ref, hyp, dist):
     while True:
         if x == 0 and y == 0:
             break
-        elif (x >= 1 and y >= 1 and dist[x][y] == dist[x - 1][y - 1]
-              and ref[x - 1] == hyp[y - 1]):
-            list.append('e')
+        elif (
+            x >= 1
+            and y >= 1
+            and dist[x][y] == dist[x - 1][y - 1]
+            and ref[x - 1] == hyp[y - 1]
+        ):
+            list.append("e")
             x = x - 1
             y = y - 1
         elif y >= 1 and dist[x][y] == dist[x][y - 1] + 1:
-            list.append('i')
+            list.append("i")
             x = x
             y = y - 1
         elif x >= 1 and y >= 1 and dist[x][y] == dist[x - 1][y - 1] + 1:
-            list.append('s')
+            list.append("s")
             x = x - 1
             y = y - 1
         else:
-            list.append('d')
+            list.append("d")
             x = x - 1
             y = y
     return list[::-1]

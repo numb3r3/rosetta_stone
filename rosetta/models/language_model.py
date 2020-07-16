@@ -25,42 +25,45 @@ class BertLM(nn.Module):
         super().__init__()
         self.logger = helper.get_logger(__name__)
 
-        if 'pretrained_model_path' in kwargs:
-            pretrained_model_path = kwargs.pop('pretrained_model_path')
+        if "pretrained_model_path" in kwargs:
+            pretrained_model_path = kwargs.pop("pretrained_model_path")
             self._restore_from_pretrained(pretrained_model_path, **kwargs)
-        elif 'bert_config_file' in kwargs:
-            config_path = kwargs['bert_config_file']
+        elif "bert_config_file" in kwargs:
+            config_path = kwargs["bert_config_file"]
             config = modeling_bert.BertConfig.from_pretrained(config_path)
             self.model = modeling_bert.BertModel(config)
         else:
-            raise ValueError('Pleas provide pretrained model or config path!')
-        self.extraction_layer = kwargs.get('extraction_layer', -1)
+            raise ValueError("Pleas provide pretrained model or config path!")
+        self.extraction_layer = kwargs.get("extraction_layer", -1)
 
     def _restore_from_pretrained(self, pretrained_model_path: str, **kwargs):
         # We need to differentiate between loading model using custom format and Pytorch-Transformers format
-        config_path = os.path.join(pretrained_model_path, 'bert_config.json')
+        config_path = os.path.join(pretrained_model_path, "bert_config.json")
         if os.path.exists(config_path):
             bert_config = modeling_bert.BertConfig.from_pretrained(config_path)
 
-            model_path = os.path.join(pretrained_model_path,
-                                      'bert_model.ckpt.index')
+            model_path = os.path.join(pretrained_model_path, "bert_model.ckpt.index")
             self.model = modeling_bert.BertForPreTraining.from_pretrained(
-                model_path, config=bert_config, **kwargs).bert
+                model_path, config=bert_config, **kwargs
+            ).bert
         else:
             # Pytorch-transformer Style
             self.model = modeling_bert.BertModel.from_pretrained(
-                pretrained_model_path, **kwargs)
+                pretrained_model_path, **kwargs
+            )
 
     # def cross_entropy_one_hot(input, target):
     #     _, labels = target.max(dim=0)
     #     return nn.CrossEntropyLoss()(input, labels)
 
-    def forward(self,
-                input_ids,
-                attention_mask=None,
-                token_type_ids=None,
-                position_ids=None,
-                **kwargs):
+    def forward(
+        self,
+        input_ids,
+        attention_mask=None,
+        token_type_ids=None,
+        position_ids=None,
+        **kwargs
+    ):
         """Perform the forward pass of the BERT model.
 
         :param input_ids: The ids of each token in the input sequence. Is a tensor of shape [batch_size, max_seq_len]

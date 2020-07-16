@@ -13,9 +13,9 @@ import torchaudio
 
 def load_audio(path, sample_rate: int = 16000):
     waveform, _ = torchaudio.load(path, normalization=True)
-    waveform = torchaudio.transforms.Resample(
-        orig_freq=_, new_freq=sample_rate)(
-            waveform)
+    waveform = torchaudio.transforms.Resample(orig_freq=_, new_freq=sample_rate)(
+        waveform
+    )
     # waveform = waveform.numpy().T
     # if len(waveform.shape) > 1:
     #     if waveform.shape[1] == 1:
@@ -27,7 +27,7 @@ def load_audio(path, sample_rate: int = 16000):
 
 def calc_mean_invstddev(feature):
     if len(feature.shape) != 2:
-        raise ValueError('We expect the input feature to be 2-D tensor')
+        raise ValueError("We expect the input feature to be 2-D tensor")
     mean = torch.mean(feature, dim=0)
     var = torch.var(feature, dim=0)
     # avoid division by ~zero
@@ -59,28 +59,31 @@ class SpeechDataset(Dataset):
         # delta_order: int = 0,
         # delta_window_size: int = 2,
         # apply_cmvn: bool = True,
-        **kwargs):
+        **kwargs
+    ):
         super().__init__()
         self.tokenizer = tokenizer
         self._manifests = []
-        with open(manifest_path, 'r', encoding='utf-8') as fin:
+        with open(manifest_path, "r", encoding="utf-8") as fin:
             for line in fin:
                 manifest = json.loads(line)
                 self._manifests.append(manifest)
 
         # audio config setting
-        self.feat_type = audio_conf['feat_type']
-        self.sample_rate = audio_conf['sample_rate']
-        self.frame_length = audio_conf['frame_length']
-        self.frame_shift = audio_conf['frame_shift']
-        self.num_mel_bins = audio_conf['num_mel_bins']
-        self.delta_order = audio_conf['delta_order']
-        self.delta_window_size = audio_conf['delta_window_size']
-        self.apply_cmvn = audio_conf['apply_cmvn']
+        self.feat_type = audio_conf["feat_type"]
+        self.sample_rate = audio_conf["sample_rate"]
+        self.frame_length = audio_conf["frame_length"]
+        self.frame_shift = audio_conf["frame_shift"]
+        self.num_mel_bins = audio_conf["num_mel_bins"]
+        self.delta_order = audio_conf["delta_order"]
+        self.delta_window_size = audio_conf["delta_window_size"]
+        self.apply_cmvn = audio_conf["apply_cmvn"]
 
         self.audio_feature_fn = (
             torchaudio.compliance.kaldi.fbank
-            if self.feat_type == 'fbank' else torchaudio.compliance.kaldi.mfcc)
+            if self.feat_type == "fbank"
+            else torchaudio.compliance.kaldi.mfcc
+        )
         self.max_seq_len = max_seq_len
 
         self.kwargs = kwargs
@@ -88,10 +91,9 @@ class SpeechDataset(Dataset):
     def __getitem__(self, index):
         manifest = self._manifests[index]
 
-        audio_path = manifest['audio_filepath']
+        audio_path = manifest["audio_filepath"]
         if not os.path.exists(audio_path):
-            raise FileNotFoundError(
-                'Audio file not found: {}'.format(audio_path))
+            raise FileNotFoundError("Audio file not found: {}".format(audio_path))
 
         # load and resample audio signals
         waveform, sample_rate = load_audio(audio_path, self.sample_rate)
@@ -114,7 +116,8 @@ class SpeechDataset(Dataset):
         if self.delta_order > 0:
             for _ in range(self.delta_order):
                 _delta = torchaudio.functional.compute_deltas(
-                    _delta, win_length=self.delta_window_size)
+                    _delta, win_length=self.delta_window_size
+                )
                 deltas.append(_delta)
 
             audio_frame_feats = torch.cat([audio_frame_feats] + deltas, dim=-1)
@@ -126,7 +129,7 @@ class SpeechDataset(Dataset):
         audio_frame_length = torch.LongTensor([audio_frame_feats.size(0)])
         # audio_frame_length = audio_frame_feats.size(0)
 
-        text = manifest['text']
+        text = manifest["text"]
 
         # TODO: preprocessing text, to remove punctuation
 
@@ -139,8 +142,8 @@ class SpeechDataset(Dataset):
         )
 
         text_input_ids, text_input_masks = (
-            text_tokenized_dict['input_ids'],
-            text_tokenized_dict['attention_mask'],
+            text_tokenized_dict["input_ids"],
+            text_tokenized_dict["attention_mask"],
         )
 
         text_input_ids += [self.tokenizer.eos_token_idx]
@@ -165,27 +168,18 @@ class SpeechDataset(Dataset):
 
 
 class SpeechDataIO(BaseDataIO):
-
-    def __init__(self,
-                 tokenizer_name_or_path: str = 'bert-base-chinese',
-                 **kwargs):
+    def __init__(self, tokenizer_name_or_path: str = "bert-base-chinese", **kwargs):
         super().__init__(**kwargs)
-        self.tokenizer = Tokenizer.load(
-            tokenizer_name_or_path, do_lower_case=True)
-        self.tokenizer.eos_token = '<EOS>'
+        self.tokenizer = Tokenizer.load(tokenizer_name_or_path, do_lower_case=True)
+        self.tokenizer.eos_token = "<EOS>"
         self.tokenizer.eos_token_idx = 1
 
-    def create_dataset(self,
-                       data_path: str,
-                       mode: str = 'train',
-                       **kwargs) -> Dataset:
+    def create_dataset(self, data_path: str, mode: str = "train", **kwargs) -> Dataset:
         return SpeechDataset(data_path, self.tokenizer, **kwargs)
 
-    def collate_fn(self,
-                   batch,
-                   tensor_names=None,
-                   mode: str = 'train',
-                   **kwargs) -> Dict[str, torch.Tensor]:
+    def collate_fn(
+        self, batch, tensor_names=None, mode: str = "train", **kwargs
+    ) -> Dict[str, torch.Tensor]:
 
         frame_feats, frame_length = [], []
         text_input_ids, text_input_length, text_input_masks = [], [], []

@@ -38,7 +38,7 @@ class NamedDataLoader(DataLoader):
             where the key is the name of the tensor and the value is the tensor
             itself."""
 
-            if type(dataset).__name__ == '_StreamingDataSet':
+            if type(dataset).__name__ == "_StreamingDataSet":
                 _tensor_names = dataset.tensor_names
             else:
                 _tensor_names = tensor_names
@@ -48,8 +48,9 @@ class NamedDataLoader(DataLoader):
 
             assert len(batch[0]) == len(
                 _tensor_names
-            ), 'Dataset contains {} tensors while there are {} tensor names supplied: {}'.format(
-                len(batch[0]), len(_tensor_names), _tensor_names)
+            ), "Dataset contains {} tensors while there are {} tensor names supplied: {}".format(
+                len(batch[0]), len(_tensor_names), _tensor_names
+            )
             lists_temp = [[] for _ in range(len(_tensor_names))]
             ret = dict(zip(_tensor_names, lists_temp))
 
@@ -72,7 +73,7 @@ class NamedDataLoader(DataLoader):
         )
 
     def __len__(self):
-        if type(self.dataset).__name__ == '_StreamingDataSet':
+        if type(self.dataset).__name__ == "_StreamingDataSet":
             num_samples = len(self.dataset)
             num_batches = ceil(num_samples / self.dataset.batch_size)
             return num_batches
@@ -80,8 +81,7 @@ class NamedDataLoader(DataLoader):
             return super().__len__()
 
 
-def covert_dataset_to_dataloader(dataset: Dataset, sampler: Sampler,
-                                 batch_size: int):
+def covert_dataset_to_dataloader(dataset: Dataset, sampler: Sampler, batch_size: int):
     """Wraps a PyTorch Dataset with a DataLoader.
 
     :param dataset: Dataset to be wrapped.
@@ -93,5 +93,6 @@ def covert_dataset_to_dataloader(dataset: Dataset, sampler: Sampler,
     """
     sampler_initialized = sampler(dataset)
     data_loader = DataLoader(
-        dataset, sampler=sampler_initialized, batch_size=batch_size)
+        dataset, sampler=sampler_initialized, batch_size=batch_size
+    )
     return data_loader

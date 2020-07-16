@@ -15,7 +15,6 @@ from transformers.tokenization_xlnet import XLNetTokenizer
 
 from .text_utils import run_split_on_punc
 
-
 logger = logging.getLogger(__name__)
 
 # Special characters used by the different tokenizers to indicate start of word / whitespace

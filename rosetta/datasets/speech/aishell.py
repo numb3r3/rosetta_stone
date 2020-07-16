@@ -12,7 +12,6 @@ from ...utils import io
 from ...utils.distribute import get_global_rank
 from .audio import create_audio_transform
 
-
 # Batch size will be halfed if the longest wavefile surpasses threshold
 HALF_BATCHSIZE_AUDIO_LEN = 800
 # Note: Bucketing may cause random sampling to be biased (less sampled for those length > HALF_BATCHSIZE_AUDIO_LEN )

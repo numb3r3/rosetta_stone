@@ -10,7 +10,6 @@ from torch.cuda import device_count
 
 from .. import helper
 
-
 logger = helper.get_logger(__name__)
 args = ' '.join(sys.argv)
 

@@ -4,8 +4,6 @@ from typing import Tuple
 import torch
 from torch.utils.data import DataLoader, Dataset
 from transformers import PreTrainedTokenizer
-
-
 """
 A simple raw-text dataset that's currently in run_language_modeling.py
 """

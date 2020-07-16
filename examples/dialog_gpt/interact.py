@@ -10,7 +10,6 @@ import torch
 import torch.nn.functional as F
 from transformers import BertTokenizer
 
-
 sys.path.append('.')
 
 SPECIAL_TOKENS = ['[CLS]', '[SEP]', '[PAD]', '[speaker1]', '[speaker2]']

@@ -3,7 +3,6 @@ import sys
 
 from setuptools import find_packages, setup
 
-
 PY36 = 'py36'
 PY37 = 'py37'
 PY38 = 'py38'

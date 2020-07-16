@@ -8,7 +8,6 @@ from transformers.tokenization_utils import PreTrainedTokenizer
 
 from . import DataProcessor
 
-
 logger = logging.getLogger(__name__)
 
 

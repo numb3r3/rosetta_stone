@@ -6,7 +6,6 @@ import tarfile
 import requests
 from tqdm import tqdm
 
-
 CHUNK_SIZE = 4096
 
 

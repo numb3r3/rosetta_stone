@@ -19,7 +19,6 @@ from rosetta import __version__, helper
 import torch
 import torch.nn.functional as F
 
-
 MODEL_NAMES = ['gpt2_chitchat']
 
 MODELS = [

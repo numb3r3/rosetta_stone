@@ -3,7 +3,6 @@ from tqdm import tqdm
 
 from .. import helper
 
-
 logger = logger = helper.get_logger(__name__)
 
 

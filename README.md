@@ -52,14 +52,28 @@ $ docker run --rm -it -v $(PWD):/rosetta --name rosetta huya_ai:rosetta bash
 
 # 📖 Usage
 
-In `rosetta` you don’t need to specify a training loop, just define the dataLoaders and the models. For ResNet example, 
+In `rosetta` you don’t need to specify a training loop, just define the dataLoaders and the models. For `ResNet` example, 
+
+- **Step 1**: Create YAML Configuration
+
+create a yaml file (usually named as `app.yaml`) within your repo as the example below. 
+
+    ```YAML
+    resnet56: &resnet56
+      model_module: examples.vision.resnet_model:ResNet
+      dataio_module: examples.vision.cifar10:CIFAR10
+
+      batch_size: 256
+      num_classes: 10
+    
+      n_size: 9
+    ```
+
+- **Step 2**: Define Dataloader
+
+- **Step 3**: Define Model
 
 
-- **Step 1**: Define Dataloader
-
-- **Step 2**: Define Model
-
-- **Step 3**: YAML configuration
 
 - **Step 4**: Start to train
 
@@ -113,3 +127,4 @@ Before making a contribution, please confirm that:
 - [给训练踩踩油门 —— Pytorch 加速数据读取](https://zhuanlan.zhihu.com/p/80695364)
 - [高性能PyTorch是如何炼成的？](https://mp.weixin.qq.com/s/x7u26Ok7O4xMOETmUYROJQ)
 - [service-streamer](https://github.com/ShannonAI/service-streamer): Boosting your Web Services of Deep Learning Applications.
+- [Masked batchnorm in PyTorch](https://yangkky.github.io/2020/03/16/masked-batch-norm.html)

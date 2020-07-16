@@ -21,14 +21,18 @@ default: &default
   save_checkpoints_steps: 500
 
   optimizer: AdamW
-  learning_rate: 1e-3  
+  learning_rate: 1e-3
+
+  lr_warmup_epoch: .0
+  lr_constant_epochs: .0
+  lr_decay_epoch: .0
 
   lr_warmup_steps: 1000
   lr_constant_steps: 1000
   lr_decay_method: exponential
   lr_decay_steps: 1000
   lr_decay_rate: 0.8
-  
+
   weight_decay_rate: 0.01
   weight_averaging_decay: 0.9
   gradient_clip: true

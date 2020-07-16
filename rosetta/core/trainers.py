@@ -1,7 +1,7 @@
 from functools import partial as Partial
 import os
 import time
-from typing import Dict, Iterable, Mapping, Optional, Tuple
+from typing import Dict, Iterable, Optional, Tuple
 
 import torch
 from torch import nn
@@ -77,7 +77,6 @@ class Trainer(object):
         else:
             self.device = device
 
-
         self._use_amp = use_amp
         if use_amp and not AMP_AVAILABLE:
             raise ImportError(
@@ -118,7 +117,7 @@ class Trainer(object):
             self._cuda_nonblocking = use_cuda_nonblocking
         else:
             self._cuda_nonblocking = False
-            
+
         self.optimizer = optimizer
         self.set_optimizer()
 

@@ -42,8 +42,6 @@ def set_trainer_parser(parser=None):
 
     gp = add_arg_group(parser, "trainer arguments")
 
-    from pkg_resources import resource_filename
-
     gp.add_argument("model_name", type=str, help="the model name")
     gp.add_argument(
         "--yaml-path", type=str, default="app.yaml", help="a yaml file configs models"
@@ -84,8 +82,6 @@ def set_evaluator_parser(parser=None):
 
     gp = add_arg_group(parser, "evaluator arguments")
 
-    from pkg_resources import resource_filename
-
     gp.add_argument("model_name", type=str, help="the model name")
     gp.add_argument(
         "--yaml-path", type=str, default="app.yaml", help="a yaml file configs models"
@@ -110,8 +106,6 @@ def get_main_parser():
     # create the top-level parser
     parser = set_base_parser()
     import os
-
-    show_all = "ROSETTA_FULL_CLI" in os.environ
 
     sp = parser.add_subparsers(
         dest="cli",

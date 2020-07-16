@@ -139,7 +139,8 @@ def load_yaml_params(yaml_path: str, model_name: str, cli_args=None):
     return hparams
 
 
-def create_model(hparams, resume_from: str=None):
+def create_model(hparams, resume_from: str = None):
+    import torch
     from .utils.pathlib import import_path
 
     model_pkg_name, model_cls_name = hparams["model_module"].split(":")
@@ -147,11 +148,6 @@ def create_model(hparams, resume_from: str=None):
     model_pkg = import_path(model_pkg_path)
     model_cls_ = getattr(model_pkg, model_cls_name)
     model = model_cls_(**hparams)
-
-    # model_pkg_name, model_cls_name = hparams["model_module"].split(':')
-    # model_pkg = importlib.import_module(model_pkg_name)
-    # model_cls_ = getattr(model_pkg, model_cls_name)
-    # model = model_cls_(**hparams)
 
     if resume_from:
         if os.path.isfile(resume_from):

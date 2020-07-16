@@ -81,7 +81,7 @@ def LinearAnnealingWithWarmup(
 
 
 def CosineAnealingWithWarmup(
-    warmup_steps, total_training_steps, num_cycles=0.5, last_epoch=-1
+    warmup_steps, constant_steps, total_training_steps, num_cycles=0.5, last_epoch=-1
 ):
     """ Set the learning rate of each parameter group using a cosine annealing schedule
     """
@@ -93,7 +93,7 @@ def CosineAnealingWithWarmup(
             return 1.0
         else:
             progress = (current_step - warmup_steps) / max(
-                1, total_training_steps - num_warmup_steps
+                1, total_training_steps - warmup_steps
             )
             return max(
                 0.0,

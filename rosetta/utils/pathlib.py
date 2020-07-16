@@ -1,7 +1,6 @@
 import importlib
 import itertools
-import os
-from pathlib import Path, PurePath
+from pathlib import Path
 import sys
 from types import ModuleType
 from typing import Optional, Union

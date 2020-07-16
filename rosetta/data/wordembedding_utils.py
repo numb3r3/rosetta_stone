@@ -12,21 +12,21 @@ def load_embeddings(embedding_file: str, vocab: list):
     hidden_size = None
     vectors = {}
 
-    with open(embedding_file, "r") as f:
-        for line in tqdm(f, desc="loading embeddings"):
+    with open(embedding_file, 'r') as f:
+        for line in tqdm(f, desc='loading embeddings'):
             line = line.strip()
             if line:
-                word, vec = line.split(" ", 1)
+                word, vec = line.split(' ', 1)
                 # omit repetitions = speed up + debug
                 if word in words:
                     continue
 
                 try:
-                    np_vec = np.fromstring(vec, sep=" ")
+                    np_vec = np.fromstring(vec, sep=' ')
                     if hidden_size is None:
                         # word2vec includes number of vectors and its dimension as header
                         if len(np_vec) < 4:
-                            logger.info("Skipping header")
+                            logger.info('Skipping header')
                             continue
                         else:
                             hidden_size = len(np_vec)
@@ -36,8 +36,8 @@ def load_embeddings(embedding_file: str, vocab: list):
                 except Exception as ex:
                     if logger is not None:
                         logger.debug(
-                            "Embeddings reader: Could not convert line: {}".format(line)
-                        )
+                            'Embeddings reader: Could not convert line: {}'.
+                            format(line))
                     else:
                         raise ex
     # reduce memory usage
@@ -47,7 +47,8 @@ def load_embeddings(embedding_file: str, vocab: list):
     for i, w in enumerate(vocab):
         current = vectors.get(w, np.zeros(hidden_size))
         if w not in vectors:
-            logger.warning(f"Could not load pretrained embedding for word: {w}")
+            logger.warning(
+                f'Could not load pretrained embedding for word: {w}')
         embeddings[i, :] = current
     return embeddings
 
@@ -55,9 +56,9 @@ def load_embeddings(embedding_file: str, vocab: list):
 def load_word2vec_vocab(vocab_filename: str):
     """Loads a vocabulary file into a list."""
     vocab = []
-    with open(vocab_filename, "r") as reader:
+    with open(vocab_filename, 'r') as reader:
         for l in reader:
-            w, c = l.strip().split(" ")
+            w, c = l.strip().split(' ')
             vocab.append(w.strip())
     return vocab
 
@@ -71,11 +72,10 @@ def s3e_pooling(
     mask,
     svd_components=None,
 ):
-    """
-    Pooling of word/token embeddings as described by Wang et al in their paper
-    "Efficient Sentence Embedding via Semantic Subspace Analysis"
-    (https://arxiv.org/abs/2002.09620)
-    Adjusted their implementation from here: https://github.com/BinWang28/Sentence-Embedding-S3E
+    """Pooling of word/token embeddings as described by Wang et al in their
+    paper "Efficient Sentence Embedding via Semantic Subspace Analysis"
+    (https://arxiv.org/abs/2002.09620) Adjusted their implementation from here:
+    https://github.com/BinWang28/Sentence-Embedding-S3E.
 
     This method takes a fitted "s3e model" and token embeddings from a language model and returns sentence embeddings
     using the S3E Method. The model can be fitted via `fit_s3e_on_corpus()`.
@@ -117,10 +117,12 @@ def s3e_pooling(
             cluster = token_to_cluster[k]
 
             if cluster in stage_vec[-1]:
-                stage_vec[-1][cluster].append(stage_vec[-2][k] * token_weights[k])
+                stage_vec[-1][cluster].append(stage_vec[-2][k] *
+                                              token_weights[k])
             else:
                 stage_vec[-1][cluster] = []
-                stage_vec[-1][cluster].append(stage_vec[-2][k] * token_weights[k])
+                stage_vec[-1][cluster].append(stage_vec[-2][k] *
+                                              token_weights[k])
 
         # VLAD for each cluster
         for k, v in stage_vec[-1].items():
@@ -167,6 +169,6 @@ def s3e_pooling(
     # Post processing (removal of first principal component)
     if svd_components is not None:
         embeddings = (
-            embeddings - embeddings.dot(svd_components.transpose()) * svd_components
-        )
+            embeddings -
+            embeddings.dot(svd_components.transpose()) * svd_components)
     return embeddings

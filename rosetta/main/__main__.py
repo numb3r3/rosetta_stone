@@ -1,7 +1,7 @@
 import sys
 
 
-__all__ = ["main"]
+__all__ = ['main']
 
 
 def _get_run_args(print_args: bool = True):
@@ -23,13 +23,13 @@ def _get_run_args(print_args: bool = True):
 
 
 def main():
-    """The main entrypoint of the CLI """
+    """The main entrypoint of the CLI."""
     from . import api
 
     args, unused_argv = _get_run_args()
 
-    getattr(api, args.cli.replace("-", "_"))(args, unused_argv)
+    getattr(api, args.cli.replace('-', '_'))(args, unused_argv)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

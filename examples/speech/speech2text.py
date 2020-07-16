@@ -13,30 +13,29 @@ from .models.encoder import TransformerEncoder
 
 
 class Speech2TextModel(nn.Module):
-    def __init__(
-        self,
-        feature_dim: int,
-        vocab_size: int,
-        encoder_conf: Dict,
-        decoder_conf: Dict,
-        attention_conf: Dict,
-        dropout_rate: float = 0.1,
-        prenet_name: str = None,
-        **kwargs
-    ):
+
+    def __init__(self,
+                 feature_dim: int,
+                 vocab_size: int,
+                 encoder_conf: Dict,
+                 decoder_conf: Dict,
+                 attention_conf: Dict,
+                 dropout_rate: float = 0.1,
+                 prenet_name: str = None,
+                 **kwargs):
         super().__init__()
 
-        self.encoder_dim = encoder_conf["d_model"]
-        self.decoder_dim = decoder_conf["d_model"]
+        self.encoder_dim = encoder_conf['d_model']
+        self.decoder_dim = decoder_conf['d_model']
 
         self.prenet_name = prenet_name
 
         self.prenet = None
         # 4x reduction on time feature extraction
-        if prenet_name == "vgg":
+        if prenet_name == 'vgg':
             # TODO: fix the output dim issue
             self.prenet = VGGExtractor(feature_dim)
-        elif prenet_name == "cnn":
+        elif prenet_name == 'cnn':
             self.prenet = CNNExtractor(feature_dim, self.encoder_dim)
 
         self.position_encoder = SinusoidalPositionalEncoder(self.encoder_dim)
@@ -47,29 +46,20 @@ class Speech2TextModel(nn.Module):
 
         self.output_layer = nn.Linear(self.decoder_dim, vocab_size)
 
-    def forward(
-        self,
-        audio_frame_feats,
-        audio_frame_length,
-        text_input_ids,
-        text_input_length,
-        text_input_masks,
-        **kwargs
-    ):
+    def forward(self, audio_frame_feats, audio_frame_length, text_input_ids,
+                text_input_length, text_input_masks, **kwargs):
 
         # down-sampling step
         if self.prenet:
-            audio_frame_feats, _ = self.prenet(
-                audio_frame_feats, audio_frame_feats.size(1)
-            )
+            audio_frame_feats, _ = self.prenet(audio_frame_feats,
+                                               audio_frame_feats.size(1))
 
         # add positional embedding
 
         # inspired from "Attention is All You Need"
         # (https://arxiv.org/abs/1706.03762)
         embedding_scale = torch.sqrt(torch.FloatTensor([self.encoder_dim])).to(
-            audio_frame_feats.device
-        )
+            audio_frame_feats.device)
 
         audio_frame_feats = audio_frame_feats * embedding_scale
 

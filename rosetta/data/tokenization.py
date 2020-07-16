@@ -1,5 +1,3 @@
-# coding=utf-8
-
 import collections
 import json
 import logging
@@ -21,21 +19,26 @@ from .text_utils import run_split_on_punc
 logger = logging.getLogger(__name__)
 
 # Special characters used by the different tokenizers to indicate start of word / whitespace
-SPECIAL_TOKENIZER_CHARS = r"^(##|Ġ|▁)"
+SPECIAL_TOKENIZER_CHARS = r'^(##|Ġ|▁)'
 
-SPECIAL_TOKENS = ["[CLS]", "[SEP]", "[UNK]", "[PAD]", "[MASK]"]
+SPECIAL_TOKENS = ['[CLS]', '[SEP]', '[UNK]', '[PAD]', '[MASK]']
 
 
 class Tokenizer:
-    """
-    Simple Wrapper for Tokenizers from the transformers package. Enables loading of different Tokenizer classes with a uniform interface.
+    """Simple Wrapper for Tokenizers from the transformers package.
+
+    Enables loading of different Tokenizer classes with a uniform interface.
     """
 
     @classmethod
-    def load(cls, pretrained_model_name_or_path, tokenizer_class=None, **kwargs):
-        """
-        Enables loading of different Tokenizer classes with a uniform interface. Either infer the class from
-        `pretrained_model_name_or_path` or define it manually via `tokenizer_class`.
+    def load(cls,
+             pretrained_model_name_or_path,
+             tokenizer_class=None,
+             **kwargs):
+        """Enables loading of different Tokenizer classes with a uniform
+        interface. Either infer the class from `pretrained_model_name_or_path`
+        or define it manually via `tokenizer_class`.
+
         :param pretrained_model_name_or_path:  The path of the saved pretrained model or its name (e.g. `bert-base-uncased`)
         :type pretrained_model_name_or_path: str
         :param tokenizer_class: (Optional) Name of the tokenizer class to load (e.g. `BertTokenizer`)
@@ -47,78 +50,69 @@ class Tokenizer:
         pretrained_model_name_or_path = str(pretrained_model_name_or_path)
         # guess tokenizer type from name
         if tokenizer_class is None:
-            if "albert" in pretrained_model_name_or_path.lower():
-                tokenizer_class = "AlbertTokenizer"
-            elif "xlm-roberta" in pretrained_model_name_or_path.lower():
-                tokenizer_class = "XLMRobertaTokenizer"
-            elif "roberta" in pretrained_model_name_or_path.lower():
-                tokenizer_class = "RobertaTokenizer"
-            elif "distilbert" in pretrained_model_name_or_path.lower():
-                tokenizer_class = "DistilBertTokenizer"
-            elif "bert" in pretrained_model_name_or_path.lower():
-                tokenizer_class = "BertTokenizer"
-            elif "xlnet" in pretrained_model_name_or_path.lower():
-                tokenizer_class = "XLNetTokenizer"
-            elif (
-                "word2vec" in pretrained_model_name_or_path.lower()
-                or "glove" in pretrained_model_name_or_path.lower()
-                or "fasttext" in pretrained_model_name_or_path.lower()
-            ):
-                tokenizer_class = "EmbeddingTokenizer"
+            if 'albert' in pretrained_model_name_or_path.lower():
+                tokenizer_class = 'AlbertTokenizer'
+            elif 'xlm-roberta' in pretrained_model_name_or_path.lower():
+                tokenizer_class = 'XLMRobertaTokenizer'
+            elif 'roberta' in pretrained_model_name_or_path.lower():
+                tokenizer_class = 'RobertaTokenizer'
+            elif 'distilbert' in pretrained_model_name_or_path.lower():
+                tokenizer_class = 'DistilBertTokenizer'
+            elif 'bert' in pretrained_model_name_or_path.lower():
+                tokenizer_class = 'BertTokenizer'
+            elif 'xlnet' in pretrained_model_name_or_path.lower():
+                tokenizer_class = 'XLNetTokenizer'
+            elif ('word2vec' in pretrained_model_name_or_path.lower()
+                  or 'glove' in pretrained_model_name_or_path.lower()
+                  or 'fasttext' in pretrained_model_name_or_path.lower()):
+                tokenizer_class = 'EmbeddingTokenizer'
             else:
                 raise ValueError(
                     f"Could not infer tokenizer_class from name '{pretrained_model_name_or_path}'. Set "
-                    f"arg `tokenizer_class` in Tokenizer.load() to one of: AlbertTokenizer, "
-                    f"XLMRobertaTokenizer, RobertaTokenizer, DistilBertTokenizer, BertTokenizer, or "
-                    f"XLNetTokenizer."
-                )
+                    f'arg `tokenizer_class` in Tokenizer.load() to one of: AlbertTokenizer, '
+                    f'XLMRobertaTokenizer, RobertaTokenizer, DistilBertTokenizer, BertTokenizer, or '
+                    f'XLNetTokenizer.')
             logger.info("Loading tokenizer of type '%s'" % tokenizer_class)
         # return appropriate tokenizer object
-        if tokenizer_class == "AlbertTokenizer":
+        if tokenizer_class == 'AlbertTokenizer':
             ret = AlbertTokenizer.from_pretrained(
-                pretrained_model_name_or_path, keep_accents=True, **kwargs
-            )
-        elif tokenizer_class == "XLMRobertaTokenizer":
+                pretrained_model_name_or_path, keep_accents=True, **kwargs)
+        elif tokenizer_class == 'XLMRobertaTokenizer':
             ret = XLMRobertaTokenizer.from_pretrained(
-                pretrained_model_name_or_path, **kwargs
-            )
-        elif tokenizer_class == "RobertaTokenizer":
+                pretrained_model_name_or_path, **kwargs)
+        elif tokenizer_class == 'RobertaTokenizer':
             ret = RobertaTokenizer.from_pretrained(
-                pretrained_model_name_or_path, **kwargs
-            )
-        elif tokenizer_class == "DistilBertTokenizer":
+                pretrained_model_name_or_path, **kwargs)
+        elif tokenizer_class == 'DistilBertTokenizer':
             ret = DistilBertTokenizer.from_pretrained(
-                pretrained_model_name_or_path, **kwargs
-            )
-        elif tokenizer_class == "BertTokenizer":
-            ret = BertTokenizer.from_pretrained(pretrained_model_name_or_path, **kwargs)
-        elif tokenizer_class == "XLNetTokenizer":
+                pretrained_model_name_or_path, **kwargs)
+        elif tokenizer_class == 'BertTokenizer':
+            ret = BertTokenizer.from_pretrained(pretrained_model_name_or_path,
+                                                **kwargs)
+        elif tokenizer_class == 'XLNetTokenizer':
             ret = XLNetTokenizer.from_pretrained(
-                pretrained_model_name_or_path, keep_accents=True, **kwargs
-            )
-        elif tokenizer_class == "EmbeddingTokenizer":
+                pretrained_model_name_or_path, keep_accents=True, **kwargs)
+        elif tokenizer_class == 'EmbeddingTokenizer':
             ret = EmbeddingTokenizer.from_pretrained(
-                pretrained_model_name_or_path, **kwargs
-            )
+                pretrained_model_name_or_path, **kwargs)
         if ret is None:
-            raise Exception("Unable to load tokenizer")
+            raise Exception('Unable to load tokenizer')
         else:
             return ret
 
 
 class EmbeddingTokenizer(PreTrainedTokenizer):
-    """Constructs an EmbeddingTokenizer.
-    """
+    """Constructs an EmbeddingTokenizer."""
 
     def __init__(
         self,
         vocab_file,
         do_lower_case=True,
-        unk_token="[UNK]",
-        sep_token="[SEP]",
-        pad_token="[PAD]",
-        cls_token="[CLS]",
-        mask_token="[MASK]",
+        unk_token='[UNK]',
+        sep_token='[SEP]',
+        pad_token='[PAD]',
+        cls_token='[CLS]',
+        mask_token='[MASK]',
         **kwargs,
     ):
         """
@@ -140,13 +134,13 @@ class EmbeddingTokenizer(PreTrainedTokenizer):
 
         if not os.path.isfile(vocab_file):
             raise ValueError(
-                "Can't find a vocabulary file at path '{}'.".format(vocab_file)
-            )
+                "Can't find a vocabulary file at path '{}'.".format(
+                    vocab_file))
         self.vocab = load_vocab(vocab_file)
         self.unk_tok_idx = self.vocab[unk_token]
-        self.ids_to_tokens = collections.OrderedDict(
-            [(ids, tok) for tok, ids in self.vocab.items()]
-        )
+        self.ids_to_tokens = collections.OrderedDict([
+            (ids, tok) for tok, ids in self.vocab.items()
+        ])
         self.do_lower_case = do_lower_case
         self.vocab_size = len(self.vocab)
 
@@ -156,13 +150,14 @@ class EmbeddingTokenizer(PreTrainedTokenizer):
         if os.path.isdir(pretrained_model_name_or_path):
             # Get the vocabulary from local files
             config_dict = json.load(
-                open(os.path.join(pretrained_model_name_or_path, "config.json"), "r")
-            )
-            resolved_vocab_file = os.path.join(
-                pretrained_model_name_or_path, config_dict["vocab_filename"]
-            )
+                open(
+                    os.path.join(pretrained_model_name_or_path, 'config.json'),
+                    'r'))
+            resolved_vocab_file = os.path.join(pretrained_model_name_or_path,
+                                               config_dict['vocab_filename'])
         else:
-            logger.error("Model name %s not found!" % pretrained_model_name_or_path)
+            logger.error('Model name %s not found!' %
+                         pretrained_model_name_or_path)
             raise NotImplementedError
 
         tokenizer = cls(vocab_file=resolved_vocab_file, **kwargs)
@@ -179,30 +174,30 @@ class EmbeddingTokenizer(PreTrainedTokenizer):
         """Save the tokenizer vocabulary to a directory or file."""
         index = 0
         if os.path.isdir(vocab_path):
-            vocab_file = os.path.join(vocab_path, "vocab.txt")
+            vocab_file = os.path.join(vocab_path, 'vocab.txt')
         else:
             vocab_file = vocab_path
-        with open(vocab_file, "w", encoding="utf-8") as writer:
-            for token, token_index in sorted(self.vocab.items(), key=lambda kv: kv[1]):
+        with open(vocab_file, 'w', encoding='utf-8') as writer:
+            for token, token_index in sorted(
+                    self.vocab.items(), key=lambda kv: kv[1]):
                 if index != token_index:
                     logger.warning(
-                        "Saving vocabulary to {}: vocabulary indices are not consecutive."
-                        " Please check that the vocabulary is not corrupted!".format(
-                            vocab_file
-                        )
-                    )
+                        'Saving vocabulary to {}: vocabulary indices are not consecutive.'
+                        ' Please check that the vocabulary is not corrupted!'.
+                        format(vocab_file))
                     index = token_index
-                writer.write(token + "\n")
+                writer.write(token + '\n')
                 index += 1
-        return (vocab_file,)
+        return (vocab_file, )
 
     def _convert_token_to_id(self, token):
         return self.vocab.get(token, self.unk_tok_idx)
 
 
 def tokenize_with_metadata(text, tokenizer):
-    """
-    Performing tokenization while storing some important metadata for each token:
+    """Performing tokenization while storing some important metadata for each
+    token:
+
     * offsets: (int) Character index where the token begins in the original text
     * start_of_word: (bool) If the token is the start of a word. Particularly helpful for NER and QA tasks.
     We do this by first doing whitespace tokenization and then applying the model specific tokenizer to each "word".
@@ -221,25 +216,32 @@ def tokenize_with_metadata(text, tokenizer):
     # normalize all other whitespace characters to " "
     # Note: using text.split() directly would destroy the offset,
     # since \n\n\n would be treated similarly as a single \n
-    text = re.sub(r"\s", " ", text)
+    text = re.sub(r'\s', ' ', text)
     # split text into "words" (here: simple whitespace tokenizer).
-    words = text.split(" ")
+    words = text.split(' ')
     word_offsets = []
     cumulated = 0
     for idx, word in enumerate(words):
         word_offsets.append(cumulated)
-        cumulated += len(word) + 1  # 1 because we so far have whitespace tokenizer
+        cumulated += len(
+            word) + 1  # 1 because we so far have whitespace tokenizer
 
     # split "words" into "subword tokens"
-    tokens, offsets, start_of_word = _words_to_tokens(words, word_offsets, tokenizer)
+    tokens, offsets, start_of_word = _words_to_tokens(words, word_offsets,
+                                                      tokenizer)
 
-    tokenized = {"tokens": tokens, "offsets": offsets, "start_of_word": start_of_word}
+    tokenized = {
+        'tokens': tokens,
+        'offsets': offsets,
+        'start_of_word': start_of_word
+    }
     return tokenized
 
 
 def _words_to_tokens(words, word_offsets, tokenizer):
-    """
-    Tokenize "words" into subword tokens while keeping track of offsets and if a token is the start of a word.
+    """Tokenize "words" into subword tokens while keeping track of offsets and
+    if a token is the start of a word.
+
     :param words: list of words.
     :type words: list
     :param word_offsets: Character indices where each word begins in the original text
@@ -281,7 +283,7 @@ def _words_to_tokens(words, word_offsets, tokenizer):
             token_offsets.append(w_off)
             # Depending on the tokenizer type special chars are added to distinguish tokens with preceeding
             # whitespace (=> "start of a word"). We need to get rid of these to calculate the original length of the token
-            orig_tok = re.sub(SPECIAL_TOKENIZER_CHARS, "", tok)
+            orig_tok = re.sub(SPECIAL_TOKENIZER_CHARS, '', tok)
             w_off += len(orig_tok)
             if first_tok:
                 start_of_word.append(True)
@@ -298,15 +300,16 @@ def truncate_sequences(
     seq_b,
     tokenizer,
     max_seq_len,
-    truncation_strategy="longest_first",
+    truncation_strategy='longest_first',
     with_special_tokens=True,
     stride=0,
 ):
-    """
-    Reduces a single sequence or a pair of sequences to a maximum sequence length.
-    The sequences can contain tokens or any other elements (offsets, masks ...).
-    If `with_special_tokens` is enabled, it'll remove some additional tokens to have exactly enough space for later adding special tokens (CLS, SEP etc.)
-    Supported truncation strategies:
+    """Reduces a single sequence or a pair of sequences to a maximum sequence
+    length. The sequences can contain tokens or any other elements (offsets,
+    masks ...). If `with_special_tokens` is enabled, it'll remove some
+    additional tokens to have exactly enough space for later adding special
+    tokens (CLS, SEP etc.) Supported truncation strategies:
+
     - longest_first: (default) Iteratively reduce the inputs sequence until the input is under max_length starting from the longest one at each token (when there is a pair of input sequences). Overflowing tokens only contains overflow from the first sequence.
     - only_first: Only truncate the first sequence. raise an error if the first sequence is shorter or equal to than num_tokens_to_remove.
     - only_second: Only truncate the second sequence
@@ -330,8 +333,7 @@ def truncate_sequences(
     len_a = len(seq_a)
     len_b = len(seq_b) if pair else 0
     num_special_tokens = (
-        tokenizer.num_added_tokens(pair=pair) if with_special_tokens else 0
-    )
+        tokenizer.num_added_tokens(pair=pair) if with_special_tokens else 0)
     total_len = len_a + len_b + num_special_tokens
     overflowing_tokens = []
 

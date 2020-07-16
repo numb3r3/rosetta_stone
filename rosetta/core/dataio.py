@@ -12,19 +12,19 @@ from ..utils.distribute import get_global_rank, get_world_size, is_distributed
 
 
 class BaseDataIO:
-    """ Generates and stores PyTorch DataLoader objects for the train, dev and test datasets.
-
-    """
+    """Generates and stores PyTorch DataLoader objects for the train, dev and
+    test datasets."""
 
     def __init__(self, **kwargs):
         self.logger = helper.get_logger(__name__)
 
-    def collate_fn(
-        self, batch, tensor_names=None, mode: str = "train", **kwargs
-    ) -> Tuple[torch.Tensor]:
-        """
-        A custom collate function for data loading that formats the batch as a tuple tensors
-        """
+    def collate_fn(self,
+                   batch,
+                   tensor_names=None,
+                   mode: str = 'train',
+                   **kwargs) -> Tuple[torch.Tensor]:
+        """A custom collate function for data loading that formats the batch as
+        a tuple tensors."""
         assert isinstance(batch, list)
 
         _tensor_names = tensor_names if tensor_names else list(batch[0].keys())
@@ -36,20 +36,18 @@ class BaseDataIO:
 
         return ret
 
-    def create_dataset(self, data_path: str, mode: str = "train", **kwargs):
+    def create_dataset(self, data_path: str, mode: str = 'train', **kwargs):
         raise NotImplementedError
 
-    def create_data_loader(
-        self,
-        data_path: str,
-        batch_size: int,
-        mode: str = "train",
-        pin_memory: bool = True,
-        num_workers: int = 0,
-        **kwargs
-    ):
-        """
-        Wraps a PyTorch Dataset with a DataLoader.
+    def create_data_loader(self,
+                           data_path: str,
+                           batch_size: int,
+                           mode: str = 'train',
+                           pin_memory: bool = True,
+                           num_workers: int = 0,
+                           **kwargs):
+        """Wraps a PyTorch Dataset with a DataLoader.
+
         :param dataset: Dataset to be wrapped.
         :type dataset: Dataset
         :param sampler: PyTorch sampler used to pick samples in a batch.
@@ -62,14 +60,15 @@ class BaseDataIO:
         :return: A DataLoader that wraps the input Dataset.
         """
         dataset = self.create_dataset(data_path, mode, **kwargs)
-        is_train = True if mode == "train" else False
+        is_train = True if mode == 'train' else False
         tensor_names = None
-        if type(dataset).__name__ == "_StreamingDataSet":
+        if type(dataset).__name__ == '_StreamingDataSet':
             tensor_names = dataset.tensor_names
 
         sampler = None
         if is_distributed():
-            sampler_kwargs = dict(num_replicas=get_world_size(), rank=get_global_rank())
+            sampler_kwargs = dict(
+                num_replicas=get_world_size(), rank=get_global_rank())
             sampler = DistributedSampler(dataset, **sampler_kwargs)
         elif is_train:
             sampler = RandomSampler(dataset, True)
@@ -77,13 +76,10 @@ class BaseDataIO:
         loader_kwargs = dict()
         # When supported, use 'forkserver' to spawn dataloader workers instead of 'fork' to prevent
         # issues with Infiniband implementations that are not fork-safe
-        if (
-            num_workers > 0
-            and hasattr(mp, "_supports_context")
-            and mp._supports_context
-            and "forkserver" in mp.get_all_start_methods()
-        ):
-            loader_kwargs["multiprocessing_context"] = "forkserver"
+        if (num_workers > 0 and hasattr(mp, '_supports_context')
+                and mp._supports_context
+                and 'forkserver' in mp.get_all_start_methods()):
+            loader_kwargs['multiprocessing_context'] = 'forkserver'
 
         return DataLoader(
             dataset,
@@ -94,9 +90,7 @@ class BaseDataIO:
                 batch_size=batch_size,
                 tensor_names=tensor_names,
                 mode=mode,
-                **kwargs
-            ),
+                **kwargs),
             pin_memory=pin_memory,
             num_workers=num_workers,
-            **loader_kwargs
-        )
+            **loader_kwargs)

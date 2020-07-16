@@ -9,25 +9,24 @@ import torch.nn.functional as F
 
 
 class TransformerDecoder(nn.Module):
-    def __init__(
-        self,
-        d_model: int = 512,
-        nhead: int = 8,
-        num_layers: int = 6,
-        dim_feedforward: int = 2048,
-        dropout: float = 0.1,
-        activation: str = "relu",
-        **kwargs
-    ):
+
+    def __init__(self,
+                 d_model: int = 512,
+                 nhead: int = 8,
+                 num_layers: int = 6,
+                 dim_feedforward: int = 2048,
+                 dropout: float = 0.1,
+                 activation: str = 'relu',
+                 **kwargs):
         super().__init__()
 
-        decoder_layer = _TransformerDecoderLayer(
-            d_model, nhead, dim_feedforward, dropout, activation
-        )
+        decoder_layer = _TransformerDecoderLayer(d_model, nhead,
+                                                 dim_feedforward, dropout,
+                                                 activation)
         decoder_norm = nn.LayerNorm(d_model)
-        self.transformer_decoder = _TransformerDecoder(
-            decoder_layer, num_layers, decoder_norm
-        )
+        self.transformer_decoder = _TransformerDecoder(decoder_layer,
+                                                       num_layers,
+                                                       decoder_norm)
 
         self._reset_parameters()
 

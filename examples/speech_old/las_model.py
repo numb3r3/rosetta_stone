@@ -51,7 +51,7 @@ def init_gate(bias):
     return bias
 
 
-def cal_cer(pred, truth, pad_idx: int = 0, mode: str = "cer", ctc=False):
+def cal_cer(pred, truth, pad_idx: int = 0, mode: str = 'cer', ctc=False):
     # Calculate error rate of a batch
     if pred is None:
         return np.nan
@@ -75,23 +75,19 @@ def cal_cer(pred, truth, pad_idx: int = 0, mode: str = "cer", ctc=False):
 
 
 class LASNet(nn.Module):
-    """ Implementation of "An improved hybrid CTC-Attention model for speech recognition"
-    https://arxiv.org/abs/1810.12020
+    """Implementation of "An improved hybrid CTC-Attention model for speech
+    recognition" https://arxiv.org/abs/1810.12020."""
 
-    """
-
-    def __init__(
-        self,
-        input_size: int = 40,
-        vocab_size: int = 21128,
-        init_adadelta: bool = True,
-        ctc_weight: float = 0.0,
-        encoder_config: Dict = {},
-        attention_config: Dict = {},
-        decoder_config: Dict = {},
-        emb_drop: float = 0.0,
-        **kwargs
-    ):
+    def __init__(self,
+                 input_size: int = 40,
+                 vocab_size: int = 21128,
+                 init_adadelta: bool = True,
+                 ctc_weight: float = 0.0,
+                 encoder_config: Dict = {},
+                 attention_config: Dict = {},
+                 decoder_config: Dict = {},
+                 emb_drop: float = 0.0,
+                 **kwargs):
         super().__init__()
 
         # Setup
@@ -113,23 +109,21 @@ class LASNet(nn.Module):
             self.ctc_loss = torch.nn.CTCLoss(blank=0, zero_infinity=False)
 
         if self.enable_att:
-            self.dec_dim = decoder_config["dim"]
+            self.dec_dim = decoder_config['dim']
             self.pre_embed = nn.Embedding(vocab_size, self.dec_dim)
             self.embed_drop = nn.Dropout(emb_drop)
-            self.decoder = Decoder(
-                self.encoder.out_dim + self.dec_dim, vocab_size, **decoder_config
-            )
+            self.decoder = Decoder(self.encoder.out_dim + self.dec_dim,
+                                   vocab_size, **decoder_config)
 
             query_dim = self.dec_dim * self.decoder.layer
-            self.attention = Attention(
-                self.encoder.out_dim, query_dim, **attention_config
-            )
+            self.attention = Attention(self.encoder.out_dim, query_dim,
+                                       **attention_config)
 
         # Init
         if init_adadelta:
             self.apply(init_weights)
             for l in range(self.decoder.layer):
-                bias = getattr(self.decoder.layers, "bias_ih_l{}".format(l))
+                bias = getattr(self.decoder.layers, 'bias_ih_l{}'.format(l))
                 bias = init_gate(bias)
 
         # Losses
@@ -137,7 +131,7 @@ class LASNet(nn.Module):
         self.seq_loss = torch.nn.CrossEntropyLoss(ignore_index=0)
 
     def set_state(self, prev_state, prev_attn):
-        """ Setting up all memory states for beam decoding"""
+        """Setting up all memory states for beam decoding."""
         self.decoder.set_state(prev_state)
         self.attention.set_mem(prev_attn)
 
@@ -152,17 +146,17 @@ class LASNet(nn.Module):
         emb_decoder=None,
         get_dec_state=False,
     ):
-        """
-        Arguments
-            audio_feature - [BxTxD] Acoustic feature with shape 
-            feature_len   - [B]     Length of each sample in a batch
-            decode_step   - [int]   The maximum number of attention decoder steps 
-            tf_rate       - [0,1]   The probability to perform teacher forcing for each step
-            teacher       - [BxL] Ground truth for teacher forcing with sentence length L
-            emb_decoder   - [obj]   Introduces the word embedding decoder, different behavior for training/inference
-                                    At training stage, this ONLY affects self-sampling (output remains the same)
-                                    At inference stage, this affects output to become log prob. with distribution fusion
-            get_dec_state - [bool]  If true, return decoder state [BxLxD] for other purpose
+        """Arguments.
+
+        audio_feature - [BxTxD] Acoustic feature with shape
+        feature_len   - [B]     Length of each sample in a batch
+        decode_step   - [int]   The maximum number of attention decoder steps
+        tf_rate       - [0,1]   The probability to perform teacher forcing for each step
+        teacher       - [BxL] Ground truth for teacher forcing with sentence length L
+        emb_decoder   - [obj]   Introduces the word embedding decoder, different behavior for training/inference
+                                At training stage, this ONLY affects self-sampling (output remains the same)
+                                At inference stage, this affects output to become log prob. with distribution fusion
+        get_dec_state - [bool]  If true, return decoder state [BxLxD] for other purpose
         """
         # Init
         bs = audio_feature.shape[0]
@@ -183,8 +177,9 @@ class LASNet(nn.Module):
             self.attention.reset_mem()
 
             last_char = self.pre_embed(
-                torch.zeros((bs), dtype=torch.long, device=encode_feature.device)
-            )
+                torch.zeros((bs),
+                            dtype=torch.long,
+                            device=encode_feature.device))
             att_seq, output_seq = [], []
 
             # Preprocess data for teacher forcing
@@ -195,9 +190,8 @@ class LASNet(nn.Module):
             decode_step = token_ids.shape[1]
             for t in range(decode_step):
                 # Attend (inputs current state of first layer, encoded features)
-                attn, context = self.attention(
-                    self.decoder.get_query(), encode_feature, encode_len
-                )
+                attn, context = self.attention(self.decoder.get_query(),
+                                               encode_feature, encode_len)
 
                 # Decode (inputs context + embedded last character)
                 decoder_input = torch.cat([last_char, context], dim=-1)
@@ -212,18 +206,20 @@ class LASNet(nn.Module):
                     else:
                         # self-sampling (replace by argmax may be another choice)
                         with torch.no_grad():
-                            if (emb_decoder is not None) and emb_decoder.apply_fuse:
+                            if (emb_decoder
+                                    is not None) and emb_decoder.apply_fuse:
                                 _, cur_prob = emb_decoder(
-                                    d_state, cur_char, return_loss=False
-                                )
+                                    d_state, cur_char, return_loss=False)
                             else:
                                 cur_prob = cur_char.softmax(dim=-1)
                             sampled_char = Categorical(cur_prob).sample()
-                        last_char = self.embed_drop(self.pre_embed(sampled_char))
+                        last_char = self.embed_drop(
+                            self.pre_embed(sampled_char))
                 else:
                     # Inference stage
                     if (emb_decoder is not None) and emb_decoder.apply_fuse:
-                        _, cur_char = emb_decoder(d_state, cur_char, return_loss=False)
+                        _, cur_char = emb_decoder(
+                            d_state, cur_char, return_loss=False)
                     # argmax for inference
                     last_char = self.pre_embed(torch.argmax(cur_char, dim=-1))
 
@@ -246,36 +242,40 @@ class LASNet(nn.Module):
 
         if token_ids is not None:
             ctc_loss = self.ctc_loss(
-                ctc_output.transpose(0, 1), token_ids, encode_len, token_len
-            )
+                ctc_output.transpose(0, 1), token_ids, encode_len, token_len)
             b, t, _ = att_output.shape
-            seq_loss = self.seq_loss(att_output.view(b * t, -1), token_ids.view(-1))
+            seq_loss = self.seq_loss(
+                att_output.view(b * t, -1), token_ids.view(-1))
 
-            loss = self.ctc_weight * ctc_loss + (1 - self.ctc_weight) * seq_loss
+            loss = self.ctc_weight * ctc_loss + (1 -
+                                                 self.ctc_weight) * seq_loss
 
             seq_cer = cal_cer(att_output, token_ids)
             ctc_cer = cal_cer(ctc_output, token_ids)
 
         predicts = {
-            "ctc_output": ctc_output,
-            "seq_output": att_output,
-            "dec_state": dec_state,
-            "encode_len": encode_len,
+            'ctc_output': ctc_output,
+            'seq_output': att_output,
+            'dec_state': dec_state,
+            'encode_len': encode_len,
         }
 
         metrics = {
-            "ctc_loss": ctc_loss,
-            "seq_loss": seq_loss,
-            "ctc_cer": ctc_cer,
-            "seq_cer": seq_cer,
+            'ctc_loss': ctc_loss,
+            'seq_loss': seq_loss,
+            'ctc_cer': ctc_cer,
+            'seq_cer': seq_cer,
         }
 
         return predicts, loss, metrics
 
 
 class Encoder(nn.Module):
-    """ Encoder (a.k.a. Listener in LAS)
-        Encodes acoustic feature to latent representation, see config file for more details."""
+    """Encoder (a.k.a.
+
+    Listener in LAS) Encodes acoustic feature to latent representation, see
+    config file for more details.
+    """
 
     def __init__(
         self,
@@ -293,13 +293,13 @@ class Encoder(nn.Module):
         super(Encoder, self).__init__()
 
         # Hyper-parameters checking
-        self.vgg = prenet == "vgg"
-        self.cnn = prenet == "cnn"
+        self.vgg = prenet == 'vgg'
+        self.cnn = prenet == 'cnn'
         self.sample_rate = 1
-        assert len(sample_rate) == len(dropout), "Number of layer mismatch"
-        assert len(dropout) == len(dim), "Number of layer mismatch"
+        assert len(sample_rate) == len(dropout), 'Number of layer mismatch'
+        assert len(dropout) == len(dim), 'Number of layer mismatch'
         num_layers = len(dim)
-        assert num_layers >= 1, "Encoder should have at least 1 layer"
+        assert num_layers >= 1, 'Encoder should have at least 1 layer'
 
         # Construct model
         module_list = []
@@ -319,7 +319,7 @@ class Encoder(nn.Module):
             self.sample_rate = self.sample_rate * 4
 
         # Recurrent encoder
-        if module in ["LSTM", "GRU"]:
+        if module in ['LSTM', 'GRU']:
             for l in range(num_layers):
                 module_list.append(
                     RNNLayer(
@@ -332,8 +332,7 @@ class Encoder(nn.Module):
                         sample_rate[l],
                         sample_style,
                         proj[l],
-                    )
-                )
+                    ))
                 input_dim = module_list[-1].out_dim
                 self.sample_rate = self.sample_rate * sample_rate[l]
         else:
@@ -387,12 +386,12 @@ class Attention(nn.Module):
             self.proj_v = nn.Linear(v_dim, v_dim * num_head)
 
         # Attention
-        if self.mode == "dot":
+        if self.mode == 'dot':
             self.att_layer = ScaleDotAttention(temperature, self.num_head)
-        elif self.mode == "loc":
-            self.att_layer = LocationAwareAttention(
-                loc_kernel_size, loc_kernel_num, dim, num_head, temperature
-            )
+        elif self.mode == 'loc':
+            self.att_layer = LocationAwareAttention(loc_kernel_size,
+                                                    loc_kernel_num, dim,
+                                                    num_head, temperature)
         else:
             raise NotImplementedError
 
@@ -420,9 +419,8 @@ class Attention(nn.Module):
         bs, ts, _ = enc_feat.shape
         query = torch.tanh(self.proj_q(dec_state))
 
-        query = query.view(bs, self.num_head, self.dim).view(
-            bs * self.num_head, self.dim
-        )  # BNxD
+        query = query.view(bs, self.num_head,
+                           self.dim).view(bs * self.num_head, self.dim)  # BNxD
 
         if self.key is None:
             # Maskout attention score for padded states
@@ -435,35 +433,35 @@ class Attention(nn.Module):
             )  # BxTxN
 
             if self.num_head > 1:
-                self.key = self.key.view(bs, ts, self.num_head, self.dim).permute(
-                    0, 2, 1, 3
-                )  # BxNxTxD
-                self.key = self.key.contiguous().view(
-                    bs * self.num_head, ts, self.dim
-                )  # BNxTxD
+                self.key = self.key.view(bs, ts, self.num_head,
+                                         self.dim).permute(0, 2, 1,
+                                                           3)  # BxNxTxD
+                self.key = self.key.contiguous().view(bs * self.num_head, ts,
+                                                      self.dim)  # BNxTxD
                 if self.v_proj:
-                    self.value = self.value.view(
-                        bs, ts, self.num_head, self.v_dim
-                    ).permute(
-                        0, 2, 1, 3
-                    )  # BxNxTxD
+                    self.value = self.value.view(bs, ts, self.num_head,
+                                                 self.v_dim).permute(
+                                                     0, 2, 1, 3)  # BxNxTxD
                     self.value = self.value.contiguous().view(
-                        bs * self.num_head, ts, self.v_dim
-                    )  # BNxTxD
+                        bs * self.num_head, ts, self.v_dim)  # BNxTxD
                 else:
                     self.value = self.value.repeat(self.num_head, 1, 1)
 
         # Calculate attention
         context, attn = self.att_layer(query, self.key, self.value)
         if self.num_head > 1:
-            context = context.view(bs, self.num_head * self.v_dim)  # BNxD  -> BxND
+            context = context.view(bs,
+                                   self.num_head * self.v_dim)  # BNxD  -> BxND
             context = self.merge_head(context)  # BxD
 
         return attn, context
 
 
 class Decoder(nn.Module):
-    """ Decoder (a.k.a. Speller in LAS) """
+    """Decoder (a.k.a.
+
+    Speller in LAS)
+    """
 
     # ToDo:　More elegant way to implement decoder
 
@@ -475,19 +473,22 @@ class Decoder(nn.Module):
         self.dropout = dropout
 
         # Init
-        assert module in ["LSTM", "GRU"], NotImplementedError
+        assert module in ['LSTM', 'GRU'], NotImplementedError
         self.hidden_state = None
-        self.enable_cell = module == "LSTM"
+        self.enable_cell = module == 'LSTM'
 
         # Modules
         self.layers = getattr(nn, module)(
-            input_dim, dim, num_layers=layer, dropout=dropout, batch_first=True
-        )
+            input_dim,
+            dim,
+            num_layers=layer,
+            dropout=dropout,
+            batch_first=True)
         self.char_trans = nn.Linear(dim, vocab_size)
         self.final_dropout = nn.Dropout(dropout)
 
     def init_state(self, bs):
-        """ Set all hidden states to zeros """
+        """Set all hidden states to zeros."""
         device = next(self.parameters()).device
         if self.enable_cell:
             self.hidden_state = (
@@ -495,35 +496,37 @@ class Decoder(nn.Module):
                 torch.zeros((self.layer, bs, self.dim), device=device),
             )
         else:
-            self.hidden_state = torch.zeros((self.layer, bs, self.dim), device=device)
+            self.hidden_state = torch.zeros((self.layer, bs, self.dim),
+                                            device=device)
         return self.get_state()
 
     def set_state(self, hidden_state):
-        """ Set all hidden states/cells, for decoding purpose"""
+        """Set all hidden states/cells, for decoding purpose."""
         device = next(self.parameters()).device
         if self.enable_cell:
-            self.hidden_state = (hidden_state[0].to(device), hidden_state[1].to(device))
+            self.hidden_state = (hidden_state[0].to(device),
+                                 hidden_state[1].to(device))
         else:
             self.hidden_state = hidden_state.to(device)
 
     def get_state(self):
-        """ Return all hidden states/cells, for decoding purpose"""
+        """Return all hidden states/cells, for decoding purpose."""
         if self.enable_cell:
             return (self.hidden_state[0].cpu(), self.hidden_state[1].cpu())
         else:
             return self.hidden_state.cpu()
 
     def get_query(self):
-        """ Return state of all layers as query for attention """
+        """Return state of all layers as query for attention."""
         if self.enable_cell:
-            return (
-                self.hidden_state[0].transpose(0, 1).reshape(-1, self.dim * self.layer)
-            )
+            return (self.hidden_state[0].transpose(0, 1).reshape(
+                -1, self.dim * self.layer))
         else:
-            return self.hidden_state.transpose(0, 1).reshape(-1, self.dim * self.layer)
+            return self.hidden_state.transpose(0, 1).reshape(
+                -1, self.dim * self.layer)
 
     def forward(self, x):
-        """ Decode and transform into vocab """
+        """Decode and transform into vocab."""
         if not self.training:
             self.layers.flatten_parameters()
         x, self.hidden_state = self.layers(x.unsqueeze(1), self.hidden_state)

@@ -2,21 +2,21 @@ path:
     local: &local
       suffix_model_id: ''
       log_dir_prefix: './data/logs'
-        
+
 default: &default
   <<: *local
   train_data_path: './datas/train_dataset'
   eval_data_path: './data/eval_dataset'
   batch_size: 32
   num_epochs: 10
-  
+
   checkpoint_selector:
     eval_set: eval
     eval_metric: accuracy
     higher_better: true
-  
+
   dataloader_workers: 0
-  
+
   log_interval: 10
   save_checkpoints_steps: 500
 

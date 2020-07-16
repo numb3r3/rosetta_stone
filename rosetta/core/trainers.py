@@ -31,6 +31,7 @@ except ImportError:
 
 
 class Trainer(object):
+
     def __init__(
         self,
         model: nn.Module,
@@ -49,9 +50,10 @@ class Trainer(object):
     ):
         self.logger = helper.get_logger(__name__)
 
-        self._eval_metric = kwargs["checkpoint_selector"]["eval_metric"]
-        self._higher_better = kwargs["checkpoint_selector"]["higher_better"]
-        self._best_metric = -float("inf") if self._higher_better else float("inf")
+        self._eval_metric = kwargs['checkpoint_selector']['eval_metric']
+        self._higher_better = kwargs['checkpoint_selector']['higher_better']
+        self._best_metric = -float('inf') if self._higher_better else float(
+            'inf')
 
         self._log_interval = log_interval
         self._verbose = verbose
@@ -65,29 +67,26 @@ class Trainer(object):
             self.model = model
         else:
             raise TypeError(
-                f"Unknown type for `model`. Expected nn.Module but got {type(model)}"
+                f'Unknown type for `model`. Expected nn.Module but got {type(model)}'
             )
 
         if device is None:
             self.device = (
-                torch.device("cuda")
-                if torch.cuda.is_available()
-                else torch.device("cpu")
-            )
+                torch.device('cuda')
+                if torch.cuda.is_available() else torch.device('cpu'))
         else:
             self.device = device
 
         self._use_amp = use_amp
         if use_amp and not AMP_AVAILABLE:
             raise ImportError(
-                f"Got use_amp = {use_amp}, but cannot find apex. "
-                "Please install Apex if you want to make use of automatic mixed precision. "
-                "https://github.com/NVIDIA/apex"
-            )
+                f'Got use_amp = {use_amp}, but cannot find apex. '
+                'Please install Apex if you want to make use of automatic mixed precision. '
+                'https://github.com/NVIDIA/apex')
 
         self._use_horovod = use_horovod
         if use_horovod and not is_horovod_available():
-            raise RuntimeError("horovod is not available!")
+            raise RuntimeError('horovod is not available!')
 
         # Init distributed settings
         if is_distributed():
@@ -96,7 +95,8 @@ class Trainer(object):
                 self.model = apex.parallel.convert_syncbn_model(self.model)
             elif not use_horovod:
                 # TODO: add sync_batchnorm for horovod
-                self.model = nn.SyncBatchNorm.convert_sync_batchnorm(self.model)
+                self.model = nn.SyncBatchNorm.convert_sync_batchnorm(
+                    self.model)
 
             rank = get_local_rank()
             torch.cuda.set_device(rank)
@@ -111,7 +111,7 @@ class Trainer(object):
             # resume model
             self.model.load_state_dict(state_dict)
 
-        if "cuda" in str(self.device):
+        if 'cuda' in str(self.device):
             # self.model.to(self.device)
             self.model = self.model.to(self.device)
             self._cuda_nonblocking = use_cuda_nonblocking
@@ -148,18 +148,15 @@ class Trainer(object):
 
             # wrap optimizer with DistributedOptimizer.
             self.optimizer = hvd.DistributedOptimizer(
-                self.optimizer, named_parameters=self.model.named_parameters()
-            )
+                self.optimizer, named_parameters=self.model.named_parameters())
 
         if self._use_amp:
             self.model, self.optimizer = amp.initialize(
-                self.model, self.optimizer, opt_level="O1"
-            )
+                self.model, self.optimizer, opt_level='O1')
 
         if not use_horovod and is_distributed():
             self.model = nn.parallel.DistributedDataParallel(
-                self.model, device_ids=[rank]
-            )
+                self.model, device_ids=[rank])
 
         self.lr_scheduler = lr_scheduler
         self.set_scheduler()
@@ -198,9 +195,9 @@ class Trainer(object):
     def is_train(self):
         return self._is_train
 
-    def _iteration(
-        self, batch_data: Tuple[torch.Tensor], mode: str = "eval"
-    ) -> Tuple[torch.Tensor]:
+    def _iteration(self,
+                   batch_data: Tuple[torch.Tensor],
+                   mode: str = 'eval') -> Tuple[torch.Tensor]:
         """ Iteration part, user can override via duck typing or override_iteration ::
             def iteration(self, feed_dict: Dict[str, torch.Tensor]) -> Mapping[str, torch.Tensor]:
                 input, labels = data
@@ -219,10 +216,10 @@ class Trainer(object):
             output, loss, metrics = self.model(*batch_data)
         except Exception:
             raise ValueError(
-                f"The implemented module = {type(self.model)} should return 3-tuples, i.e, output, loss, metrics. "
+                f'The implemented module = {type(self.model)} should return 3-tuples, i.e, output, loss, metrics. '
             )
 
-        if mode == "train":
+        if mode == 'train':
             # increment step here
             self._global_step += 1
 
@@ -233,10 +230,10 @@ class Trainer(object):
                 # https://gist.github.com/alsrgv/0713add50fe49a409316832a31612dde
                 with amp.scale_loss(loss, self.optimizer) as scaled_loss:
                     scaled_loss.backward()
-                    if self.kwargs.get("gradient_clip", None):
+                    if self.kwargs.get('gradient_clip', None):
                         torch.nn.utils.clip_grad_norm_(
                             amp.master_params(self.optimizer),
-                            self.kwargs["gradient_max_norm"],
+                            self.kwargs['gradient_max_norm'],
                         )
 
                     if self._use_horovod:
@@ -254,10 +251,10 @@ class Trainer(object):
                 # self.scaler.update()
             else:
                 loss.backward()
-                if self.kwargs.get("gradient_clip", None):
+                if self.kwargs.get('gradient_clip', None):
                     torch.nn.utils.clip_grad_norm_(
-                        self.model.parameters(), self.kwargs["gradient_max_norm"]
-                    )
+                        self.model.parameters(),
+                        self.kwargs['gradient_max_norm'])
                 self.optimizer.step()
 
             # update step for lr_scheduler
@@ -267,11 +264,10 @@ class Trainer(object):
         return output, loss, metrics
 
     def _loop(self, data_loader: Iterable or DataLoader, mode: str, **kwargs):
-        batch_size, total_size = (
-            (data_loader.batch_size, len(data_loader.dataset))
-            if isinstance(data_loader, DataLoader)
-            else (len(data_loader), len(data_loader))
-        )
+        batch_size, total_size = ((data_loader.batch_size,
+                                   len(data_loader.dataset)) if isinstance(
+                                       data_loader, DataLoader) else
+                                  (len(data_loader), len(data_loader)))
         total_batchs = total_size // batch_size
         # keep tracking the model's metric
         avg_metrics = AverageDictMeter()
@@ -287,31 +283,30 @@ class Trainer(object):
 
             if loss is not None:
                 # capture metrics
-                metrics.update({"loss": loss})
+                metrics.update({'loss': loss})
 
             avg_metrics.update(metrics)
 
             if (batch_idx + 1) % self.log_interval == 0:
-                if mode == "train":
+                if mode == 'train':
                     elapsed = time.time() - start_time
 
-                    logx.msg(
-                        "| epoch {:3d} | {:5d}/{:5d} batches | "
-                        "lr {:02.6f} | ms/batch {:5.2f} | "
-                        "loss {:5.3f}".format(
-                            self.epoch,
-                            (batch_idx + 1) * get_world_size(),
-                            total_batchs,
-                            self.lr_scheduler.get_lr()[0],
-                            elapsed * 1000 / (self.log_interval * get_world_size()),
-                            loss.item(),
-                        )
-                    )
+                    logx.msg('| epoch {:3d} | {:5d}/{:5d} batches | '
+                             'lr {:02.6f} | ms/batch {:5.2f} | '
+                             'loss {:5.3f}'.format(
+                                 self.epoch,
+                                 (batch_idx + 1) * get_world_size(),
+                                 total_batchs,
+                                 self.lr_scheduler.get_lr()[0],
+                                 elapsed * 1000 /
+                                 (self.log_interval * get_world_size()),
+                                 loss.item(),
+                             ))
 
                     start_time = time.time()
 
                     logx.add_scalar(
-                        "%s/learning_rate" % mode,
+                        '%s/learning_rate' % mode,
                         self.lr_scheduler.get_lr()[0],
                         self.global_step,
                     )
@@ -320,10 +315,10 @@ class Trainer(object):
         return avg_metrics
 
     def train(self, data_loader: Iterable or DataLoader, **kwargs):
-        """ Perform the training procedure for an epoch.
+        """Perform the training procedure for an epoch.
 
         :param data_loader:
-        :param mode: Name of this loop. Default is `train`. 
+        :param mode: Name of this loop. Default is `train`.
         """
 
         self._is_train = True
@@ -334,19 +329,18 @@ class Trainer(object):
 
         avg_metrics = None
         with torch.enable_grad():
-            avg_metrics = self._loop(data_loader, mode="train", **kwargs)
+            avg_metrics = self._loop(data_loader, mode='train', **kwargs)
 
         if isinstance(data_loader, DataLoader) and isinstance(
-            data_loader.sampler, DistributedSampler
-        ):
+                data_loader.sampler, DistributedSampler):
             data_loader.sampler.set_epoch(self.epoch)
         return avg_metrics
 
     def eval(self, data_loader: Iterable or DataLoader, **kwargs):
-        """ Evaluate the model.
+        """Evaluate the model.
 
         :param data_loader:
-        :param mode: Name of this loop. Default is `dev`. 
+        :param mode: Name of this loop. Default is `dev`.
         :return:
         """
 
@@ -357,24 +351,24 @@ class Trainer(object):
 
         eval_metrics = None
         with torch.no_grad():
-            eval_metrics = self._loop(data_loader, mode="eval", **kwargs)
+            eval_metrics = self._loop(data_loader, mode='eval', **kwargs)
 
-        logx.metric("validate", eval_metrics, self.epoch)
+        logx.metric('validate', eval_metrics, self.epoch)
 
         return eval_metrics
 
     def run(
         self,
         train_loader: Iterable or DataLoader,
-        eval_loaders: Iterable or DataLoader or Dict[str, Iterable or DataLoader],
+        eval_loaders: Iterable or DataLoader
+        or Dict[str, Iterable or DataLoader],
         total_steps: int,
         eval_intervals: int,
     ):
-        """ Train the model for a given iterations. This module is almost equal to ::
-            for ep in range(total_steps):
-                trainer.train(train_loader)
-                for k, v in eval_loaders.items():
-                    trainer.eval(v, k)
+        """Train the model for a given iterations. This module is almost equal
+        to :: for ep in range(total_steps): trainer.train(train_loader) for k,
+        v in eval_loaders.items(): trainer.eval(v, k)
+
         :param train_loader:
         :param eval_loaders:
         :param total_steps:
@@ -383,6 +377,7 @@ class Trainer(object):
         """
 
         class ProxyLoader(object):
+
             def __init__(self, loader):
                 self.loader = loader
 
@@ -399,41 +394,43 @@ class Trainer(object):
                         counter += 1
 
         train_loader = ProxyLoader(train_loader)
-        if not isinstance(eval_loaders, Dict) and (
-            isinstance(eval_loaders, Iterable) or isinstance(eval_loaders, DataLoader)
-        ):
-            eval_loaders = {"eval": eval_loaders}
+        if not isinstance(eval_loaders,
+                          Dict) and (isinstance(eval_loaders, Iterable)
+                                     or isinstance(eval_loaders, DataLoader)):
+            eval_loaders = {'eval': eval_loaders}
 
         for ep in range(total_steps // eval_intervals):
             self.train(train_loader)
             if isinstance(train_loader.loader, DataLoader) and isinstance(
-                train_loader.loader.sampler, DistributedSampler
-            ):
+                    train_loader.loader.sampler, DistributedSampler):
                 train_loader.loader.sampler.set_epoch(self.epoch)
             for name, loader in eval_loaders.items():
                 self.eval(loader, name)
 
     def save_checkpoint(self, eval_metrics, **kwargs):
-        """ checkpoint saving """
+        """checkpoint saving."""
         metric = eval_metrics[self._eval_metric]
 
         self._best_metric = (
-            max(self.best_metric, metric)
-            if self._higher_better
-            else min(self.best_metric, metric)
-        )
+            max(self.best_metric, metric) if self._higher_better else min(
+                self.best_metric, metric))
 
         # TODO: save amp states when using amp
         save_dict = {
-            "epoch": self.epoch,
-            "global_step": self.global_step,
-            "state_dict": self.model.state_dict(),
-            "metrics": eval_metrics,
-            "best_metric": self.best_metric,
-            "optimizer": self.optimizer.state_dict(),
-            "lr_scheduler": self.lr_scheduler.state_dict()
-            if self.lr_scheduler
-            else None,
+            'epoch':
+            self.epoch,
+            'global_step':
+            self.global_step,
+            'state_dict':
+            self.model.state_dict(),
+            'metrics':
+            eval_metrics,
+            'best_metric':
+            self.best_metric,
+            'optimizer':
+            self.optimizer.state_dict(),
+            'lr_scheduler':
+            self.lr_scheduler.state_dict() if self.lr_scheduler else None,
         }
 
         logx.save_model(
@@ -444,12 +441,12 @@ class Trainer(object):
         )
 
     def load_checkpoint(self, resume_file: str, **kwargs):
-        """Restore a model and return a dict with any meta data included in
-        the snapshot
-        """
+        """Restore a model and return a dict with any meta data included in the
+        snapshot."""
         if os.path.isfile(resume_file):
             # logx.msg("=> loading checkpoint '{}'".format(resume_file))
-            checkpoint = torch.load(resume_file, map_location=torch.device("cpu"))
+            checkpoint = torch.load(
+                resume_file, map_location=torch.device('cpu'))
 
             # self._epoch = checkpoint["epoch"]
             # self._global_step = checkpoint["global_step"]
@@ -459,23 +456,22 @@ class Trainer(object):
             # self.optimizer.load_state_dict(checkpoint['optimizer'])
             # self.lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
 
-            logx.msg(
-                "=> loaded checkpoint '{}' (epoch {})".format(
-                    resume_file, checkpoint["epoch"]
-                )
-            )
-            state_dict = checkpoint["state_dict"]
-            meta = {k: v for k, v in checkpoint.items() if k != "state_dict"}
+            logx.msg("=> loaded checkpoint '{}' (epoch {})".format(
+                resume_file, checkpoint['epoch']))
+            state_dict = checkpoint['state_dict']
+            meta = {k: v for k, v in checkpoint.items() if k != 'state_dict'}
             return (state_dict, meta)
         else:
             logx.msg("=> no checkpoint found at '{}'".format(resume_file))
             return None
 
     def set_optimizer(self):
-        """ Set optimizer(s) for model(s). You can override as ::
-            class YourTrainer(TrainerBase):
-                def set_optimizer(self):
-                    self.optimizer = torch.optim.SGD(self.model.parameters())
+        """Set optimizer(s) for model(s).
+
+        You can override as ::
+        class YourTrainer(TrainerBase):
+            def set_optimizer(self):
+                self.optimizer = torch.optim.SGD(self.model.parameters())
         """
 
         optimizer = self.optimizer
@@ -485,24 +481,26 @@ class Trainer(object):
         elif isinstance(optimizer, Partial):
             if not issubclass(optimizer.func, Optimizer):
                 raise TypeError(
-                    f"`optimizer.func` is expected to be subclass of `Optimizer`"
-                    f" but got {type(optimizer.func)}"
-                )
+                    f'`optimizer.func` is expected to be subclass of `Optimizer`'
+                    f' but got {type(optimizer.func)}')
             self.optimizer = optimizer(self.model.parameters())
 
         else:
-            raise TypeError(f"Unexpected type {type(optimizer)} for `optimizer`")
+            raise TypeError(
+                f'Unexpected type {type(optimizer)} for `optimizer`')
 
     def set_scheduler(self):
-        """ Set scheduler(s) for optimizer(s). You can override as ::
-            class YourTrainer(TrainerBase):
-                def set_scheduler(self):
-                    self.scheduler = torch.optim.lr_scheduler.Foo(self.optimizer)
+        """Set scheduler(s) for optimizer(s).
+
+        You can override as ::
+        class YourTrainer(TrainerBase):
+            def set_scheduler(self):
+                self.scheduler = torch.optim.lr_scheduler.Foo(self.optimizer)
         """
 
         lr_scheduler = self.lr_scheduler
         if lr_scheduler is not None and self.optimizer is None:
-            raise TypeError("Optimizer is not set, so scheduler cannot be set")
+            raise TypeError('Optimizer is not set, so scheduler cannot be set')
 
         if isinstance(lr_scheduler, Scheduler) or lr_scheduler is None:
             self.lr_scheduler = lr_scheduler
@@ -510,10 +508,10 @@ class Trainer(object):
         elif isinstance(lr_scheduler, Partial):
             if not issubclass(lr_scheduler.func, Scheduler):
                 raise TypeError(
-                    f"`scheduler.func` is expected to be subclass of `_LRScheduler`"
-                    f" but got {type(lr_scheduler.func)}"
-                )
+                    f'`scheduler.func` is expected to be subclass of `_LRScheduler`'
+                    f' but got {type(lr_scheduler.func)}')
             self.lr_scheduler = lr_scheduler(self.optimizer)
 
         else:
-            raise TypeError(f"Unexpected type {type(lr_scheduler)} for `lr_scheduler`")
+            raise TypeError(
+                f'Unexpected type {type(lr_scheduler)} for `lr_scheduler`')

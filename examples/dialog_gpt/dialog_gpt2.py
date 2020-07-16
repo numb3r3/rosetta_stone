@@ -4,8 +4,8 @@ from transformers.modeling_gpt2 import GPT2Config, GPT2LMHeadModel
 
 
 def compute_accuracy(logits, labels, device, pad_id=-100):
-    """
-    计算非pad_id的平均loss和准确率
+    """计算非pad_id的平均loss和准确率.
+
     :param outputs:
     :param labels:
     :param device:
@@ -24,30 +24,31 @@ def compute_accuracy(logits, labels, device, pad_id=-100):
 
     # 对非pad_id的token的loss进行求平均，且计算出预测的准确率
     not_ignore = shift_labels.ne(
-        pad_id
-    )  # 进行非运算，返回一个tensor，若targets_view的第i个位置为pad_id，则置为0，否则为1
+        pad_id)  # 进行非运算，返回一个tensor，若targets_view的第i个位置为pad_id，则置为0，否则为1
     num_targets = not_ignore.long().sum().item()  # 计算target中的非pad_id的数量
 
-    correct = (shift_labels == preds) & not_ignore  # 计算model预测正确的token的个数，排除pad的tokne
+    correct = (shift_labels
+               == preds) & not_ignore  # 计算model预测正确的token的个数，排除pad的tokne
     correct = correct.float().sum()
 
     accuracy = correct / num_targets
     return accuracy
 
 
-def accuracy(logits, target, topk=(1,), pad_id=0):
-    """Computes the accuracy over the k top predictions for the specified values of k"""
+def accuracy(logits, target, topk=(1, ), pad_id=0):
+    """Computes the accuracy over the k top predictions for the specified
+    values of k."""
     with torch.no_grad():
         _, preds = logits.max(
             dim=-1
         )  # preds表示对应的prediction_score预测出的token在voca中的id。维度为[batch_size,token_len]
 
         not_ignore = target.ne(
-            pad_id
-        )  # 进行非运算，返回一个tensor，若targets_view的第i个位置为pad_id，则置为0，否则为1
+            pad_id)  # 进行非运算，返回一个tensor，若targets_view的第i个位置为pad_id，则置为0，否则为1
         num_targets = not_ignore.long().sum().item()  # 计算target中的非pad_id的数量
 
-        correct = (target == preds) & not_ignore  # 计算model预测正确的token的个数，排除pad的tokne
+        correct = (target
+                   == preds) & not_ignore  # 计算model预测正确的token的个数，排除pad的tokne
         correct = correct.float().sum()
 
         accuracy = correct / num_targets
@@ -56,15 +57,19 @@ def accuracy(logits, target, topk=(1,), pad_id=0):
 
 
 class DialogGPT2(nn.Module):
-    def __init__(self, vocab_size: int, pretrained_model: str = None, **kwargs):
+
+    def __init__(self,
+                 vocab_size: int,
+                 pretrained_model: str = None,
+                 **kwargs):
         super().__init__()
         if pretrained_model:
             # resume from a pretrained model
-            print("resume from a pretrained model: %s" % pretrained_model)
+            print('resume from a pretrained model: %s' % pretrained_model)
             self.gpt2_model = GPT2LMHeadModel.from_pretrained(pretrained_model)
         else:
             # start from scratch
-            model_config = GPT2Config(**kwargs["gpt2_model_conf"])
+            model_config = GPT2Config(**kwargs['gpt2_model_conf'])
             self.gpt2_model = GPT2LMHeadModel(config=model_config)
 
             # resize vocab size
@@ -72,14 +77,12 @@ class DialogGPT2(nn.Module):
 
         # self.smoothing = LabelSmoothing(local_rank, self.vocab.size, self.vocab.padding_idx, smoothing_factor)
 
-    def forward(
-        self,
-        context_input_ids,
-        context_segment_ids=None,
-        context_masks=None,
-        lm_labels=None,
-        **kwargs
-    ):
+    def forward(self,
+                context_input_ids,
+                context_segment_ids=None,
+                context_masks=None,
+                lm_labels=None,
+                **kwargs):
 
         # logits, *_ = self.gpt2_model(
         #     context_input_ids,
@@ -103,9 +106,8 @@ class DialogGPT2(nn.Module):
                 token_type_ids=context_segment_ids,
                 attention_mask=context_masks,
             )
-            metrics["accuracy"] = compute_accuracy(
-                logits, lm_labels, logits.device, pad_id=-100
-            )
+            metrics['accuracy'] = compute_accuracy(
+                logits, lm_labels, logits.device, pad_id=-100)
 
         else:
             logits, *_ = self.gpt2_model(
@@ -114,7 +116,7 @@ class DialogGPT2(nn.Module):
                 attention_mask=context_masks,
             )
 
-        predicts = {"logits": logits}
+        predicts = {'logits': logits}
 
         return predicts, loss, metrics
 

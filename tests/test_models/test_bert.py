@@ -10,6 +10,7 @@ def test_model_from_scratch():
         model = BertLM()
 
     params = {
-        "bert_config_file": "https://s3.amazonaws.com/models.huggingface.co/bert/bert-base-uncased-config.json"
+        'bert_config_file':
+        'https://s3.amazonaws.com/models.huggingface.co/bert/bert-base-uncased-config.json'
     }
     model = BertLM(**params)

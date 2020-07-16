@@ -1,4 +1,4 @@
-"""Many of the modeling parts here come from the great transformers repository: 
+"""Many of the modeling parts here come from the great transformers repository:
 https://github.com/huggingface/transformers.
 Thanks for the great work! """
 from typing import Dict
@@ -32,7 +32,7 @@ class Bert(_BertModel, PretrainedModel):
             self.init_from_checkpoint(pretrained_checkpoint_file)
 
     def init_from_checkpoint(self, checkpoint_file: str):
-        """The following codes are borrowed from 
+        """The following codes are borrowed from
         """
         try:
             state_dict = torch.load(checkpoint_file, map_location="cpu")

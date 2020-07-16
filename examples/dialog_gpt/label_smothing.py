@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 
 class LabelSmoothing(nn.Module):
-    "Implement label smoothing."
+    """Implement label smoothing."""
 
     def __init__(self, device, size, padding_idx, label_smoothing=0.0):
         super().__init__()
@@ -28,11 +28,10 @@ class LabelSmoothing(nn.Module):
 
         model_prob = self.one_hot.repeat(target.size(0), 1)
         if real_size > 0:
-            ext_zeros = torch.full(
-                (model_prob.size(0), real_size), self.smoothing_value
-            ).to(self.device)
+            ext_zeros = torch.full((model_prob.size(0), real_size),
+                                   self.smoothing_value).to(self.device)
             model_prob = torch.cat((model_prob, ext_zeros), -1)
         model_prob.scatter_(1, target, self.confidence)
         model_prob.masked_fill_((target == self.padding_idx), 0.0)
 
-        return F.kl_div(output, model_prob, reduction="sum")
+        return F.kl_div(output, model_prob, reduction='sum')

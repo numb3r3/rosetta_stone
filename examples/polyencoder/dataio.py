@@ -11,6 +11,7 @@ from .transform import SelectionJoinTransform, SelectionSequentialTransform
 
 
 class SelectionDataset(Dataset):
+
     def __init__(
         self,
         file_path: str,
@@ -24,30 +25,30 @@ class SelectionDataset(Dataset):
         self.data_source = []
         self.transformed_data = {}
 
-        with open(file_path, encoding="utf-8") as f:
-            group = {"context": None, "responses": [], "labels": []}
+        with open(file_path, encoding='utf-8') as f:
+            group = {'context': None, 'responses': [], 'labels': []}
             for line in f:
-                split = line.strip().split("\t")
+                split = line.strip().split('\t')
                 lbl, context, response = int(split[0]), split[1:-1], split[-1]
 
-                if lbl == 1 and len(group["responses"]) > 0:
+                if lbl == 1 and len(group['responses']) > 0:
                     self.data_source.append(group)
-                    group = {"context": None, "responses": [], "labels": []}
+                    group = {'context': None, 'responses': [], 'labels': []}
                     if sample_cnt > 0 and len(self.data_source) >= sample_cnt:
                         break
 
-                group["responses"].append(response)
-                group["labels"].append(lbl)
-                group["context"] = context
+                group['responses'].append(response)
+                group['labels'].append(lbl)
+                group['context'] = context
 
-            if len(group["responses"]) > 0:
+            if len(group['responses']) > 0:
                 self.data_source.append(group)
 
         # if get_global_rank() <= 0:
         #     self.prepare()
 
     def prepare(self):
-        print("prepare datasets ...")
+        print('prepare datasets ...')
         for idx in tqdm(range(len(self.data_source))):
             self.__get_single_item__(idx)
 
@@ -68,16 +69,14 @@ class SelectionDataset(Dataset):
         else:
             group = self.data_source[index]
             context, responses, labels = (
-                group["context"],
-                group["responses"],
-                group["labels"],
+                group['context'],
+                group['responses'],
+                group['labels'],
             )
             transformed_context = self.context_transform(
-                context
-            )  # [token_ids],[seg_ids],[masks]
+                context)  # [token_ids],[seg_ids],[masks]
             transformed_responses = self.response_transform(
-                responses
-            )  # [token_ids],[seg_ids],[masks]
+                responses)  # [token_ids],[seg_ids],[masks]
             _tranformed_data = transformed_context, transformed_responses, labels
             self.transformed_data[index] = _tranformed_data
 
@@ -85,9 +84,10 @@ class SelectionDataset(Dataset):
 
 
 class ConversationDataIO(BaseDataIO):
+
     def __init__(
         self,
-        tokenizer_name_or_path: str = "bert-base-cased",
+        tokenizer_name_or_path: str = 'bert-base-cased',
         max_contexts_length: int = 256,
         max_response_length: int = 64,
         max_history: int = 10,
@@ -109,16 +109,19 @@ class ConversationDataIO(BaseDataIO):
             pair_last=False,
         )
 
-    def create_dataset(
-        self, data_path: str, mode: str = "train", download: bool = True, **kwargs
-    ):
-        return SelectionDataset(
-            data_path, self.context_transform, self.response_transform
-        )
+    def create_dataset(self,
+                       data_path: str,
+                       mode: str = 'train',
+                       download: bool = True,
+                       **kwargs):
+        return SelectionDataset(data_path, self.context_transform,
+                                self.response_transform)
 
-    def collate_fn(
-        self, batch, tensor_names=None, mode: str = "train", **kwargs
-    ) -> Tuple[torch.Tensor]:
+    def collate_fn(self,
+                   batch,
+                   tensor_names=None,
+                   mode: str = 'train',
+                   **kwargs) -> Tuple[torch.Tensor]:
 
         contexts_token_ids_list_batch, contexts_segment_ids_list_batch, contexts_input_masks_list_batch, responses_token_ids_list_batch, responses_segment_ids_list_batch, responses_input_masks_list_batch = (
             [],
@@ -164,14 +167,11 @@ class ConversationDataIO(BaseDataIO):
             input_mask_ids = contexts_input_masks_list_batch[i]
 
             contexts_token_ids_list_batch[i] += [self.pad_id] * (
-                max_ctx_seq_len - len(input_ids)
-            )
+                max_ctx_seq_len - len(input_ids))
             contexts_segment_ids_list_batch[i] += [0] * (
-                max_ctx_seq_len - len(segment_ids)
-            )
+                max_ctx_seq_len - len(segment_ids))
             contexts_input_masks_list_batch[i] += [0] * (
-                max_ctx_seq_len - len(input_mask_ids)
-            )
+                max_ctx_seq_len - len(input_mask_ids))
 
             responses_token_ids_list = responses_token_ids_list_batch[i]
             responses_segment_ids_list = responses_segment_ids_list_batch[i]
@@ -183,14 +183,11 @@ class ConversationDataIO(BaseDataIO):
                 input_mask_ids = responses_input_masks_list[_]
 
                 responses_token_ids_list[_] += [self.pad_id] * (
-                    max_resp_seq_len - len(input_ids)
-                )
+                    max_resp_seq_len - len(input_ids))
                 responses_segment_ids_list[_] += [0] * (
-                    max_resp_seq_len - len(segment_ids)
-                )
+                    max_resp_seq_len - len(segment_ids))
                 responses_input_masks_list[_] += [0] * (
-                    max_resp_seq_len - len(input_mask_ids)
-                )
+                    max_resp_seq_len - len(input_mask_ids))
 
         long_tensors = [
             contexts_token_ids_list_batch,
@@ -202,8 +199,7 @@ class ConversationDataIO(BaseDataIO):
         ]
 
         contexts_token_ids_list_batch, contexts_segment_ids_list_batch, contexts_input_masks_list_batch, responses_token_ids_list_batch, responses_segment_ids_list_batch, responses_input_masks_list_batch = (
-            torch.tensor(t, dtype=torch.long) for t in long_tensors
-        )
+            torch.tensor(t, dtype=torch.long) for t in long_tensors)
 
         labels_batch = torch.tensor(labels_batch, dtype=torch.long)
         return (

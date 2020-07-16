@@ -5,7 +5,7 @@ from transformers.modeling_bert import ACT2FN, BertLayerNorm
 
 
 class FeedForwardBlock(torch.nn.Module):
-    """ A feed forward neural network of variable depth and width. """
+    """A feed forward neural network of variable depth and width."""
 
     def __init__(self, layer_dims, **kwargs):
         # Todo: Consider having just one input argument
@@ -30,13 +30,13 @@ class FeedForwardBlock(torch.nn.Module):
 
 
 class PredictionHead(torch.nn.Module):
+
     def __init__(self, **kwargs):
         super().__init__()
 
     def logits_to_loss(self, logits, labels):
-        """
-        Implement this function in your special Prediction Head.
-        Should combine logits and labels with a loss fct to a per sample loss.
+        """Implement this function in your special Prediction Head. Should
+        combine logits and labels with a loss fct to a per sample loss.
 
         :param logits: logits, can vary in shape and type, depending on task
         :type logits: object
@@ -47,9 +47,8 @@ class PredictionHead(torch.nn.Module):
         raise NotImplementedError()
 
     def logits_to_preds(self, logits):
-        """
-        Implement this function in your special Prediction Head.
-        Should combine turn logits into predictions.
+        """Implement this function in your special Prediction Head. Should
+        combine turn logits into predictions.
 
         :param logits: logits, can vary in shape and type, depending on task
         :type logits: object
@@ -59,15 +58,16 @@ class PredictionHead(torch.nn.Module):
 
 
 class RegressionHead(PredictionHead):
-    def __init__(self, layer_dims=[768, 1], task_name="regression", **kwargs):
+
+    def __init__(self, layer_dims=[768, 1], task_name='regression', **kwargs):
         super().__init__()
         self.layer_dims = layer_dims
         self.feed_forward = FeedForwardBlock(self.layer_dims)
         # num_labels is being set to 2 since it is being hijacked to store the scaling factor and the mean
         self.num_labels = 2
-        self.ph_output_type = "per_sequence_continuous"
-        self.model_type = "regression"
-        self.loss_fct = MSELoss(reduction="none")
+        self.ph_output_type = 'per_sequence_continuous'
+        self.model_type = 'regression'
+        self.loss_fct = MSELoss(reduction='none')
         self.task_name = task_name
 
     def forward(self, x):
@@ -83,14 +83,15 @@ class RegressionHead(PredictionHead):
 
 
 class TextClassificationHead(PredictionHead):
+
     def __init__(
         self,
         layer_dims=None,
         num_labels=None,
         class_weights=None,
         loss_ignore_index=-100,
-        loss_reduction="none",
-        task_name="text_classification",
+        loss_reduction='none',
+        task_name='text_classification',
         **kwargs,
     ):
         """
@@ -118,8 +119,8 @@ class TextClassificationHead(PredictionHead):
         self.feed_forward = FeedForwardBlock(self.layer_dims)
         # logger.info(f"Prediction head initialized with size {self.layer_dims}")
 
-        self.ph_output_type = "per_sequence"
-        self.model_type = "text_classification"
+        self.ph_output_type = 'per_sequence'
+        self.model_type = 'text_classification'
         self.task_name = (
             task_name
         )  # used for connecting with the right output of the processor
@@ -128,8 +129,7 @@ class TextClassificationHead(PredictionHead):
         if class_weights:
             # logger.info(f"Using class weights for task '{self.task_name}': {self.class_weights}")
             balanced_weights = torch.nn.Parameter(
-                torch.tensor(class_weights), requires_grad=False
-            )
+                torch.tensor(class_weights), requires_grad=False)
         else:
             balanced_weights = None
 
@@ -166,13 +166,14 @@ class TextClassificationHead(PredictionHead):
 
 
 class MultiLabelTextClassificationHead(PredictionHead):
+
     def __init__(
         self,
         layer_dims=None,
         num_labels=None,
         class_weights=None,
-        loss_reduction="none",
-        task_name="text_classification",
+        loss_reduction='none',
+        task_name='text_classification',
         pred_threshold=0.5,
         **kwargs,
     ):
@@ -199,8 +200,8 @@ class MultiLabelTextClassificationHead(PredictionHead):
         self.num_labels = self.layer_dims[-1]
         # logger.info(f"Prediction head initialized with size {self.layer_dims}")
         self.feed_forward = FeedForwardBlock(self.layer_dims)
-        self.ph_output_type = "per_sequence"
-        self.model_type = "multilabel_text_classification"
+        self.ph_output_type = 'per_sequence'
+        self.model_type = 'multilabel_text_classification'
         self.task_name = (
             task_name
         )  # used for connecting with the right output of the processor
@@ -211,14 +212,12 @@ class MultiLabelTextClassificationHead(PredictionHead):
             # logger.info(f"Using class weights for task '{self.task_name}': {self.class_weights}")
             # TODO must balanced weight really be a instance attribute?
             self.balanced_weights = torch.nn.Parameter(
-                torch.tensor(class_weights), requires_grad=False
-            )
+                torch.tensor(class_weights), requires_grad=False)
         else:
             self.balanced_weights = None
 
         self.loss_fct = BCEWithLogitsLoss(
-            pos_weight=self.balanced_weights, reduction=loss_reduction
-        )
+            pos_weight=self.balanced_weights, reduction=loss_reduction)
 
     def forward(self, X):
         logits = self.feed_forward(X)
@@ -227,8 +226,7 @@ class MultiLabelTextClassificationHead(PredictionHead):
     def logits_to_loss(self, logits, labels, **kwargs):
         # label_ids = kwargs.get(self.label_tensor_name).to(dtype=torch.float)
         loss = self.loss_fct(
-            logits.view(-1, self.num_labels), labels.view(-1, self.num_labels)
-        )
+            logits.view(-1, self.num_labels), labels.view(-1, self.num_labels))
         per_sample_loss = loss.mean(1)
         return per_sample_loss
 
@@ -249,7 +247,12 @@ class MultiLabelTextClassificationHead(PredictionHead):
 
 
 class TokenClassificationHead(PredictionHead):
-    def __init__(self, layer_dims=None, num_labels=None, task_name="ner", **kwargs):
+
+    def __init__(self,
+                 layer_dims=None,
+                 num_labels=None,
+                 task_name='ner',
+                 **kwargs):
         """
         :param layer_dims: The size of the layers in the feed forward component. The feed forward will have as many layers as there are ints in this list. This param will be deprecated in future
         :type layer_dims: list
@@ -269,16 +272,21 @@ class TokenClassificationHead(PredictionHead):
         self.num_labels = self.layer_dims[-1]
         # logger.info(f"Prediction head initialized with size {self.layer_dims}")
         self.feed_forward = FeedForwardBlock(self.layer_dims)
-        self.loss_fct = CrossEntropyLoss(reduction="none")
-        self.ph_output_type = "per_token"
-        self.model_type = "token_classification"
+        self.loss_fct = CrossEntropyLoss(reduction='none')
+        self.ph_output_type = 'per_token'
+        self.model_type = 'token_classification'
         self.task_name = task_name
 
     def forward(self, X):
         logits = self.feed_forward(X)
         return logits
 
-    def logits_to_loss(self, logits, labels, initial_mask, padding_mask=None, **kwargs):
+    def logits_to_loss(self,
+                       logits,
+                       labels,
+                       initial_mask,
+                       padding_mask=None,
+                       **kwargs):
 
         # Todo: should we be applying initial mask here? Loss is currently calculated even on non initial tokens
         active_loss = padding_mask.view(-1) == 1
@@ -286,8 +294,8 @@ class TokenClassificationHead(PredictionHead):
         active_labels = labels.view(-1)[active_loss]
 
         loss = self.loss_fct(
-            active_logits, active_labels
-        )  # loss is a 1 dimemnsional (active) token loss
+            active_logits,
+            active_labels)  # loss is a 1 dimemnsional (active) token loss
         return loss
 
     @staticmethod
@@ -313,7 +321,8 @@ class TokenClassificationHead(PredictionHead):
             preds_word_all.append(preds_word)
         return preds_word_all
 
-    def logits_to_probs(self, logits, initial_mask, return_class_probs, **kwargs):
+    def logits_to_probs(self, logits, initial_mask, return_class_probs,
+                        **kwargs):
         # get per token probs
         softmax = torch.nn.Softmax(dim=2)
         token_probs = softmax(logits)
@@ -334,21 +343,25 @@ class TokenClassificationHead(PredictionHead):
 
 
 class BertLMHead(PredictionHead):
-    def __init__(
-        self, hidden_size, vocab_size, hidden_act="gelu", task_name="lm", **kwargs
-    ):
+
+    def __init__(self,
+                 hidden_size,
+                 vocab_size,
+                 hidden_act='gelu',
+                 task_name='lm',
+                 **kwargs):
         super().__init__()
 
         self.hidden_size = hidden_size
         self.hidden_act = hidden_act
         self.vocab_size = vocab_size
-        self.loss_fct = CrossEntropyLoss(reduction="none", ignore_index=-100)
+        self.loss_fct = CrossEntropyLoss(reduction='none', ignore_index=-100)
         self.num_labels = vocab_size  # vocab size
         # TODO Check if weight init needed!
         # self.apply(self.init_bert_weights)
-        self.ph_output_type = "per_token"
+        self.ph_output_type = 'per_token'
 
-        self.model_type = "language_modelling"
+        self.model_type = 'language_modelling'
         self.task_name = task_name
 
         # NN Layers
@@ -376,8 +389,7 @@ class BertLMHead(PredictionHead):
     def logits_to_loss(self, logits, labels, **kwargs):
         batch_size = labels.shape[0]
         masked_lm_loss = self.loss_fct(
-            logits.view(-1, self.num_labels), labels.view(-1)
-        )
+            logits.view(-1, self.num_labels), labels.view(-1))
         per_sample_loss = masked_lm_loss.view(-1, batch_size).mean(dim=0)
         return per_sample_loss
 
@@ -392,7 +404,8 @@ class BertLMHead(PredictionHead):
         preds = []
         # we have a batch of sequences here. we need to convert for each token in each sequence.
         for pred_ids_for_sequence in lm_preds_ids:
-            preds.append(
-                [self.label_list[int(x)] for x in pred_ids_for_sequence if int(x) != -1]
-            )
+            preds.append([
+                self.label_list[int(x)] for x in pred_ids_for_sequence
+                if int(x) != -1
+            ])
         return preds

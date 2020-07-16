@@ -15,11 +15,9 @@ def get_logger(name: str, log_format: str = None) -> logging.Logger:
     ch.setLevel(logging.INFO)
     if not log_format:
         log_format = (
-            "%(levelname)-.1s:"
-            + name
-            + ":[%(filename).8s:%(funcName).8s:%(lineno)3d]:%(message)s"
-        )
-    ch.setFormatter(logging.Formatter(log_format, datefmt="%m-%d %H:%M:%S"))
+            '%(levelname)-.1s:' + name +
+            ':[%(filename).8s:%(funcName).8s:%(lineno)3d]:%(message)s')
+    ch.setFormatter(logging.Formatter(log_format, datefmt='%m-%d %H:%M:%S'))
     logger.addHandler(ch)
     return logger
 
@@ -35,11 +33,9 @@ def set_logger(name: str, log_format: str = None, verbose: bool = False):
         logger.setLevel(logging.DEBUG if verbose else logging.INFO)
         if not log_format:
             log_format = (
-                "%(levelname)-.1s:"
-                + name
-                + ":[%(filename).8s:%(funcName).8s:%(lineno)3d]:%(message)s"
-            )
-        formatter = logging.Formatter(log_format, datefmt="%m-%d %H:%M:%S")
+                '%(levelname)-.1s:' + name +
+                ':[%(filename).8s:%(funcName).8s:%(lineno)3d]:%(message)s')
+        formatter = logging.Formatter(log_format, datefmt='%m-%d %H:%M:%S')
         console_handler = logging.StreamHandler()
         console_handler.setLevel(logging.DEBUG if verbose else logging.INFO)
         console_handler.setFormatter(formatter)
@@ -52,11 +48,14 @@ def set_logger(name: str, log_format: str = None, verbose: bool = False):
 def parse_cli_args(args: List[str]):
     cli_args = collections.defaultdict(list)
     if args:
-        for k, v in ((k.lstrip("-"), v) for k, v in (a.split("=") for a in args)):
+        for k, v in ((k.lstrip('-'), v)
+                     for k, v in (a.split('=') for a in args)):
             cli_args[k].append(v)
 
         for k, v in cli_args.items():
-            parsed_v = [s for s in (parse_arg(vv) for vv in v) if s is not None]
+            parsed_v = [
+                s for s in (parse_arg(vv) for vv in v) if s is not None
+            ]
             if len(parsed_v) > 1:
                 cli_args[k] = parsed_v
             if len(parsed_v) == 1:
@@ -67,9 +66,9 @@ def parse_cli_args(args: List[str]):
 
 
 def parse_arg(v: str):
-    if v.startswith("[") and v.endswith("]"):
+    if v.startswith('[') and v.endswith(']'):
         # function args must be immutable tuples not list
-        tmp = v.replace("[", "").replace("]", "").strip().split(",")
+        tmp = v.replace('[', '').replace(']', '').strip().split(',')
         if len(tmp) > 0:
             return [parse_arg(_.strip()) for _ in tmp]
         else:
@@ -83,9 +82,9 @@ def parse_arg(v: str):
             if len(v) == 0:
                 # ignore it when the parameter is empty
                 v = None
-            elif v.lower() == "true":
+            elif v.lower() == 'true':
                 v = True
-            elif v.lower() == "false":
+            elif v.lower() == 'false':
                 v = False
     return v
 
@@ -96,12 +95,12 @@ def parse_args(
     default_set: str = None,
     default_yaml_file: str = None,
 ):
-    with open(default_yaml_file or "default.yaml") as fp:
+    with open(default_yaml_file or 'default.yaml') as fp:
         configs = YAML().load(fp)
         default_cfg = configs[default_set]
 
         hparams = default_cfg.copy()
-        hparams["model_name"] = model_name
+        hparams['model_name'] = model_name
 
         if yaml_path:
             with open(yaml_path) as fp:
@@ -118,33 +117,33 @@ def load_yaml_params(yaml_path: str, model_name: str, cli_args=None):
 
     cli_args = parse_cli_args(cli_args) if cli_args else None
     default_yaml_file = resource_filename(
-        "rosetta", "/".join(("resources", "default.yaml"))
-    )
-    hparams = parse_args(yaml_path, model_name, "default", default_yaml_file)
+        'rosetta', '/'.join(('resources', 'default.yaml')))
+    hparams = parse_args(yaml_path, model_name, 'default', default_yaml_file)
 
     if cli_args:
         # useful when changing params defined in YAML
-        print("override parameters with cli args ...")
+        print('override parameters with cli args ...')
         for k, v in cli_args.items():
             if k in hparams and hparams.get(k) != v:
-                print("%20s: %20s -> %20s" % (k, hparams.get(k), v))
+                print('%20s: %20s -> %20s' % (k, hparams.get(k), v))
                 hparams[k] = v
             elif k not in hparams:
-                print("%s is not a valid attribute! ignore!" % k)
+                print('%s is not a valid attribute! ignore!' % k)
 
-    print("current parameters")
+    print('current parameters')
     for k, v in sorted(hparams.items()):
-        if not k.startswith("_"):
-            print("%20s = %-20s" % (k, v))
+        if not k.startswith('_'):
+            print('%20s = %-20s' % (k, v))
     return hparams
 
 
 def create_model(hparams, resume_from: str = None):
     import torch
+
     from .utils.pathlib import import_path
 
-    model_pkg_name, model_cls_name = hparams["model_module"].split(":")
-    model_pkg_path = os.path.join(*model_pkg_name.split(".")) + ".py"
+    model_pkg_name, model_cls_name = hparams['model_module'].split(':')
+    model_pkg_path = os.path.join(*model_pkg_name.split('.')) + '.py'
     model_pkg = import_path(model_pkg_path)
     model_cls_ = getattr(model_pkg, model_cls_name)
     model = model_cls_(**hparams)
@@ -152,8 +151,9 @@ def create_model(hparams, resume_from: str = None):
     if resume_from:
         if os.path.isfile(resume_from):
             print("=> loading checkpoint '{}'".format(resume_from))
-            checkpoint = torch.load(resume_from, map_location=torch.device("cpu"))
-            model.load_state_dict(checkpoint["state_dict"])
+            checkpoint = torch.load(
+                resume_from, map_location=torch.device('cpu'))
+            model.load_state_dict(checkpoint['state_dict'])
         else:
             print("=> no checkpoint found at '{}'".format(resume_from))
             sys.exit(1)
@@ -164,8 +164,8 @@ def create_model(hparams, resume_from: str = None):
 def create_dataio(hparams):
     from .utils.pathlib import import_path
 
-    dataio_pkg_name, dataio_cls_name = hparams["dataio_module"].split(":")
-    dataio_pkg_path = os.path.join(*dataio_pkg_name.split(".")) + ".py"
+    dataio_pkg_name, dataio_cls_name = hparams['dataio_module'].split(':')
+    dataio_pkg_path = os.path.join(*dataio_pkg_name.split('.')) + '.py'
     dataio_pkg = import_path(dataio_pkg_path)
     dataio_cls_ = getattr(dataio_pkg, dataio_cls_name)
     dataio = dataio_cls_(**hparams)
@@ -174,10 +174,11 @@ def create_dataio(hparams):
 
 
 class PathImporter:
+
     @staticmethod
     def _get_module_name(absolute_path):
         module_name = os.path.basename(absolute_path)
-        module_name = module_name.replace(".py", "")
+        module_name = module_name.replace('.py', '')
         return module_name
 
     @staticmethod
@@ -185,8 +186,7 @@ class PathImporter:
         for p in paths:
             if not os.path.exists(p):
                 raise FileNotFoundError(
-                    "cannot import module from %s, file not exist", p
-                )
+                    'cannot import module from %s, file not exist', p)
             module, spec = PathImporter._path_import(p)
         return module
 
@@ -195,11 +195,12 @@ class PathImporter:
         import importlib.util
 
         module_name = PathImporter._get_module_name(absolute_path)
-        spec = importlib.util.spec_from_file_location(module_name, absolute_path)
+        spec = importlib.util.spec_from_file_location(module_name,
+                                                      absolute_path)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         sys.modules[spec.name] = module
         return module, spec
 
 
-default_logger = get_logger("rosetta")  #: a logger at the global-level
+default_logger = get_logger('rosetta')  #: a logger at the global-level

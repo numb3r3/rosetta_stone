@@ -2,17 +2,18 @@ import numpy as np
 
 
 def edit_distance(ref, hyp):
-    """
-    This function is to calculate the edit distance of reference sentence and the hypothesis sentence.
+    """This function is to calculate the edit distance of reference sentence
+    and the hypothesis sentence.
+
     Main algorithm used is dynamic programming.
     Attributes:
         r -> the list of words produced by splitting reference sentence.
         h -> the list of words produced by splitting hypothesis sentence.
     """
 
-    dist = np.zeros((len(ref) + 1) * (len(hyp) + 1), dtype=np.uint8).reshape(
-        (len(ref) + 1, len(hyp) + 1)
-    )
+    dist = np.zeros(
+        (len(ref) + 1) * (len(hyp) + 1), dtype=np.uint8).reshape(
+            (len(ref) + 1, len(hyp) + 1))
     for i in range(len(ref) + 1):
         for j in range(len(hyp) + 1):
             if i == 0:
@@ -32,8 +33,9 @@ def edit_distance(ref, hyp):
 
 
 def get_step_list(ref, hyp, dist):
-    """
-    This function is to get the list of steps in the process of dynamic programming.
+    """This function is to get the list of steps in the process of dynamic
+    programming.
+
     Attributes:
         r -> the list of words produced by splitting reference sentence.
         h -> the list of words produced by splitting hypothesis sentence.
@@ -46,33 +48,29 @@ def get_step_list(ref, hyp, dist):
     while True:
         if x == 0 and y == 0:
             break
-        elif (
-            x >= 1
-            and y >= 1
-            and dist[x][y] == dist[x - 1][y - 1]
-            and ref[x - 1] == hyp[y - 1]
-        ):
-            list.append("e")
+        elif (x >= 1 and y >= 1 and dist[x][y] == dist[x - 1][y - 1]
+              and ref[x - 1] == hyp[y - 1]):
+            list.append('e')
             x = x - 1
             y = y - 1
         elif y >= 1 and dist[x][y] == dist[x][y - 1] + 1:
-            list.append("i")
+            list.append('i')
             x = x
             y = y - 1
         elif x >= 1 and y >= 1 and dist[x][y] == dist[x - 1][y - 1] + 1:
-            list.append("s")
+            list.append('s')
             x = x - 1
             y = y - 1
         else:
-            list.append("d")
+            list.append('d')
             x = x - 1
             y = y
     return list[::-1]
 
 
 def word_error_rate(ref, hyp):
-    """
-    This is a function that calculate the word error rate in ASR.
+    """This is a function that calculate the word error rate in ASR.
+
     You can use it like this: wer("what is it".split(), "what is".split())
     """
 

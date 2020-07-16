@@ -8,17 +8,16 @@ import torchaudio
 
 class CMVN(torch.jit.ScriptModule):
 
-    __constants__ = ["mode", "dim", "eps"]
+    __constants__ = ['mode', 'dim', 'eps']
 
-    def __init__(self, mode="global", dim=2, eps=1e-10):
+    def __init__(self, mode='global', dim=2, eps=1e-10):
         # `torchaudio.load()` loads audio with shape [channel, feature_dim, time]
         # so perform normalization on dim=2 by default
         super().__init__()
 
-        if mode != "global":
+        if mode != 'global':
             raise NotImplementedError(
-                "Only support global mean variance normalization."
-            )
+                'Only support global mean variance normalization.')
 
         self.mode = mode
         self.dim = dim
@@ -26,18 +25,17 @@ class CMVN(torch.jit.ScriptModule):
 
     @torch.jit.script_method
     def forward(self, x):
-        if self.mode == "global":
+        if self.mode == 'global':
             return (x - x.mean(self.dim, keepdim=True)) / (
-                self.eps + x.std(self.dim, keepdim=True)
-            )
+                self.eps + x.std(self.dim, keepdim=True))
 
     def extra_repr(self):
-        return "mode={}, dim={}, eps={}".format(self.mode, self.dim, self.eps)
+        return 'mode={}, dim={}, eps={}'.format(self.mode, self.dim, self.eps)
 
 
 class Delta(torch.jit.ScriptModule):
 
-    __constants__ = ["order", "window_size", "padding"]
+    __constants__ = ['order', 'window_size', 'padding']
 
     def __init__(self, order=1, window_size=2):
         # Reference:
@@ -49,7 +47,7 @@ class Delta(torch.jit.ScriptModule):
         self.window_size = window_size
 
         filters = self._create_filters(order, window_size)
-        self.register_buffer("filters", filters)
+        self.register_buffer('filters', filters)
         self.padding = (0, (filters.shape[-1] - 1) // 2)
 
     @torch.jit.script_method
@@ -70,7 +68,8 @@ class Delta(torch.jit.ScriptModule):
             for j in range(-window_size, window_size + 1):
                 normalizer += j * j
                 for k in range(-prev_offset, prev_offset + 1):
-                    curr[j + k + curr_offset] += j * scales[i - 1][k + prev_offset]
+                    curr[j + k +
+                         curr_offset] += j * scales[i - 1][k + prev_offset]
             curr = [x / normalizer for x in curr]
             scales.append(curr)
 
@@ -82,10 +81,11 @@ class Delta(torch.jit.ScriptModule):
         return torch.tensor(scales).unsqueeze(1).unsqueeze(1)
 
     def extra_repr(self):
-        return "order={}, window_size={}".format(self.order, self.window_size)
+        return 'order={}, window_size={}'.format(self.order, self.window_size)
 
 
 class Postprocess(torch.jit.ScriptModule):
+
     @torch.jit.script_method
     def forward(self, x):
         # [channel, feature_dim, time] -> [time, channel, feature_dim]
@@ -96,14 +96,13 @@ class Postprocess(torch.jit.ScriptModule):
 
 # TODO(Windqaq): make this scriptable
 class ExtractAudioFeature(nn.Module):
-    def __init__(self, mode="fbank", num_mel_bins=40, **kwargs):
+
+    def __init__(self, mode='fbank', num_mel_bins=40, **kwargs):
         super().__init__()
         self.mode = mode
         self.extract_fn = (
             torchaudio.compliance.kaldi.fbank
-            if mode == "fbank"
-            else torchaudio.compliance.kaldi.mfcc
-        )
+            if mode == 'fbank' else torchaudio.compliance.kaldi.mfcc)
         self.num_mel_bins = num_mel_bins
         self.kwargs = kwargs
 
@@ -115,21 +114,20 @@ class ExtractAudioFeature(nn.Module):
             num_mel_bins=self.num_mel_bins,
             channel=-1,
             sample_frequency=sample_rate,
-            **self.kwargs
-        )
+            **self.kwargs)
         return y.transpose(0, 1).unsqueeze(0).detach()
 
     def extra_repr(self):
-        return "mode={}, num_mel_bins={}".format(self.mode, self.num_mel_bins)
+        return 'mode={}, num_mel_bins={}'.format(self.mode, self.num_mel_bins)
 
 
 def create_audio_transform(audio_config: Dict):
-    feat_type = audio_config.pop("feat_type")
-    feat_dim = audio_config.pop("feat_dim")
+    feat_type = audio_config.pop('feat_type')
+    feat_dim = audio_config.pop('feat_dim')
 
-    delta_order = audio_config.pop("delta_order", 0)
-    delta_window_size = audio_config.pop("delta_window_size", 2)
-    apply_cmvn = audio_config.pop("apply_cmvn")
+    delta_order = audio_config.pop('delta_order', 0)
+    delta_window_size = audio_config.pop('delta_window_size', 2)
+    apply_cmvn = audio_config.pop('apply_cmvn')
 
     transforms = [ExtractAudioFeature(feat_type, feat_dim, **audio_config)]
 

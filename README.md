@@ -52,11 +52,11 @@ $ docker run --rm -it -v $(PWD):/rosetta --name rosetta huya_ai:rosetta bash
 
 # 📖 Usage
 
-In `rosetta` you don’t need to specify a training loop, just define the dataLoaders and the models. For `ResNet` example, 
+In `rosetta` you don’t need to specify a training loop, just define the dataLoaders and the models. For `ResNet` example,
 
 - **Step 1**: Create YAML Configuration
 
-create a yaml file (usually named as `app.yaml`) within your repo as the example below. 
+create a yaml file (usually named as `app.yaml`) within your repo as the example below.
 
     ```YAML
     resnet56: &resnet56
@@ -65,7 +65,7 @@ create a yaml file (usually named as `app.yaml`) within your repo as the example
 
       batch_size: 256
       num_classes: 10
-    
+
       n_size: 9
     ```
 
@@ -119,7 +119,7 @@ Before making a contribution, please confirm that:
 # 👍 References
 
 - [homura](https://github.com/moskomule/homura): PyTorch utilities including trainer, reporter, etc.
-- [FARM](https://github.com/deepset-ai/FARM): Fast & easy transfer learning for NLP. Harvesting language models for the industry. 
+- [FARM](https://github.com/deepset-ai/FARM): Fast & easy transfer learning for NLP. Harvesting language models for the industry.
 - [kotonoha](https://github.com/moskomule/kotonoha): NLP utilities for research
 - [padertorch](https://github.com/fgnt/padertorch): A collection of common functionality to simplify the design, training and evaluation of machine learning models based on pytorch with an emphasis on speech processing.
 - [Tips, tricks and gotchas in PyTorch](https://coolnesss.github.io/2019-02-05/pytorch-gotchas)

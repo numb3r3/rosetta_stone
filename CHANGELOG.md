@@ -1,4 +1,19 @@
 
+# Release Note (`v1.1.14`)
+> Release time: 2020-07-16 14:49:06
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🐞 Bug fixes
+ - [[```b7b426cb```](https://github.com/numb3r3/rosetta_stone/commit/b7b426cb43cc7078a0dec4f8b3b93e1a2e5488d3)] __-__ __trainer__: fix #issue [22049](https://github.com/pytorch/pytorch/issues/22049) Cannot update part of the parameters in DistributedDataParallel (*wangfeng*)
+
+### 🍹 Other Improvements
+ - [[```a552c464```](https://github.com/numb3r3/rosetta_stone/commit/a552c464509bd39492186a9bd270dedc3124cc4e)] __-__ format codes to pass pre-commit (*wangfeng*)
+ - [[```146dc6f5```](https://github.com/numb3r3/rosetta_stone/commit/146dc6f55f8c1894a7acab5b5610e23eb34a387e)] __-__ __changelog__: update change log to v1.1.13 (*wangfeng*)
+
 # Release Note (`v1.1.13`)
 > Release time: 2020-07-16 11:39:10
 

@@ -95,12 +95,12 @@ def train(args, unused_argv):
     )
     epoch_steps = total_size // hparams["batch_size"]
 
-    if hparams["lr_warmup_epoch"] > 0:
-        hparams["lr_warmup_steps"] = int(hparams["lr_warmup_epoch"] * epoch_steps)
+    if hparams["lr_warmup_epochs"] > 0:
+        hparams["lr_warmup_steps"] = int(hparams["lr_warmup_epochs"] * epoch_steps)
     if hparams["lr_constant_epochs"] > 0:
         hparams["lr_constant_steps"] = int(hparams["lr_constant_epochs"] * epoch_steps)
-    if hparams["lr_decay_epoch"] > 0:
-        hparams["lr_decay_steps"] = hparams["lr_decay_epoch"] * epoch_steps
+    if hparams["lr_decay_epochs"] > 0:
+        hparams["lr_decay_steps"] = int(hparams["lr_decay_epochs"] * epoch_steps)
 
     optimizer = _create_optimizer(hparams)
     lr_scheduler = _create_lr_scheduler(hparams)

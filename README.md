@@ -11,7 +11,7 @@
 
 `Rosetta Stone` is a lightweight `PyTorch` wrapper & toolkit that aims to make your deep learning life easier. It enables users to performe end-to-end experiment quickly and efficiently. In comparison with the other open source libraries, Rosetta is an alternate low-code toolkit that can be used to perform deep learning tasks with only few lines of code. It easy to use and make you focus on designing your models!
 
-***⚠️ Note:** The code is still under active development (with no frozen API), but is already usable in applications.
+⚠️ : The code is still under active development (with no frozen API), but is already usable in applications.
 
 ## Features
 

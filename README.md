@@ -1,7 +1,5 @@
 <p align="center">
-<a href="#">
-    <img src=".github/github-banner.png?raw=true" height="200" alt="">
-</a>
+    <img style="vertical-align:middle" src=".github/github-banner.png?raw=true" height="200" alt="">
 </p>
 
 # Rosetta Stone <img src=".github/logo.png?raw=true" width="120" align="right" alt="">

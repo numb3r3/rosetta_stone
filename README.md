@@ -1,4 +1,4 @@
-# Rosetta Stone <img src=".github/logo.png?raw=true" width="200" height="225" align="right" alt="ts-graphql/rosetta logo">
+# Rosetta Stone <img src=".github/logo.png?raw=true" width="150" align="right" alt="">
 
 <p align="center">
 <a href="#">

@@ -1,4 +1,4 @@
-# Rosetta Stone <img src=".github/logo.png?raw=true" width="100" align="right" alt="">
+# Rosetta Stone <img src=".github/logo.png?raw=true" width="80" align="right" alt="">
 
 <!---
 <p align="center">

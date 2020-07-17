@@ -1,12 +1,20 @@
+# Rosetta Stone <img src=".github/logo.png?raw=true" width="200" height="225" align="right" alt="ts-graphql/rosetta logo">
+
+<p align="center">
+<a href="#">
+    <img src=".github/github-banner.png?raw=true" alt="">
+</a>
+</p>
+
 Rosetta Stone
 =============
 
 # 🏄 Introducton
-make your deep learning life easier
 
-**Rosetta Stone** is a lightweight framework that aims to make your deep learning life easier. It enables users to performe end-to-end experiment quickly and efficiently. In comparison with the other open source libraries, Rosetta is an alternate low-code toolkit that can be used to perform deep learning tasks with only few lines of code. It easy to use and make you focus on designing your models!
 
-***Note: `master` branch is the developing branch.**
+**Rosetta Stone** is a lightweight `PyTorch` wrapper & toolkit that aims to make your deep learning life easier. It enables users to performe end-to-end experiment quickly and efficiently. In comparison with the other open source libraries, Rosetta is an alternate low-code toolkit that can be used to perform deep learning tasks with only few lines of code. It easy to use and make you focus on designing your models!
+
+***Note:** ⚠️ `master` branch is the developing branch. The code is still under active development (with no frozen API), but is already usable in applications.
 
 ## Features
 
@@ -128,3 +136,4 @@ Before making a contribution, please confirm that:
 - [高性能PyTorch是如何炼成的？](https://mp.weixin.qq.com/s/x7u26Ok7O4xMOETmUYROJQ)
 - [service-streamer](https://github.com/ShannonAI/service-streamer): Boosting your Web Services of Deep Learning Applications.
 - [Masked batchnorm in PyTorch](https://yangkky.github.io/2020/03/16/masked-batch-norm.html)
+- [ru_transformers](https://github.com/mgrankin/ru_transformers): train GPT-2 on Google TPUs

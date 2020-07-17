@@ -153,7 +153,7 @@ class Trainer(object):
 
         if self._use_amp:
             self.model, self.optimizer = amp.initialize(
-                self.model, self.optimizer, opt_level="O1"
+                self.model, self.optimizer, opt_level="O2"
             )
 
         if not use_horovod and is_distributed():

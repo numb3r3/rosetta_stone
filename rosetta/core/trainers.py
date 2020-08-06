@@ -131,12 +131,14 @@ class Trainer(object):
         # else:
         #     self.accessible_model = self.model
 
-        # fix learning rate issue
-        if is_distributed():
-            # scale the learning rate by the number of workers to account for
-            # increased total batch size
-            for param_group in self.optimizer.param_groups:
-                param_group['lr'] *= max(1.0, get_world_size() // 2)
+        # NOTE: the learning rate decay strategy does not work with following
+        # commented codes
+
+        # if is_distributed():
+        #     # scale the learning rate by the number of workers to account for
+        #     # increased total batch size
+        #     for param_group in self.optimizer.param_groups:
+        #         param_group['lr'] *= max(1.0, get_world_size() // 2)
 
         if use_horovod:
             import horovod.torch as hvd

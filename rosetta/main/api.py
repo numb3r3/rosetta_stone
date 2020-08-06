@@ -57,6 +57,10 @@ def train(args, unused_argv):
     if is_distributed() or args.use_horovod:
         init_distributed(use_horovod=args.use_horovod)
 
+        # scale the learning rate by the number of workers to account for
+        # increased total batch size
+        hparams['learning_rate'] *= max(1.0, get_world_size() // 2)
+
     # NOTE: get_global_rank() would return -1 for standalone training
     global_rank = max(0, get_global_rank())
 

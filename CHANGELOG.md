@@ -1,4 +1,22 @@
 
+# Release Note (`v1.1.15`)
+> Release time: 2020-08-06 11:12:24
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🆕 New Features
+ - [[```1d6f1f79```](https://github.com/numb3r3/rosetta_stone/commit/1d6f1f79451593193e656e727d727564e6806e9c)] __-__ load model&#39;s hparams from yaml (*wangfeng*)
+
+### 🐞 Bug fixes
+ - [[```8e875692```](https://github.com/numb3r3/rosetta_stone/commit/8e875692db02a12af54dc3f6678d0317ba3e1a04)] __-__ __trainer__: scale the learning rate by the number of workers (half of workers) (*wangfeng*)
+
+### 🍹 Other Improvements
+ - [[```0ff7f1ae```](https://github.com/numb3r3/rosetta_stone/commit/0ff7f1aec93d7b4f39b735093ee63c688f620922)] __-__ add isort.cfg (*wangfeng*)
+ - [[```b1816616```](https://github.com/numb3r3/rosetta_stone/commit/b1816616172844c27090077bf70fe6197809444d)] __-__ __changelog__: update change log to v1.1.14 (*wangfeng*)
+
 # Release Note (`v1.1.14`)
 > Release time: 2020-07-16 14:49:06
 

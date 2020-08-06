@@ -112,6 +112,25 @@ def parse_args(
     return hparams
 
 
+def load_model_hparams(yaml_path: str):
+    default_yaml_file = resource_filename(
+        'rosetta', '/'.join(('resources', 'default.yaml')))
+
+    with open(default_yaml_file) as fp:
+        configs = YAML().load(fp)
+        default_cfg = configs[default_set]
+
+        hparams = default_cfg.copy()
+
+        with open(yaml_path) as fp:
+            customized = YAML().load(fp)
+            model_params = customized[model_name]
+
+            hparams.update(model_params)
+
+    return hparams
+
+
 def load_yaml_params(yaml_path: str, model_name: str, cli_args=None):
     from pkg_resources import resource_filename
 

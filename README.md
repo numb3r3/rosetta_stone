@@ -6,6 +6,8 @@ make your deep learning life easier
 
 **Rosetta Stone** is a lightweight framework that aims to make your deep learning life easier. It enables users to performe end-to-end experiment quickly and efficiently. In comparison with the other open source libraries, Rosetta is an alternate low-code toolkit that can be used to perform deep learning tasks with only few lines of code. It easy to use and make you focus on designing your models!
 
+🦆 **Version 1.1.15 out now!**
+
 ***Note: `master` branch is the developing branch.**
 
 ## Features
@@ -58,7 +60,7 @@ In `rosetta` you don’t need to specify a training loop, just define the dataLo
 
 create a yaml file (usually named as `app.yaml`) within your repo as the example below.
 
-    ```YAML
+    ```bash
     resnet56: &resnet56
       model_module: examples.vision.resnet_model:ResNet
       dataio_module: examples.vision.cifar10:CIFAR10

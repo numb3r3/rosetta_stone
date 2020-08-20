@@ -83,6 +83,9 @@ class Trainer(object):
                 'Please install Apex if you want to make use of automatic mixed precision. '
                 'https://github.com/NVIDIA/apex')
 
+        if use_amp:
+            assert torch.backends.cudnn.enabled, 'Amp requires cudnn backend to be enabled.'
+
         self._use_horovod = use_horovod
         if use_horovod and not is_horovod_available():
             raise RuntimeError('horovod is not available!')
@@ -156,8 +159,16 @@ class Trainer(object):
                 self.model, self.optimizer, opt_level='O1')
 
         if not use_horovod and is_distributed():
-            self.model = nn.parallel.DistributedDataParallel(
-                self.model, device_ids=[rank], find_unused_parameters=True)
+            if self._use_amp:
+                # For distributed training, wrap the model with apex.parallel.DistributedDataParallel.
+                # This must be done AFTER the call to amp.initialize.  If model = DDP(model) is called
+                # before model, ... = amp.initialize(model, ...), the call to amp.initialize may alter
+                # the types of model's parameters in a way that disrupts or destroys DDP's allreduce hooks.
+                from apex.parallel import DistributedDataParallel as DDP
+                self.model = DDP(self.model, delay_allreduce=True)
+            else:
+                self.model = nn.parallel.DistributedDataParallel(
+                    self.model, device_ids=[rank], find_unused_parameters=True)
 
         self.lr_scheduler = lr_scheduler
         self.set_scheduler()

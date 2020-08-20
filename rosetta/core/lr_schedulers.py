@@ -152,7 +152,7 @@ class _DecayedLRWithWarmup(_lr_scheduler._LRScheduler):
         constant_steps,
         decay_method='exponential',
         decay_steps=20000,
-        decay_rate=0.5,
+        decay_rate=0.8,
         last_epoch=-1,
     ):
         self.warmup_steps = warmup_steps

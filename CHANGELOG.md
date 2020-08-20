@@ -1,4 +1,19 @@
 
+# Release Note (`v1.1.16`)
+> Release time: 2020-08-20 12:47:14
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🐞 Bug fixes
+ - [[```aa0fef0f```](https://github.com/numb3r3/rosetta_stone/commit/aa0fef0f158df29d6ca3d258b231387dfdf39cae)] __-__ lr decay strategy in distributed mode (*wangfeng*)
+
+### 🍹 Other Improvements
+ - [[```3c92b149```](https://github.com/numb3r3/rosetta_stone/commit/3c92b149bead5b05b9246bbc34b7809858b4b41a)] __-__ fix amp under distributed env (*wangfeng*)
+ - [[```cded3538```](https://github.com/numb3r3/rosetta_stone/commit/cded3538062c572802449883acaacd0bfa14da3c)] __-__ __changelog__: update change log to v1.1.15 (*wangfeng*)
+
 # Release Note (`v1.1.15`)
 > Release time: 2020-08-06 11:12:24
 

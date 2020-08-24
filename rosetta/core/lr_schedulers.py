@@ -104,34 +104,6 @@ def CosineAnealingWithWarmup(warmup_steps,
     return partial(_lr_scheduler.LambdaLR, **locals())
 
 
-def _exponential_decay(factor_rate, step, decay_steps=20000, decay_rate=0.5):
-    """Exponential decay.
-
-    When training a model, it is often recommended to lower the learning rate as
-    the training progresses.  This function applies an exponential decay function
-    to a provided initial learning rate.
-
-    The function returns the decayed learning rate.  It is computed as:
-
-    ```python
-    factor_rate = factor_rate *
-                            decay_rate ^ (global_step / decay_steps)
-    ```
-    """
-
-    factor_rate *= decay_rate**(step // decay_steps)
-    return factor_rate
-
-
-def _cyclic_decay(factor_rate, step, decay_steps=1000, decay_rate=0.1):
-    """Cyclic decay."""
-    min_factor_rate = factor_rate * decay_rate
-    cycle = math.cos(math.mod(step * math.pi / decay_steps,
-                              math.pi)) * 0.5 + 0.5
-    factor_rate = (factor_rate - min_factor_rate) * cycle + min_factor_rate
-    return factor_rate
-
-
 def DecayedLRWithWarmup(
     warmup_steps,
     constant_steps,
@@ -199,3 +171,31 @@ class _DecayedLRWithWarmup(_lr_scheduler._LRScheduler):
         return [
             base_lr * _lr_lambda(self.last_epoch) for base_lr in self.base_lrs
         ]
+
+
+def _exponential_decay(factor_rate, step, decay_steps=20000, decay_rate=0.5):
+    """Exponential decay.
+
+    When training a model, it is often recommended to lower the learning rate as
+    the training progresses.  This function applies an exponential decay function
+    to a provided initial learning rate.
+
+    The function returns the decayed learning rate.  It is computed as:
+
+    ```python
+    factor_rate = factor_rate *
+                            decay_rate ^ (global_step / decay_steps)
+    ```
+    """
+
+    factor_rate *= decay_rate**(step // decay_steps)
+    return factor_rate
+
+
+def _cyclic_decay(factor_rate, step, decay_steps=1000, decay_rate=0.1):
+    """Cyclic decay."""
+    min_factor_rate = factor_rate * decay_rate
+    cycle = math.cos(math.mod(step * math.pi / decay_steps,
+                              math.pi)) * 0.5 + 0.5
+    factor_rate = (factor_rate - min_factor_rate) * cycle + min_factor_rate
+    return factor_rate

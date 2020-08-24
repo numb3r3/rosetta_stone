@@ -30,11 +30,12 @@ class Trainer(object):
         lr_scheduler: Scheduler = None,
         log_interval: int = 10,
         evaluate_every: int = 100,
+        gradient_accumulation_steps: int = 1,
         update_scheduler_by_epoch: bool = False,
         device: Optional[torch.device or str] = None,
         use_cudnn_benchmark: bool = True,
         use_cuda_nonblocking: bool = False,
-        use_sync_bn: bool = True,
+        use_sync_bn: bool = False,
         use_horovod: bool = False,
         use_amp: bool = False,
         verbose: bool = True,
@@ -53,6 +54,9 @@ class Trainer(object):
         self._step = -1
         self._epoch = -1
         self._is_train = None
+        self._loss = None
+
+        self.gradient_accumulation_steps = gradient_accumulation_steps
 
         for k, v in kwargs.items():
             if hasattr(self, k):
@@ -196,15 +200,22 @@ class Trainer(object):
                     f'The implemented module = {type(self.model)} should return 3-tuples, i.e, output, loss, metrics. '
                 )
 
-        if self.is_train:
-            self.optimizer.zero_grad()
-            if self._use_amp:
-                self.scaler.scale(loss).backward()
-                self.scaler.step(self.optimizer)
-                self.scaler.update()
-            else:
-                loss.backward()
-                self.optimizer.step()
+        if (self.step + 1) % self.gradient_accumulation_steps == 0:
+            loss = self._loss / self.gradient_accumulation_steps
+
+            if self.is_train:
+                self.optimizer.zero_grad()
+                self.model.zero_grad()
+                if self._use_amp:
+                    self.scaler.scale(self._loss).backward()
+                    self.scaler.step(self.optimizer)
+                    self.scaler.update()
+                else:
+                    self._loss.backward()
+                    self.optimizer.step()
+        else:
+            self._loss = self._loss + loss if (self._loss
+                                               is not None) else loss
 
         return output, loss, metrics
 
@@ -287,7 +298,8 @@ class Trainer(object):
         if self.scheduler is not None and self._update_scheduler_by_epoch:
             self.scheduler.step()
 
-        # For distributed training
+        # For distributed training, to make shuffling work properly across multiple epochs.
+        # Otherwise, the same ordering will be always used.
         if isinstance(data_loader, DataLoader) and isinstance(
                 data_loader.sampler, DistributedSampler):
             data_loader.sampler.set_epoch(self.epoch)
@@ -439,20 +451,25 @@ class Trainer(object):
                 raise TypeError(
                     f'`optimizer.func` is expected to be subclass of `Optimizer`'
                     f' but got {type(optimizer.func)}')
-            self.optimizer = optimizer(self.model.parameters())
 
-        elif isinstance(optimizer, dict):
-            if not isinstance(self.model, nn.ModuleDict):
-                raise TypeError(
-                    'When `optimizer` is `dict`, `model` also needs to be `dict` or `nn.ModuleDict`'
-                )
+            grouped_parameters = self.model.parameters()
+            if hasattr(self.model, optimizer_grouped_parameters):
+                grouped_parameters = self.mode.optimizer_grouped_parameters
 
-            if isinstance(list(optimizer.values())[0], Partial):
-                optimizer = {
-                    k: v(self.model[k].parameters())
-                    for k, v in optimizer.items() if v is not None
-                }
-            self.optimizer = StepDict(Optimizer, **optimizer)
+            self.optimizer = optimizer(grouped_parameters)
+
+        # elif isinstance(optimizer, dict):
+        #     if not isinstance(self.model, nn.ModuleDict):
+        #         raise TypeError(
+        #             'When `optimizer` is `dict`, `model` also needs to be `dict` or `nn.ModuleDict`'
+        #         )
+
+        #     if isinstance(list(optimizer.values())[0], Partial):
+        #         optimizer = {
+        #             k: v(self.model[k].parameters())
+        #             for k, v in optimizer.items() if v is not None
+        #         }
+        #     self.optimizer = StepDict(Optimizer, **optimizer)
 
         else:
             raise TypeError(

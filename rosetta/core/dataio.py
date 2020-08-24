@@ -9,6 +9,7 @@ from torch.utils.data.sampler import RandomSampler
 
 from .. import helper
 from ..utils.distribute import get_global_rank, get_world_size, is_distributed
+from ..data.prefetcher import DataPrefetcher
 
 
 class BaseDataIO:
@@ -45,6 +46,8 @@ class BaseDataIO:
                            mode: str = 'train',
                            pin_memory: bool = True,
                            num_workers: int = 0,
+                           use_prefetcher: bool = False,
+                           start_epoch: bool = 0,
                            **kwargs):
         """Wraps a PyTorch Dataset with a DataLoader.
 
@@ -70,6 +73,12 @@ class BaseDataIO:
             sampler_kwargs = dict(
                 num_replicas=get_world_size(), rank=get_global_rank())
             sampler = DistributedSampler(dataset, **sampler_kwargs)
+
+            # In distributed mode, calling the :meth`set_epoch(epoch) <set_epoch>` method
+            # at the beginning of each epoch **before** creating the `DataLoader` iterator is necessary
+            # to make shuffling work properly across multiple epochs.
+            #  Otherwise, the same ordering will be always used.
+            sampler.set_epoch(start_epoch)
         elif is_train:
             sampler = RandomSampler(dataset, True)
 
@@ -81,7 +90,7 @@ class BaseDataIO:
                 and 'forkserver' in mp.get_all_start_methods()):
             loader_kwargs['multiprocessing_context'] = 'forkserver'
 
-        return DataLoader(
+        data_loader = DataLoader(
             dataset,
             sampler=sampler,
             batch_size=batch_size,
@@ -94,3 +103,8 @@ class BaseDataIO:
             pin_memory=pin_memory,
             num_workers=num_workers,
             **loader_kwargs)
+
+        if use_prefetcher:
+            data_loader = DataPrefetcher(data_loader, start_epoch)
+
+        return data_loader

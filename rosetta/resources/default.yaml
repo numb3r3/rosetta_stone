@@ -16,6 +16,7 @@ default: &default
     higher_better: true
 
   dataloader_workers: 0
+  use_prefetcher: false
 
   log_interval: 10
   save_checkpoints_steps: 500
@@ -37,5 +38,6 @@ default: &default
   weight_averaging_decay: 0.9
   gradient_clip: true
   gradient_max_norm: 1.0
+  gradient_accumulation_steps: 1
 
   dropout_rate: 0.1

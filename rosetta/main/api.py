@@ -61,9 +61,6 @@ def train(args, unused_argv):
         # increased total batch size
         hparams['learning_rate'] *= max(1.0, get_world_size() // 2)
 
-    # NOTE: get_global_rank() would return -1 for standalone training
-    global_rank = max(0, get_global_rank())
-
     log_dir = hparams.get(
         'log_dir', os.path.join(hparams['log_dir_prefix'], args.model_name))
     suffix_model_id = hparams['suffix_model_id']
@@ -74,7 +71,7 @@ def train(args, unused_argv):
         logdir=os.path.join(log_dir, log_name),
         coolname=True,
         tensorboard=True,
-        global_rank=global_rank,
+        global_rank=get_global_rank(),
         eager_flush=True,
         hparams=hparams,
     )
@@ -115,6 +112,7 @@ def train(args, unused_argv):
         lr_scheduler=lr_scheduler,
         use_horovod=args.use_horovod,
         use_amp=args.use_amp,
+        use_prefetcher=args.use_prefetcher,
         resume=args.resume_from,
         **hparams,
     )

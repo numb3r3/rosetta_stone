@@ -16,7 +16,6 @@ default: &default
     higher_better: true
 
   dataloader_workers: 0
-  use_prefetcher: false
 
   log_interval: 10
   save_checkpoints_steps: 500

@@ -76,6 +76,13 @@ def set_trainer_parser(parser=None):
         help='use horovod for distributed training',
     )
 
+    gp.add_argument(
+        '--use-prefetcher',
+        action='store_true',
+        default=False,
+        help='use prefetcher to speed up data loader',
+    )
+
     return parser
 
 

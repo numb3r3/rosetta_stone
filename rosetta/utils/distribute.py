@@ -113,6 +113,17 @@ def is_distributed() -> bool:
     return get_world_size() > 1
 
 
+def get_local_rank() -> int:
+    # returns -1 if not distributed, else returns local rank
+    # it works before dist.init_process_group
+    if IS_DISTRIBUTED_HOROVOD:
+        import horovod.torch as hvd
+
+        return hvd.local_rank()
+    else:
+        return int(os.environ.get('LOCAL_RANK', 0))
+
+
 def get_global_rank() -> int:
     # returns 0 if not distributed, else returns global rank
     # it works before dist.init_process_group
@@ -121,7 +132,7 @@ def get_global_rank() -> int:
 
         return hvd.rank()
     else:
-        return int(get_environ('RANK', 0))
+        return int(os.environ.get('RANK', 0))
 
 
 def is_master() -> bool:

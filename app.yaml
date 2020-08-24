@@ -1,8 +1,6 @@
 resnet56: &resnet56
-  model_package: examples.vision.resnet_model
-  model_class: ResNet
-  dataio_package: examples.vision.cifar10
-  dataio_class: CIFAR10
+  model_module: examples.vision.resnet_model:ResNet
+  dataio_module: examples.vision.cifar10:CIFAR10
 
   batch_size: 256
 

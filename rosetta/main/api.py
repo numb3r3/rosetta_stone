@@ -105,11 +105,11 @@ def train(args, unused_argv):
                                         epoch_steps)
 
     optimizer = _create_optimizer(hparams)
-    lr_scheduler = _create_lr_scheduler(hparams)
+    scheduler = _create_lr_scheduler(hparams)
     trainer = trainers.Trainer(
         model,
         optimizer,
-        lr_scheduler=lr_scheduler,
+        scheduler=scheduler,
         use_horovod=args.use_horovod,
         use_amp=args.use_amp,
         use_prefetcher=args.use_prefetcher,

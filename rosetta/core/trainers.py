@@ -1,7 +1,7 @@
 from functools import partial as Partial
 import os
 import time
-from typing import Dict, Iterable, Optional, Tuple, Mapping
+from typing import Dict, Iterable, Optional, Tuple, Mapping, Any
 
 import torch
 from torch import nn
@@ -27,7 +27,7 @@ class Trainer(object):
         self,
         model: nn.Module,
         optimizer: Optimizer,
-        lr_scheduler: Scheduler = None,
+        scheduler: Scheduler = None,
         log_interval: int = 10,
         evaluate_every: int = 100,
         gradient_accumulation_steps: int = 1,
@@ -184,8 +184,7 @@ class Trainer(object):
         """
 
         output, loss, metrics = self.iteration(data, mode)
-        if self.is_train and self.scheduler is not None and not self._update_scheduler_by_epoch:
-            self.scheduler.step()
+
         return output, loss, metrics
 
     def iteration(self,
@@ -200,8 +199,10 @@ class Trainer(object):
                     f'The implemented module = {type(self.model)} should return 3-tuples, i.e, output, loss, metrics. '
                 )
 
+        self._loss = self._loss + loss if (self._loss is not None) else loss
+
         if (self.step + 1) % self.gradient_accumulation_steps == 0:
-            loss = self._loss / self.gradient_accumulation_steps
+            self._loss = self._loss / self.gradient_accumulation_steps
 
             if self.is_train:
                 self.optimizer.zero_grad()
@@ -213,9 +214,12 @@ class Trainer(object):
                 else:
                     self._loss.backward()
                     self.optimizer.step()
-        else:
-            self._loss = self._loss + loss if (self._loss
-                                               is not None) else loss
+
+            if self.is_train and self.scheduler is not None and not self._update_scheduler_by_epoch:
+                self.scheduler.step()
+
+            # reset self._loss to accumulate again
+            self._loss = None
 
         return output, loss, metrics
 
@@ -261,7 +265,7 @@ class Trainer(object):
                                  self.epoch,
                                  (batch_idx + 1) * get_world_size(),
                                  total_batchs,
-                                 self.lr_scheduler.get_lr()[0],
+                                 self.scheduler.get_lr()[0],
                                  elapsed * 1000 /
                                  (self.log_interval * get_world_size()),
                                  loss.item(),
@@ -271,10 +275,10 @@ class Trainer(object):
 
                     logx.add_scalar(
                         '%s/learning_rate' % mode,
-                        self.lr_scheduler.get_lr()[0],
-                        self.global_step,
+                        self.scheduler.get_lr()[0],
+                        self.step,
                     )
-                    logx.metric(mode, metrics, self.global_step)
+                    logx.metric(mode, metrics, self.step)
 
         return avg_metrics
 
@@ -453,7 +457,7 @@ class Trainer(object):
                     f' but got {type(optimizer.func)}')
 
             grouped_parameters = self.model.parameters()
-            if hasattr(self.model, optimizer_grouped_parameters):
+            if hasattr(self.model, 'optimizer_grouped_parameters'):
                 grouped_parameters = self.mode.optimizer_grouped_parameters
 
             self.optimizer = optimizer(grouped_parameters)

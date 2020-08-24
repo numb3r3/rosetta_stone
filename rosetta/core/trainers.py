@@ -1,7 +1,7 @@
 from functools import partial as Partial
 import os
 import time
-from typing import Dict, Iterable, Optional, Tuple
+from typing import Dict, Iterable, Optional, Tuple, Mapping
 
 import torch
 from torch import nn
@@ -20,14 +20,6 @@ from ..utils.distribute import (
 )
 from ..utils.logx import logx
 
-try:
-    import apex
-    from apex import amp
-
-    AMP_AVAILABLE = True
-except ImportError:
-    AMP_AVAILABLE = False
-
 
 class Trainer(object):
 
@@ -38,13 +30,15 @@ class Trainer(object):
         lr_scheduler: Scheduler = None,
         log_interval: int = 10,
         evaluate_every: int = 100,
+        update_scheduler_by_epoch: bool = False,
         device: Optional[torch.device or str] = None,
+        use_cudnn_benchmark: bool = True,
         use_cuda_nonblocking: bool = False,
+        use_sync_bn: bool = True,
         use_horovod: bool = False,
         use_amp: bool = False,
         verbose: bool = True,
         resume: str = None,
-        reset_lr_scheduler: bool = False,
         **kwargs,
     ):
         self.logger = helper.get_logger(__name__)
@@ -56,144 +50,112 @@ class Trainer(object):
 
         self._log_interval = log_interval
         self._verbose = verbose
-        self._global_step = -1
+        self._step = -1
         self._epoch = -1
         self._is_train = None
 
+        for k, v in kwargs.items():
+            if hasattr(self, k):
+                raise AttributeError(f'{self} already has {k}')
+            if torch.is_tensor(v):
+                v = v.to(self.device)
+            if isinstance(v, nn.Module):
+                v.to(self.device)
+            kwargs[k] = v
+            # setattr(self, k, v)
+            # self.logger.debug(f"trainer sets {k} as a new attribute")
+
         self.kwargs = kwargs
 
-        if isinstance(model, nn.Module):
-            self.model = model
-        else:
-            raise TypeError(
-                f'Unknown type for `model`. Expected nn.Module but got {type(model)}'
-            )
+        # if isinstance(model, nn.Module):
+        #     self.model = model
+        # else:
+        #     raise TypeError(
+        #         f'Unknown type for `model`. Expected nn.Module but got {type(model)}'
+        #     )
 
-        if device is None:
-            self.device = (
-                torch.device('cuda')
-                if torch.cuda.is_available() else torch.device('cpu'))
-        else:
-            self.device = device
+        self.device = device or (torch.device(
+            'cuda') if torch.cuda.is_available() else torch.device('cpu'))
 
-        self._use_amp = use_amp
-        if use_amp and not AMP_AVAILABLE:
-            raise ImportError(
-                f'Got use_amp = {use_amp}, but cannot find apex. '
-                'Please install Apex if you want to make use of automatic mixed precision. '
-                'https://github.com/NVIDIA/apex')
-
-        if use_amp:
-            assert torch.backends.cudnn.enabled, 'Amp requires cudnn backend to be enabled.'
-
-        self._use_horovod = use_horovod
-        if use_horovod and not is_horovod_available():
-            raise RuntimeError('horovod is not available!')
-
-        # Init distributed settings
+        # setup for distributed
+        self._use_sync_bn = use_sync_bn
         if is_distributed():
-            # normalization parameters are synchronized across workers during forward pass.
-            if self._use_amp:
-                self.model = apex.parallel.convert_syncbn_model(self.model)
-            elif not use_horovod:
-                # TODO: add sync_batchnorm for horovod
-                self.model = nn.SyncBatchNorm.convert_sync_batchnorm(
-                    self.model)
+            if self._use_sync_bn:
+                model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
+                self.logger.info(
+                    'BNs of model are converted to nn.SyncBatchNorm')
 
             rank = get_local_rank()
             torch.cuda.set_device(rank)
             if get_global_rank() > 0:
                 # to avoid overwriting
-                verbose = False
+                self._verbose = False
 
-        # optionally resume from a checkpoint
-        if resume:
-            state_dict, checkpoint_metas = self.load_checkpoint(resume)
-
-            # resume model
-            self.model.load_state_dict(state_dict)
+        # setup model
+        if isinstance(model, nn.Module):
+            self.model = model
+        elif isinstance(model, dict):
+            self.model = nn.ModuleDict(model)
+        else:
+            raise TypeError(
+                f'Unknown type for `model`. Expected nn.Module or Dict[str, Module], but got {type(model)}'
+            )
 
         if 'cuda' in str(self.device):
-            # self.model.to(self.device)
-            self.model = self.model.to(self.device)
+            self.model.to(self.device)
+            torch.backends.cudnn.benchmark = use_cudnn_benchmark
             self._cuda_nonblocking = use_cuda_nonblocking
+            self.logger.debug(
+                f'cuda: True, cudnn.benchmark: {use_cudnn_benchmark}, '
+                f'cuda.nonblocking: {use_cuda_nonblocking}')
         else:
             self._cuda_nonblocking = False
+            # usually, this is not expected
+            self.logger.info(
+                f'cuda: False (torch.cuda.is_available()={torch.cuda.is_available()})'
+            )
 
+        if not use_horovod and is_distributed():
+            self.model = nn.parallel.DistributedDataParallel(
+                self.model, device_ids=[rank])
+
+        # self.accessible_model is useful for e.g., checkpointing
+        if isinstance(self.model,
+                      nn.parallel.DistributedDataParallel) or isinstance(
+                          self.model, nn.DataParallel):
+            self.accessible_model = self.model.module
+        else:
+            self.accessible_model = self.model
+
+        # setup optimizer and scheduler
         self.optimizer = optimizer
+        self.scheduler = scheduler
+        self._update_scheduler_by_epoch = update_scheduler_by_epoch
         self.set_optimizer()
-
-        # # resume optimizer
-        # if resume_checkpoint:
-        #     self.optimizer.load_state_dict(resume_checkpoint["optimizer"])
-
-        # if isinstance(self.model, nn.parallel.DistributedDataParallel) or isinstance(
-        #     self.model, nn.DataParallel
-        # ):
-        #     self.accessible_model = self.model.module
-        # else:
-        #     self.accessible_model = self.model
-
-        # NOTE: the learning rate decay strategy does not work with following
-        # commented codes
-
-        # if is_distributed():
-        #     # scale the learning rate by the number of workers to account for
-        #     # increased total batch size
-        #     for param_group in self.optimizer.param_groups:
-        #         param_group['lr'] *= max(1.0, get_world_size() // 2)
+        self.set_scheduler()
 
         if use_horovod:
+            if not is_horovod_available():
+                raise RuntimeError('horovod is not available!')
             import horovod.torch as hvd
 
-            # broadcast parameters & optimizer state.
             hvd.broadcast_parameters(self.model.state_dict(), root_rank=0)
             hvd.broadcast_optimizer_state(self.optimizer, root_rank=0)
-
-            # wrap optimizer with DistributedOptimizer.
             self.optimizer = hvd.DistributedOptimizer(
                 self.optimizer, named_parameters=self.model.named_parameters())
 
+        self._use_amp = use_amp
         if self._use_amp:
-            self.model, self.optimizer = amp.initialize(
-                self.model, self.optimizer, opt_level='O1')
-
-        if not use_horovod and is_distributed():
-            if self._use_amp:
-                # For distributed training, wrap the model with apex.parallel.DistributedDataParallel.
-                # This must be done AFTER the call to amp.initialize.  If model = DDP(model) is called
-                # before model, ... = amp.initialize(model, ...), the call to amp.initialize may alter
-                # the types of model's parameters in a way that disrupts or destroys DDP's allreduce hooks.
-                from apex.parallel import DistributedDataParallel as DDP
-                self.model = DDP(self.model, delay_allreduce=True)
-            else:
-                self.model = nn.parallel.DistributedDataParallel(
-                    self.model, device_ids=[rank], find_unused_parameters=True)
-
-        self.lr_scheduler = lr_scheduler
-        self.set_scheduler()
-
-        # # resume lr_scheduler
-        # if resume_checkpoint and not reset_lr_scheduler:
-        #     lr_scheduler_state_dict = resume_checkpoint["lr_scheduler"]
-        #     if lr_scheduler_state_dict:
-        #         self.lr_scheduler.load_state_dict(lr_scheduler_state_dict)
-
-        # self._use_amp = use_amp
-        # if use_amp:
-        #     if not hasattr(torch.cuda, "amp"):
-        #         warnings.warn("amp is not available")
-        #         self._use_amp = False
-        #     else:
-        #         self.scaler = torch.cuda.amp.GradScaler()
+            self.scaler = torch.cuda.amp.GradScaler()
+            self.logger.info('AMP is activated')
 
     @property
     def log_interval(self):
         return self._log_interval
 
     @property
-    def global_step(self):
-        return self._global_step
+    def step(self):
+        return self._step
 
     @property
     def epoch(self):
@@ -208,88 +170,67 @@ class Trainer(object):
         return self._is_train
 
     def _iteration(self,
-                   batch_data: Tuple[torch.Tensor],
-                   mode: str = 'eval') -> Tuple[torch.Tensor]:
-        """ Iteration part, user can override via duck typing or override_iteration ::
-            def iteration(self, feed_dict: Dict[str, torch.Tensor]) -> Mapping[str, torch.Tensor]:
-                input, labels = data
-                output = self.model(input)
-                loss = self.loss_f(output, labels)
-                if self.is_train:
-                    self.optimizer.zero_grad()
-                    loss.backward()
-                    self.optimizer.step()
-                return TensorMap(loss=loss, output=output)
-        :param data: data used during a iteration
-        :return: TensorMap or Dict
+                   data: Tuple[torch.Tensor],
+                   mode: str = 'train') -> Tuple[torch.Tensor]:
+        """Iteration level training loop.
+
+        :param data: should be TensorTuple
+        :param mode: train, test or val
+        :return:
         """
 
-        try:
-            output, loss, metrics = self.model(*batch_data)
-        except Exception:
-            raise ValueError(
-                f'The implemented module = {type(self.model)} should return 3-tuples, i.e, output, loss, metrics. '
-            )
+        output, loss, metrics = self.iteration(data, mode)
+        if self.is_train and self.scheduler is not None and not self._update_scheduler_by_epoch:
+            self.scheduler.step()
+        return output, loss, metrics
 
-        if mode == 'train':
-            # increment step here
-            self._global_step += 1
+    def iteration(self,
+                  data: Tuple[torch.Tensor],
+                  mode: str = 'train') -> Tuple[torch.Tensor]:
 
-            # compute gradient and do SGD step
+        with torch.cuda.amp.autocast(self._use_amp):
+            try:
+                output, loss, metrics = self.model(*data)
+            except Exception:
+                raise ValueError(
+                    f'The implemented module = {type(self.model)} should return 3-tuples, i.e, output, loss, metrics. '
+                )
+
+        if self.is_train:
             self.optimizer.zero_grad()
             if self._use_amp:
-                # Horovod with Apex
-                # https://gist.github.com/alsrgv/0713add50fe49a409316832a31612dde
-                with amp.scale_loss(loss, self.optimizer) as scaled_loss:
-                    scaled_loss.backward()
-                    if self.kwargs.get('gradient_clip', None):
-                        torch.nn.utils.clip_grad_norm_(
-                            amp.master_params(self.optimizer),
-                            self.kwargs['gradient_max_norm'],
-                        )
-
-                    if self._use_horovod:
-                        self.optimizer.synchronize()
-
-                if self._use_horovod:
-                    with self.optimizer.skip_synchronize():
-                        self.optimizer.step()
-                else:
-                    self.optimizer.step()
-
-                # TODO: use `torch.cuda.amp` instead
-                # self.scaler(loss).backward()
-                # self.scaler.step(self.optimizer)
-                # self.scaler.update()
+                self.scaler.scale(loss).backward()
+                self.scaler.step(self.optimizer)
+                self.scaler.update()
             else:
                 loss.backward()
-                if self.kwargs.get('gradient_clip', None):
-                    torch.nn.utils.clip_grad_norm_(
-                        self.model.parameters(),
-                        self.kwargs['gradient_max_norm'])
                 self.optimizer.step()
-
-            # update step for lr_scheduler
-            if self.lr_scheduler:
-                self.lr_scheduler.step()
 
         return output, loss, metrics
 
-    def _loop(self, data_loader: Iterable or DataLoader, mode: str, **kwargs):
+    def _loop(self,
+              data_loader: Iterable or DataLoader,
+              mode: str = 'train',
+              **kwargs):
         batch_size, total_size = ((data_loader.batch_size,
                                    len(data_loader.dataset)) if isinstance(
                                        data_loader, DataLoader) else
                                   (len(data_loader), len(data_loader)))
         total_batchs = total_size // batch_size
+
         # keep tracking the model's metric
         avg_metrics = AverageDictMeter()
         start_time = time.time()
+
         for batch_idx, batch_data in enumerate(data_loader):
             # move batch of samples to device
             batch_data = [
                 x.to(self.device) if isinstance(x, torch.Tensor) else x
                 for x in batch_data
             ]
+
+            if self.is_train:
+                self._step += 1
 
             output, loss, metrics = self._iteration(batch_data, mode)
 
@@ -327,10 +268,10 @@ class Trainer(object):
         return avg_metrics
 
     def train(self, data_loader: Iterable or DataLoader, **kwargs):
-        """Perform the training procedure for an epoch.
+        """Training the model for an epoch.
 
         :param data_loader:
-        :param mode: Name of this loop. Default is `train`.
+        :param mode: Name of this loop. Default is `train`. Passed to callbacks.
         """
 
         self._is_train = True
@@ -343,16 +284,21 @@ class Trainer(object):
         with torch.enable_grad():
             avg_metrics = self._loop(data_loader, mode='train', **kwargs)
 
+        if self.scheduler is not None and self._update_scheduler_by_epoch:
+            self.scheduler.step()
+
+        # For distributed training
         if isinstance(data_loader, DataLoader) and isinstance(
                 data_loader.sampler, DistributedSampler):
             data_loader.sampler.set_epoch(self.epoch)
+
         return avg_metrics
 
     def eval(self, data_loader: Iterable or DataLoader, **kwargs):
         """Evaluate the model.
 
         :param data_loader:
-        :param mode: Name of this loop. Default is `dev`.
+        :param mode: Name of this loop. Default is `test`. Passed to callbacks.
         :return:
         """
 
@@ -378,13 +324,13 @@ class Trainer(object):
         eval_intervals: int,
     ):
         """Train the model for a given iterations. This module is almost equal
-        to :: for ep in range(total_steps): trainer.train(train_loader) for k,
-        v in eval_loaders.items(): trainer.eval(v, k)
+        to :: for ep in range(total_iterations): trainer.train(train_loader)
+        for k, v in val_loaders.items(): trainer.test(v, k)
 
         :param train_loader:
-        :param eval_loaders:
-        :param total_steps:
-        :param eval_intervals:
+        :param val_loaders:
+        :param total_iterations:
+        :param val_intervals:
         :return:
         """
 
@@ -419,6 +365,30 @@ class Trainer(object):
             for name, loader in eval_loaders.items():
                 self.eval(loader, name)
 
+    def state_dict(self) -> Mapping[str, Any]:
+
+        return {
+            'model': self.accessible_model.state_dict(),
+            'optim': self.optimizer.state_dict(),
+            'scheduler': self.scheduler.state_dict(),
+            'epoch': self.epoch,
+            'step': self.step,
+            'update_scheduler_by_epoch': self._update_scheduler_by_epoch,
+            'use_sync_bn': self._use_sync_bn,
+            'use_amp': self._use_amp
+        }
+
+    def load_state_dict(self, state_dict: Mapping[str, Any]) -> None:
+        self.accessible_model.load_state_dict(state_dict['model'])
+        self.optimizer.load_state_dict(state_dict['optim'])
+        self.scheduler.load_state_dict(state_dict['scheduler'])
+        self.scheduler.last_epoch = state_dict['epoch']
+        self._epoch = state_dict['epoch']
+        self._update_scheduler_by_epoch = state_dict[
+            'update_scheduler_by_epoch']
+        self._use_sync_bn = state_dict['use_sync_bn']
+        self._use_amp = state_dict['use_amp']
+
     def save_checkpoint(self, eval_metrics, **kwargs):
         """checkpoint saving."""
         metric = eval_metrics[self._eval_metric]
@@ -427,26 +397,10 @@ class Trainer(object):
             max(self.best_metric, metric) if self._higher_better else min(
                 self.best_metric, metric))
 
-        # TODO: save amp states when using amp
-        save_dict = {
-            'epoch':
-            self.epoch,
-            'global_step':
-            self.global_step,
-            'state_dict':
-            self.model.state_dict(),
-            'metrics':
-            eval_metrics,
-            'best_metric':
-            self.best_metric,
-            'optimizer':
-            self.optimizer.state_dict(),
-            'lr_scheduler':
-            self.lr_scheduler.state_dict() if self.lr_scheduler else None,
-        }
+        state_dict = self.state_dict()
 
         logx.save_model(
-            save_dict,
+            state_dict,
             metric=metric,
             epoch=self.epoch,
             higher_better=self._higher_better,
@@ -456,34 +410,24 @@ class Trainer(object):
         """Restore a model and return a dict with any meta data included in the
         snapshot."""
         if os.path.isfile(resume_file):
-            # logx.msg("=> loading checkpoint '{}'".format(resume_file))
-            checkpoint = torch.load(
+            state_dict = torch.load(
                 resume_file, map_location=torch.device('cpu'))
-
-            # self._epoch = checkpoint["epoch"]
-            # self._global_step = checkpoint["global_step"]
-            # self._best_metric = checkpoint["best_metric"]
-
-            # self.model.load_state_dict(checkpoint['state_dict'])
-            # self.optimizer.load_state_dict(checkpoint['optimizer'])
-            # self.lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
 
             logx.msg("=> loaded checkpoint '{}' (epoch {})".format(
                 resume_file, checkpoint['epoch']))
-            state_dict = checkpoint['state_dict']
-            meta = {k: v for k, v in checkpoint.items() if k != 'state_dict'}
-            return (state_dict, meta)
+            self.load_state_dict(state_dict)
         else:
             logx.msg("=> no checkpoint found at '{}'".format(resume_file))
-            return None
+            raise FileNotFoundError(f'resume file {resume_file} not found!')
 
-    def set_optimizer(self):
+    def set_optimizer(self) -> None:
         """Set optimizer(s) for model(s).
 
-        You can override as ::
-        class YourTrainer(TrainerBase):
-            def set_optimizer(self):
-                self.optimizer = torch.optim.SGD(self.model.parameters())
+        You can override as::
+            class YourTrainer(TrainerBase):
+                def set_optimizer(self):
+                    self.optimizer = torch.optim.SGD(self.model.parameters())
+        :return:
         """
 
         optimizer = self.optimizer
@@ -497,33 +441,56 @@ class Trainer(object):
                     f' but got {type(optimizer.func)}')
             self.optimizer = optimizer(self.model.parameters())
 
+        elif isinstance(optimizer, dict):
+            if not isinstance(self.model, nn.ModuleDict):
+                raise TypeError(
+                    'When `optimizer` is `dict`, `model` also needs to be `dict` or `nn.ModuleDict`'
+                )
+
+            if isinstance(list(optimizer.values())[0], Partial):
+                optimizer = {
+                    k: v(self.model[k].parameters())
+                    for k, v in optimizer.items() if v is not None
+                }
+            self.optimizer = StepDict(Optimizer, **optimizer)
+
         else:
             raise TypeError(
                 f'Unexpected type {type(optimizer)} for `optimizer`')
 
-    def set_scheduler(self):
+    def set_scheduler(self) -> None:
         """Set scheduler(s) for optimizer(s).
 
         You can override as ::
-        class YourTrainer(TrainerBase):
-            def set_scheduler(self):
-                self.scheduler = torch.optim.lr_scheduler.Foo(self.optimizer)
+            class YourTrainer(TrainerBase):
+                def set_scheduler(self):
+                    self.scheduler = torch.optim.lr_scheduler.Foo(self.optimizer)
+        :return:
         """
 
-        lr_scheduler = self.lr_scheduler
-        if lr_scheduler is not None and self.optimizer is None:
+        scheduler = self.scheduler
+        if scheduler is not None and self.optimizer is None:
             raise TypeError('Optimizer is not set, so scheduler cannot be set')
 
-        if isinstance(lr_scheduler, Scheduler) or lr_scheduler is None:
-            self.lr_scheduler = lr_scheduler
+        if isinstance(scheduler, Scheduler) or scheduler is None:
+            self.scheduler = scheduler
 
-        elif isinstance(lr_scheduler, Partial):
-            if not issubclass(lr_scheduler.func, Scheduler):
+        elif isinstance(scheduler, Partial):
+            self.scheduler = scheduler(self.optimizer)
+
+        elif isinstance(scheduler, dict):
+            if not isinstance(self.optimizer, StepDict):
                 raise TypeError(
-                    f'`scheduler.func` is expected to be subclass of `_LRScheduler`'
-                    f' but got {type(lr_scheduler.func)}')
-            self.lr_scheduler = lr_scheduler(self.optimizer)
+                    'When `scheduler` is `dict`, `optimizer` is also needs to be `dict`'
+                )
+
+            _scheduler = {}
+            for k, v in scheduler.items():
+                if isinstance(v, Partial):
+                    v = v(self.optimizer[k])
+                _scheduler[k] = v
+            self.scheduler = StepDict(Scheduler, **_scheduler)
 
         else:
             raise TypeError(
-                f'Unexpected type {type(lr_scheduler)} for `lr_scheduler`')
+                f'Unexpected type {type(scheduler)} for `scheduler`')

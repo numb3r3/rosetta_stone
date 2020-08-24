@@ -3,7 +3,7 @@ import builtins
 import importlib.util
 import os
 import sys
-from typing import Optional
+from typing import Optional, Callable
 
 from torch import distributed
 from torch.cuda import device_count
@@ -13,8 +13,28 @@ from .. import helper
 logger = helper.get_logger(__name__)
 args = ' '.join(sys.argv)
 
-_DISTRIBUTED_FLAG = False
-_USE_HOROVOD_FLAG = False
+# IS_DISTRIBUTED is used to handle horovod
+IS_DISTRIBUTED_HOROVOD = False
+
+# decorators
+
+
+def if_is_master(func: Callable) -> Callable:
+    """Wraps function that is active only if it is the master process.
+
+    :param func: Any function
+    :return:
+    """
+
+    @wraps(func)
+    def inner(*args, **kwargs) -> Optional:
+        if is_master():
+            return func(*args, **kwargs)
+
+    return inner
+
+
+# distributed
 
 
 def init_distributed(
@@ -23,12 +43,12 @@ def init_distributed(
     init_method: Optional[str] = None,
     warning: bool = True,
 ):
-    """initializer for distributed training.
+    """Simple initializer for distributed training.
 
-    :param use_horovod:
-    :param backend: backend when
-    :param init_method:
-    :param warning:
+    :param use_horovod: If use horovod as distributed backend
+    :param backend: backend of torch.distributed.init_process_group
+    :param init_method: init_method of torch.distributed.init_process_group
+    :param warning: Warn if this method is called multiple times
     :return:
     """
 
@@ -36,9 +56,9 @@ def init_distributed(
         raise RuntimeError(
             'Distributed training is not available on this machine')
 
-    global _DISTRIBUTED_FLAG
-    _DISTRIBUTED_FLAG = True
     if use_horovod:
+        global IS_DISTRIBUTED_HOROVOD
+        IS_DISTRIBUTED_HOROVOD = True
         if backend is not None or init_method is not None:
             raise RuntimeError(
                 'Try to use horovod, but `backend` and `init_method` are not None'
@@ -52,14 +72,10 @@ def init_distributed(
         else:
             raise RuntimeError('horovod is not available!')
 
-        global _USE_HOROVOD_FLAG
-        _USE_HOROVOD_FLAG = True
-
     else:
-        if backend is None:
-            backend = 'nccl'
-        if init_method:
-            init_method = 'env://'
+        # default values
+        backend = backend or 'nccl'
+        init_method = init_method or 'env://'
 
         if not is_distributed():
             raise RuntimeError(
@@ -72,7 +88,7 @@ def init_distributed(
         else:
             distributed.init_process_group(
                 backend=backend, init_method=init_method)
-        logger.debug('init distributed')
+        logger.info('init distributed')
 
     if not is_master():
 
@@ -89,39 +105,35 @@ def is_horovod_available() -> bool:
 
 
 def is_distributed_available() -> bool:
-    return (hasattr(distributed, 'is_available') and getattr(
-        distributed, 'is_available')) or is_horovod_available()
+    return distributed.is_available() or is_horovod_available()
 
 
 def is_distributed() -> bool:
+    # to handle horovod
     return get_world_size() > 1
 
 
-def get_local_rank() -> int:
-    # returns -1 if not distributed, else returns local rank
-    # it works before dist.init_process_group
-    if not is_distributed():
-        return -1
-    else:
-        if _USE_HOROVOD_FLAG:
-            import horovod.torch as hvd
-
-            return hvd.local_rank()
-        return int(os.environ.get('LOCAL_RANK', 0))
-
-
 def get_global_rank() -> int:
-    # returns -1 if not distributed, else returns global rank
+    # returns 0 if not distributed, else returns global rank
     # it works before dist.init_process_group
-    if _DISTRIBUTED_FLAG and _USE_HOROVOD_FLAG:
+    if IS_DISTRIBUTED_HOROVOD:
         import horovod.torch as hvd
 
         return hvd.rank()
-    return int(os.environ.get('RANK', -1))
+    else:
+        return int(get_environ('RANK', 0))
 
 
 def is_master() -> bool:
-    return get_global_rank() <= 0
+    return get_global_rank() == 0
+
+
+def get_num_nodes() -> int:
+    # assume all nodes have the same number of gpus
+    if not is_distributed():
+        return 1
+    else:
+        return get_world_size() // device_count()
 
 
 def get_num_nodes() -> int:
@@ -133,8 +145,9 @@ def get_num_nodes() -> int:
 
 
 def get_world_size() -> int:
-    if _DISTRIBUTED_FLAG and _USE_HOROVOD_FLAG:
+    if IS_DISTRIBUTED_HOROVOD:
         import horovod.torch as hvd
 
         return hvd.size()
-    return int(os.environ.get('WORLD_SIZE', 1))
+    else:
+        return int(os.environ.get('WORLD_SIZE', 1))

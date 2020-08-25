@@ -1,4 +1,16 @@
 
+# Release Note (`v1.2.3`)
+> Release time: 2020-08-25 13:35:39
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🍹 Other Improvements
+ - [[```9d73fe07```](https://github.com/numb3r3/rosetta_stone/commit/9d73fe07caeff877c2ad46539087b2b744374d63)] __-__ enable find_unused_parameters in DDP (*wangfeng*)
+ - [[```e7018ee3```](https://github.com/numb3r3/rosetta_stone/commit/e7018ee382a4942c89059b6bb4d9feb871178f0c)] __-__ __changelog__: update change log to v1.2.2 (*wangfeng*)
+
 # Release Note (`v1.2.2`)
 > Release time: 2020-08-25 12:42:01
 

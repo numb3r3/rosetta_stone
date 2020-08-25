@@ -1,4 +1,18 @@
 
+# Release Note (`v1.2.2`)
+> Release time: 2020-08-25 12:42:01
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🆕 New Features
+ - [[```64f0dfc9```](https://github.com/numb3r3/rosetta_stone/commit/64f0dfc9f9b74c71b8dd72f8e0c6276301349a0a)] __-__ __trainer__: enable gradient_clip (*wangfeng*)
+
+### 🍹 Other Improvements
+ - [[```c109a734```](https://github.com/numb3r3/rosetta_stone/commit/c109a734a6caba79f2bca4cf0266207615d415f5)] __-__ __changelog__: update change log to v1.2.1 (*wangfeng*)
+
 # Release Note (`v1.2.1`)
 > Release time: 2020-08-25 12:31:50
 

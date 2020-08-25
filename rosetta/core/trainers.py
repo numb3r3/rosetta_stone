@@ -124,7 +124,10 @@ class Trainer(object):
 
         if not use_horovod and is_distributed():
             self.model = nn.parallel.DistributedDataParallel(
-                self.model, device_ids=[rank])
+                self.model,
+                device_ids=[rank],
+                output_device=rank,
+                find_unused_parameters=True)
 
         # self.accessible_model is useful for e.g., checkpointing
         if isinstance(self.model,

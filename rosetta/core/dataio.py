@@ -46,7 +46,6 @@ class BaseDataIO:
                            mode: str = 'train',
                            pin_memory: bool = True,
                            num_workers: int = 0,
-                           use_prefetcher: bool = False,
                            start_epoch: bool = 0,
                            **kwargs):
         """Wraps a PyTorch Dataset with a DataLoader.
@@ -90,7 +89,7 @@ class BaseDataIO:
                 and 'forkserver' in mp.get_all_start_methods()):
             loader_kwargs['multiprocessing_context'] = 'forkserver'
 
-        data_loader = DataLoader(
+        return DataLoader(
             dataset,
             sampler=sampler,
             batch_size=batch_size,
@@ -103,8 +102,3 @@ class BaseDataIO:
             pin_memory=pin_memory,
             num_workers=num_workers,
             **loader_kwargs)
-
-        if use_prefetcher:
-            data_loader = DataPrefetcher(data_loader, start_epoch)
-
-        return data_loader

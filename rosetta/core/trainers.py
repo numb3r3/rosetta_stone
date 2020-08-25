@@ -48,6 +48,7 @@ class Trainer(object):
         use_sync_bn: bool = False,
         use_horovod: bool = False,
         use_amp: bool = False,
+        use_prefetcher=False,
         verbose: bool = True,
         **kwargs,
     ):
@@ -64,6 +65,8 @@ class Trainer(object):
         self._epoch = -1
         self._is_train = None
         self._loss = None
+
+        self._use_prefetcher = use_prefetcher
 
         self.gradient_accumulation_steps = gradient_accumulation_steps
 
@@ -255,6 +258,10 @@ class Trainer(object):
         # keep tracking the model's metric
         avg_metrics = AverageDictMeter()
         start_time = time.time()
+
+        if self._use_prefetcher:
+            from ..data.async_data import AsyncDataLoader
+            data_loader = AsyncDataLoader(data_loader)
 
         for batch_idx, batch_data in enumerate(data_loader):
             # move batch of samples to device

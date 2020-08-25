@@ -82,17 +82,9 @@ def train(args, unused_argv):
     num_workers = hparams.pop('dataloader_workers')
 
     train_loader = dataio.create_data_loader(
-        train_data_path,
-        mode='train',
-        num_workers=num_workers,
-        use_prefetcher=args.use_prefetcher,
-        **hparams)
+        train_data_path, mode='train', num_workers=num_workers, **hparams)
     eval_loader = dataio.create_data_loader(
-        eval_data_path,
-        mode='eval',
-        num_workers=num_workers,
-        use_prefetcher=args.use_prefetcher,
-        **hparams)
+        eval_data_path, mode='eval', num_workers=num_workers, **hparams)
 
     # adjust learning rate decay parameter
     from torch.utils.data import DataLoader

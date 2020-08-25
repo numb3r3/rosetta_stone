@@ -104,11 +104,14 @@ def train(args, unused_argv):
         hparams['lr_decay_steps'] = int(hparams['lr_decay_epochs'] *
                                         epoch_steps)
 
+    device = 'cpu' if args.no_cuda else 'cuda'
+
     optimizer = _create_optimizer(hparams)
     scheduler = _create_lr_scheduler(hparams)
     trainer = trainers.Trainer(
         model,
         optimizer,
+        device=device,
         scheduler=scheduler,
         use_horovod=args.use_horovod,
         use_amp=args.use_amp,

@@ -9,6 +9,16 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler as Scheduler
 from torch.utils.data import DataLoader, DistributedSampler
 
+try:
+    from contextlib import nullcontext
+except ImportError:
+    from contextlib import contextmanager
+
+    @contextmanager
+    def nullcontext():
+        yield
+
+
 from .. import helper
 from ..utils.containers import AverageDictMeter
 from ..utils.distribute import (
@@ -57,6 +67,12 @@ class Trainer(object):
 
         self.gradient_accumulation_steps = gradient_accumulation_steps
 
+        if device is None:
+            self.device = device or (torch.device(
+                'cuda') if torch.cuda.is_available() else torch.device('cpu'))
+        else:
+            self.device = device
+
         for k, v in kwargs.items():
             if hasattr(self, k):
                 raise AttributeError(f'{self} already has {k}')
@@ -65,20 +81,8 @@ class Trainer(object):
             if isinstance(v, nn.Module):
                 v.to(self.device)
             kwargs[k] = v
-            # setattr(self, k, v)
-            # self.logger.debug(f"trainer sets {k} as a new attribute")
 
         self.kwargs = kwargs
-
-        # if isinstance(model, nn.Module):
-        #     self.model = model
-        # else:
-        #     raise TypeError(
-        #         f'Unknown type for `model`. Expected nn.Module but got {type(model)}'
-        #     )
-
-        self.device = device or (torch.device(
-            'cuda') if torch.cuda.is_available() else torch.device('cpu'))
 
         # setup for distributed
         self._use_sync_bn = use_sync_bn
@@ -190,7 +194,8 @@ class Trainer(object):
                   data: Tuple[torch.Tensor],
                   mode: str = 'train') -> Tuple[torch.Tensor]:
 
-        with torch.cuda.amp.autocast(self._use_amp):
+        with torch.cuda.amp.autocast(
+                self._use_amp) if self._use_amp else nullcontext():
             try:
                 output, loss, metrics = self.model(*data)
             except Exception:

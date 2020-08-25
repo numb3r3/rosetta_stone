@@ -1,4 +1,18 @@
 
+# Release Note (`v1.2.5`)
+> Release time: 2020-08-25 15:45:22
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🍹 Other Improvements
+ - [[```255f4c54```](https://github.com/numb3r3/rosetta_stone/commit/255f4c548c2428c4dd807b561300101cbc589b32)] __-__ __prefetcher__: minor fixing prefetcher (*wangfeng*)
+ - [[```bdec4125```](https://github.com/numb3r3/rosetta_stone/commit/bdec41253d937a9b697629a99eb9cbc732c96786)] __-__ __readme__: fix readme yaml code (*wangfeng*)
+ - [[```6e318647```](https://github.com/numb3r3/rosetta_stone/commit/6e318647f23e09d1d6b9b9fcba004aa7561d3675)] __-__ __prefetcher__: use asyn dataloader in standalone and prefetcher in DDP (*wangfeng*)
+ - [[```85ae85f7```](https://github.com/numb3r3/rosetta_stone/commit/85ae85f79ef1d787dc367d862f8b3e183e07b92e)] __-__ __changelog__: update change log to v1.2.4 (*wangfeng*)
+
 # Release Note (`v1.2.4`)
 > Release time: 2020-08-25 14:17:13
 

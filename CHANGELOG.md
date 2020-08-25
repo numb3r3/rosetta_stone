@@ -1,4 +1,16 @@
 
+# Release Note (`v1.1.17`)
+> Release time: 2020-08-25 11:39:06
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🍹 Other Improvements
+ - [[```959af865```](https://github.com/numb3r3/rosetta_stone/commit/959af865307c6aa7efeefb5a8c7a0c340abc2f84)] __-__ enable use_prefetcher (*wangfeng*)
+ - [[```6f714656```](https://github.com/numb3r3/rosetta_stone/commit/6f714656615e84d148a375a778dc7c5ad0dc4c44)] __-__ __changelog__: update change log to v1.1.16 (*wangfeng*)
+
 # Release Note (`v1.1.16`)
 > Release time: 2020-08-20 12:47:14
 

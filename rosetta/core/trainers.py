@@ -259,11 +259,17 @@ class Trainer(object):
         avg_metrics = AverageDictMeter()
         start_time = time.time()
 
+        prefetcher = None
         if self._use_prefetcher:
-            from ..data.async_data import AsyncDataLoader
-            data_loader = AsyncDataLoader(data_loader)
+            if not is_distributed():
+                # NOTE: async dataloader cannot work with DDP
+                from ..data.async_data import AsyncDataLoader
+                prefetcher = AsyncDataLoader(data_loader)
+            else:
+                from ..data.prefetcher import DataPrefetcher
+                prefetcher = DataLoader(data_loader)
 
-        for batch_idx, batch_data in enumerate(data_loader):
+        for batch_idx, batch_data in enumerate(prefetcher or data_loader):
             # move batch of samples to device
             batch_data = [
                 x.to(self.device) if isinstance(x, torch.Tensor) else x

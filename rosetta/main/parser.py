@@ -77,6 +77,14 @@ def set_trainer_parser(parser=None):
     )
 
     gp.add_argument(
+        '--use-sync-bn',
+        action='store_true',
+        default=False,
+        help=
+        'convert BatchNorm layer to SyncBatchNorm before wrapping Network with DDP',
+    )
+
+    gp.add_argument(
         '--use-prefetcher',
         action='store_true',
         default=False,

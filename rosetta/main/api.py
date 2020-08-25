@@ -124,6 +124,7 @@ def train(args, unused_argv):
         use_horovod=args.use_horovod,
         use_amp=args.use_amp,
         use_prefetcher=args.use_prefetcher,
+        use_sync_bn=args.use_sync_bn,
         **hparams,
     )
 

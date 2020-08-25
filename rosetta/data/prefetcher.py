@@ -10,7 +10,7 @@ class DataPrefetcher(object):
     def __init__(self, loader: DataLoader, start_epoch: int = 0):
         if not torch.cuda.is_available():
             raise RuntimeError('Prefetcher needs CUDA, but not available!')
-        self.loader = iter(loader)
+        self.loader = loader
         self.epoch = start_epoch - 1
 
     def __len__(self):
@@ -25,11 +25,11 @@ class DataPrefetcher(object):
         stream = torch.cuda.Stream()
         is_first = True
 
-        for next_data in self.loader:
+        for next_data in iter(self.loader):
             with torch.cuda.stream(stream):
                 next_data = [
                     x.to(device='cuda', non_blocking=True)
-                    if torch.is_tensor(x) else x for x in self.next_data
+                    if torch.is_tensor(x) else x for x in next_data
                 ]
 
             if not is_first:

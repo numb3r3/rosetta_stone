@@ -156,7 +156,7 @@ def load_yaml_params(yaml_path: str, model_name: str, cli_args=None):
     return hparams
 
 
-def create_model(hparams, resume_from: str = None):
+def create_model(hparams):
     import torch
 
     from .utils.pathlib import import_path

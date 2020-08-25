@@ -213,10 +213,22 @@ class Trainer(object):
                 self.model.zero_grad()
                 if self._use_amp:
                     self.scaler.scale(self._loss).backward()
+                    if self.kwargs.get('gradient_clip', None):
+                        self.scaler.unscale_(self.optimizer)
+                        torch.nn.utils.clip_grad_norm_(
+                            self.model.parameters(),
+                            self.kwargs['gradient_max_norm'])
+
                     self.scaler.step(self.optimizer)
                     self.scaler.update()
                 else:
                     self._loss.backward()
+
+                    if self.kwargs.get('gradient_clip', None):
+                        torch.nn.utils.clip_grad_norm_(
+                            self.model.parameters(),
+                            self.kwargs['gradient_max_norm'])
+
                     self.optimizer.step()
 
             if self.is_train and self.scheduler is not None and not self._update_scheduler_by_epoch:

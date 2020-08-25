@@ -1,4 +1,15 @@
 
+# Release Note (`v1.2.1`)
+> Release time: 2020-08-25 12:31:50
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🆕 New Features
+ - [[```5ddca50b```](https://github.com/numb3r3/rosetta_stone/commit/5ddca50be388399e81e1097a1019e5c88b790440)] __-__ rework (*wangfeng*)
+
 # Release Note (`v1.1.18`)
 > Release time: 2020-08-25 12:28:36
 

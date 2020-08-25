@@ -39,7 +39,6 @@ class Trainer(object):
         use_horovod: bool = False,
         use_amp: bool = False,
         verbose: bool = True,
-        resume: str = None,
         **kwargs,
     ):
         self.logger = helper.get_logger(__name__)
@@ -248,7 +247,6 @@ class Trainer(object):
                 self._step += 1
 
             output, loss, metrics = self._iteration(batch_data, mode)
-
             if loss is not None:
                 # capture metrics
                 metrics.update({'loss': loss})
@@ -407,6 +405,11 @@ class Trainer(object):
 
     def save_checkpoint(self, eval_metrics, **kwargs):
         """checkpoint saving."""
+
+        if self._eval_metric not in eval_metrics:
+            raise ValueError(
+                f"The model's metric {self._eval_metric} is not available!")
+
         metric = eval_metrics[self._eval_metric]
 
         self._best_metric = (
@@ -426,12 +429,12 @@ class Trainer(object):
         """Restore a model and return a dict with any meta data included in the
         snapshot."""
         if os.path.isfile(resume_file):
-            state_dict = torch.load(
+            checkpoint = torch.load(
                 resume_file, map_location=torch.device('cpu'))
 
             logx.msg("=> loaded checkpoint '{}' (epoch {})".format(
                 resume_file, checkpoint['epoch']))
-            self.load_state_dict(state_dict)
+            self.load_state_dict(checkpoint)
         else:
             logx.msg("=> no checkpoint found at '{}'".format(resume_file))
             raise FileNotFoundError(f'resume file {resume_file} not found!')
@@ -458,7 +461,7 @@ class Trainer(object):
 
             grouped_parameters = self.model.parameters()
             if hasattr(self.model, 'optimizer_grouped_parameters'):
-                grouped_parameters = self.mode.optimizer_grouped_parameters
+                grouped_parameters = self.model.optimizer_grouped_parameters
 
             self.optimizer = optimizer(grouped_parameters)
 

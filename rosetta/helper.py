@@ -167,16 +167,6 @@ def create_model(hparams, resume_from: str = None):
     model_cls_ = getattr(model_pkg, model_cls_name)
     model = model_cls_(**hparams)
 
-    if resume_from:
-        if os.path.isfile(resume_from):
-            print("=> loading checkpoint '{}'".format(resume_from))
-            checkpoint = torch.load(
-                resume_from, map_location=torch.device('cpu'))
-            model.load_state_dict(checkpoint['state_dict'])
-        else:
-            print("=> no checkpoint found at '{}'".format(resume_from))
-            sys.exit(1)
-
     return model
 
 

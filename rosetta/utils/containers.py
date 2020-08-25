@@ -25,11 +25,13 @@ class AverageMeter(object):
 
     @property
     def average(self):
+        if self.count == 0: return None
         return self.sum / self.count
 
 
-class AverageDictMeter(dict):
+class AverageDictMeter(MutableMapping, dict):
     """a grouping of average meters."""
+    __slots__ = ['_data']
 
     def __init__(self):
         super().__init__()
@@ -61,6 +63,12 @@ class AverageDictMeter(dict):
 
     def __iter__(self):
         return iter({k: v.average for k, v in self._data.items()})
+
+    def __contains__(self, key):
+        return key in self._data
+
+    def items(self):
+        return [(k, v.average) for k, v in self._data.items()]
 
     def keys(self):
         return self._data.keys()

@@ -113,9 +113,11 @@ def train(args, unused_argv):
         use_horovod=args.use_horovod,
         use_amp=args.use_amp,
         use_prefetcher=args.use_prefetcher,
-        resume=args.resume_from,
         **hparams,
     )
+
+    if args.resume_from:
+        trainer.load_checkpoint(args.resume_from)
 
     for epoch in range(hparams['num_epochs']):
         epoch_start_time = time.time()

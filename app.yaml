@@ -25,3 +25,8 @@ bert: &bert
   vocab_size: 30522
 
   num_epochs: 100
+
+  checkpoint_selector:
+    eval_set: eval
+    eval_metric: loss
+    higher_better: false

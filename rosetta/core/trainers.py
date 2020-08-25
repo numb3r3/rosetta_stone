@@ -261,13 +261,19 @@ class Trainer(object):
 
         prefetcher = None
         if self._use_prefetcher:
-            if not is_distributed():
-                # NOTE: async dataloader cannot work with DDP
+            if is_distributed():
+                from ..data.prefetcher import DataPrefetcher
+                prefetcher = DataPrefetcher(data_loader)
+                self.logger.info(
+                    'use `rosetta_stone.data.prefetcher.DataPrefetcher` as prefetcher'
+                )
+            else:
+                # NOTE: async dataloader does not work with DDP
                 from ..data.async_data import AsyncDataLoader
                 prefetcher = AsyncDataLoader(data_loader)
-            else:
-                from ..data.prefetcher import DataPrefetcher
-                prefetcher = DataLoader(data_loader)
+                self.logger.info(
+                    'use `rosetta_stone.data.async_data.AsyncDataLoader` as prefetcher'
+                )
 
         for batch_idx, batch_data in enumerate(prefetcher or data_loader):
             # move batch of samples to device

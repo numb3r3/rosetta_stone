@@ -1,4 +1,30 @@
 
+# Release Note (`v1.1.18`)
+> Release time: 2020-08-25 12:28:36
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🍹 Other Improvements
+ - [[```9c78afc6```](https://github.com/numb3r3/rosetta_stone/commit/9c78afc6a41c364f38735e3680422dd7d4ebedc7)] __-__ add sync_batch_norm (*wangfeng*)
+ - [[```ca6c92aa```](https://github.com/numb3r3/rosetta_stone/commit/ca6c92aacd6f7207e763268ef969eba195e4208d)] __-__ releas v1.2.0 (*wangfeng*)
+ - [[```93115913```](https://github.com/numb3r3/rosetta_stone/commit/93115913d04a72060c144b12454293cc4663e9bc)] __-__ __changelog__: update change log to v1.1.17 (*wangfeng*)
+
+# Release Note (`v1.1.18`)
+> Release time: 2020-08-25 12:28:17
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🍹 Other Improvements
+ - [[```9c78afc6```](https://github.com/numb3r3/rosetta_stone/commit/9c78afc6a41c364f38735e3680422dd7d4ebedc7)] __-__ add sync_batch_norm (*wangfeng*)
+ - [[```ca6c92aa```](https://github.com/numb3r3/rosetta_stone/commit/ca6c92aacd6f7207e763268ef969eba195e4208d)] __-__ releas v1.2.0 (*wangfeng*)
+ - [[```93115913```](https://github.com/numb3r3/rosetta_stone/commit/93115913d04a72060c144b12454293cc4663e9bc)] __-__ __changelog__: update change log to v1.1.17 (*wangfeng*)
+
 # Release Note (`v1.1.17`)
 > Release time: 2020-08-25 11:39:06
 

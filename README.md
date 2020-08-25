@@ -60,7 +60,7 @@ In `rosetta` you don’t need to specify a training loop, just define the dataLo
 
 create a yaml file (usually named as `app.yaml`) within your repo as the example below.
 
-    ```bash
+    ```yaml
     resnet56: &resnet56
       model_module: examples.vision.resnet_model:ResNet
       dataio_module: examples.vision.cifar10:CIFAR10

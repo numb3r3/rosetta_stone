@@ -1,4 +1,23 @@
 
+# Release Note (`v1.2.6`)
+> Release time: 2020-08-27 18:02:50
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🆕 New Features
+ - [[```48855041```](https://github.com/numb3r3/rosetta_stone/commit/48855041ad5ce34d27b50a5ac2c400bcae416212)] __-__ __optimizer__: add make_parameter_groups implement from allennlp (*wangfeng*)
+
+### 📗 Documentation
+ - [[```5d7ab4e7```](https://github.com/numb3r3/rosetta_stone/commit/5d7ab4e78263eb18b2a00a5128f5effb1ccab306)] __-__ __readme__: add more refers (*wangfeng*)
+
+### 🍹 Other Improvements
+ - [[```be288ebe```](https://github.com/numb3r3/rosetta_stone/commit/be288ebee03d6783f6a2cf236e811aa86928c7b5)] __-__ __optimizer__: fix missing import (*wangfeng*)
+ - [[```9bce131e```](https://github.com/numb3r3/rosetta_stone/commit/9bce131edae8b576ff91b5db0e0e261cd90b47d1)] __-__ __trainer__: fix prefetcher to make it work with DDP (*wangfeng*)
+ - [[```b275f08b```](https://github.com/numb3r3/rosetta_stone/commit/b275f08bb9cac8c58b8cb0881960ccd7d0442704)] __-__ __changelog__: update change log to v1.2.5 (*wangfeng*)
+
 # Release Note (`v1.2.5`)
 > Release time: 2020-08-25 15:45:22
 

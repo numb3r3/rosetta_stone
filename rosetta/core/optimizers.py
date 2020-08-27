@@ -1,5 +1,5 @@
 """Pytorch optimization definitions and functions."""
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union, Iterable, Callable
 from functools import partial
 import torch
 import math

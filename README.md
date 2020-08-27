@@ -120,6 +120,8 @@ Before making a contribution, please confirm that:
 
 # 👍 References
 
+- [flambe](https://github.com/asappresearch/flambe): An ML framework to accelerate research and its path to production.
+- [Jacinle](https://github.com/vacancy/Jacinle): It contains a range of utility functions for python development, including project configuration, file IO, image processing, inter-process communication, etc.
 - [homura](https://github.com/moskomule/homura): PyTorch utilities including trainer, reporter, etc.
 - [FARM](https://github.com/deepset-ai/FARM): Fast & easy transfer learning for NLP. Harvesting language models for the industry.
 - [kotonoha](https://github.com/moskomule/kotonoha): NLP utilities for research

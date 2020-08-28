@@ -22,6 +22,7 @@ default: &default
 
   optimizer: AdamW
   learning_rate: 1e-3
+  minimal_lr: 1e-6
 
   lr_warmup_epochs: .0
   lr_constant_epochs: .0

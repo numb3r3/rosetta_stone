@@ -35,6 +35,7 @@ def _create_lr_scheduler(hparams):
         decay_method=hparams['lr_decay_method'],
         decay_steps=hparams['lr_decay_steps'],
         decay_rate=hparams['lr_decay_rate'],
+        min_lr=hparams['minimal_lr'],
     )
     return lr_scheduler
 

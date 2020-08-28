@@ -1,4 +1,18 @@
 
+# Release Note (`v1.2.8`)
+> Release time: 2020-08-28 18:23:22
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🆕 New Features
+ - [[```8624d471```](https://github.com/numb3r3/rosetta_stone/commit/8624d47120ff25501fb365ff8bf564f11cabd6e4)] __-__ __scheduler__: support min_lr param for  only (*wangfeng*)
+
+### 🍹 Other Improvements
+ - [[```52cad880```](https://github.com/numb3r3/rosetta_stone/commit/52cad88021b50779565754610a9206d2cd505003)] __-__ __changelog__: update change log to v1.2.7 (*wangfeng*)
+
 # Release Note (`v1.2.7`)
 > Release time: 2020-08-28 13:13:18
 

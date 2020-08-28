@@ -107,6 +107,7 @@ def CosineAnealingWithWarmup(warmup_steps,
 def DecayedLRWithWarmup(
     warmup_steps,
     constant_steps,
+    min_lr: float = 0.0,
     decay_method='exponential',
     decay_steps=20000,
     decay_rate=0.5,
@@ -122,6 +123,7 @@ class _DecayedLRWithWarmup(_lr_scheduler._LRScheduler):
         optimizer,
         warmup_steps,
         constant_steps,
+        min_lr: float = .0,
         decay_method='exponential',
         decay_steps=20000,
         decay_rate=0.8,
@@ -132,6 +134,7 @@ class _DecayedLRWithWarmup(_lr_scheduler._LRScheduler):
         self.decay_method = decay_method
         self.decay_steps = decay_steps
         self.decay_rate = decay_rate
+        self.min_lr = min_lr
 
         super().__init__(optimizer, last_epoch)
 
@@ -169,7 +172,8 @@ class _DecayedLRWithWarmup(_lr_scheduler._LRScheduler):
             return factor_rate
 
         return [
-            base_lr * _lr_lambda(self.last_epoch) for base_lr in self.base_lrs
+            max(self.min_lr, base_lr * _lr_lambda(self.last_epoch))
+            for base_lr in self.base_lrs
         ]
 
 

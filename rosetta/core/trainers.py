@@ -438,16 +438,19 @@ class Trainer(object):
             'use_amp': self._use_amp
         }
 
-    def load_state_dict(self, state_dict: Mapping[str, Any]) -> None:
+    def load_state_dict(self,
+                        state_dict: Mapping[str, Any],
+                        resume_optimizer: bool = False) -> None:
         self.accessible_model.load_state_dict(state_dict['model'])
-        self.optimizer.load_state_dict(state_dict['optim'])
-        self.scheduler.load_state_dict(state_dict['scheduler'])
-        self.scheduler.last_epoch = state_dict['epoch']
-        self._epoch = state_dict['epoch']
-        self._update_scheduler_by_epoch = state_dict[
-            'update_scheduler_by_epoch']
-        self._use_sync_bn = state_dict['use_sync_bn']
-        self._use_amp = state_dict['use_amp']
+        if resume_optimizer:
+            self.optimizer.load_state_dict(state_dict['optim'])
+            self.scheduler.load_state_dict(state_dict['scheduler'])
+            self.scheduler.last_epoch = state_dict['epoch']
+            self._epoch = state_dict['epoch']
+            self._update_scheduler_by_epoch = state_dict[
+                'update_scheduler_by_epoch']
+            self._use_sync_bn = state_dict['use_sync_bn']
+            self._use_amp = state_dict['use_amp']
 
     def save_checkpoint(self, eval_metrics, **kwargs):
         """checkpoint saving."""
@@ -471,7 +474,10 @@ class Trainer(object):
             higher_better=self._higher_better,
         )
 
-    def load_checkpoint(self, resume_file: str, **kwargs):
+    def load_checkpoint(self,
+                        resume_file: str,
+                        resume_optimizer: bool = False,
+                        **kwargs):
         """Restore a model and return a dict with any meta data included in the
         snapshot."""
         if os.path.isfile(resume_file):
@@ -480,7 +486,7 @@ class Trainer(object):
 
             logx.msg("=> loaded checkpoint '{}' (epoch {})".format(
                 resume_file, checkpoint['epoch']))
-            self.load_state_dict(checkpoint)
+            self.load_state_dict(checkpoint, resume_optimizer=resume_optimizer)
         else:
             logx.msg("=> no checkpoint found at '{}'".format(resume_file))
             raise FileNotFoundError(f'resume file {resume_file} not found!')

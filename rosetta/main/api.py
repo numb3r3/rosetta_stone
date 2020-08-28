@@ -120,8 +120,9 @@ def train(args, unused_argv):
         **hparams,
     )
 
-    if args.resume_from:
-        trainer.load_checkpoint(args.resume_from)
+    if args.checkpoint:
+        trainer.load_checkpoint(
+            args.checkpoint, resume_optimizer=args.resume_optimizer)
 
     for epoch in range(hparams['num_epochs']):
         epoch_start_time = time.time()
@@ -178,14 +179,18 @@ def eval(args, unused_argv):
     eval_loader = dataio.create_data_loader(
         eval_data_path, mode='eval', num_workers=num_workers, **hparams)
 
+    device = 'cpu' if args.no_cuda else 'cuda'
+
     optimizer = _create_optimizer(hparams)
-    lr_scheduler = _create_lr_scheduler(hparams)
     trainer = trainers.Trainer(
         model,
         optimizer,
-        lr_scheduler=lr_scheduler,
-        resume=args.resume_from,
+        device=device,
+        scheduler=None,
+        use_prefetcher=args.use_prefetcher,
         **hparams)
+
+    trainer.load_checkpoint(args.checkpoint, resume_optimizer=False)
 
     metric_key = hparams['checkpoint_selector']['eval_metric']
 

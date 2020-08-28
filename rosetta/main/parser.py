@@ -49,11 +49,18 @@ def set_trainer_parser(parser=None):
         help='a yaml file configs models')
 
     gp.add_argument(
-        '--resume-from',
+        '--checkpoint',
         default='',
         type=str,
         metavar='PATH',
-        help='path to latest checkpoint (default: none)',
+        help='path to the checkpoint (default: none)',
+    )
+
+    gp.add_argument(
+        '--resume-optimizer',
+        action='store_true',
+        default=False,
+        help='resume optimizer (and scheduler) from checkpoint',
     )
 
     gp.add_argument(
@@ -108,11 +115,11 @@ def set_evaluator_parser(parser=None):
         help='a yaml file configs models')
 
     gp.add_argument(
-        '--resume-from',
+        '--checkpoint',
         default='',
         type=str,
         metavar='PATH',
-        help='path to latest checkpoint (default: none)',
+        help='path to the checkpoint (default: none)',
     )
 
     gp.add_argument(
@@ -120,6 +127,13 @@ def set_evaluator_parser(parser=None):
         action='store_true',
         default=False,
         help='disables CUDA training')
+
+    gp.add_argument(
+        '--use-prefetcher',
+        action='store_true',
+        default=False,
+        help='use prefetcher to speed up data loader',
+    )
 
     return parser
 

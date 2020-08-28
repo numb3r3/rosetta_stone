@@ -1,4 +1,21 @@
 
+# Release Note (`v1.2.7`)
+> Release time: 2020-08-28 13:13:18
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🆕 New Features
+ - [[```8f126c1a```](https://github.com/numb3r3/rosetta_stone/commit/8f126c1a3b28178c8c63a477ac533dae548ee637)] __-__ __checkpoint__: enable resume model params from checkpoint only (*wangfeng*)
+
+### 🐞 Bug fixes
+ - [[```455a608e```](https://github.com/numb3r3/rosetta_stone/commit/455a608e98f495a3d3b6b341355e194bae91680c)] __-__ __evaluator__: fix eval mode works (*wangfeng*)
+
+### 🍹 Other Improvements
+ - [[```bf3128d6```](https://github.com/numb3r3/rosetta_stone/commit/bf3128d670822f74751c01af7c29a57d70dff949)] __-__ __changelog__: update change log to v1.2.6 (*wangfeng*)
+
 # Release Note (`v1.2.6`)
 > Release time: 2020-08-27 18:02:50
 

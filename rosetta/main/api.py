@@ -13,6 +13,20 @@ def _create_optimizer(hparams):
             momentum=hparams.get('momentum', 0),
             dampening=hparams.get('dampening', 0),
         )
+    elif optim == 'Adamdelta':
+        optimizer = optimizers.Adadelta(
+            lr=hparams['learning_rate'],
+            weight_decay=hparams['weight_decay_rate'],
+            rho=hparams.get('rho', 0.9),
+        )
+    elif optim == 'Adafactor':
+        optimizer = optimizers.Adafactor(
+            lr=hparams['learning_rate'],
+            weight_decay=hparams['weight_decay_rate'],
+            scale_parameter=hparams.get('scale_parameter', True),
+            relative_step=hparams.get('relative_step', True),
+            warmup_init=hparams.get('warmup_init', False),
+        )
     else:
         optimizer = {
             'Adam': optimizers.Adam,

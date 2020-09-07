@@ -63,6 +63,8 @@ def train(args, unused_argv):
                                     init_distributed, is_distributed)
     from ..utils.logx import logx
 
+    # set attribute with priority
+    # metas in command args > YAML > class attribute > default_config
     hparams = load_yaml_params(
         args.yaml_path, args.model_name, cli_args=unused_argv)
     model = create_model(hparams)

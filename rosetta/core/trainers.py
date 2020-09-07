@@ -132,13 +132,13 @@ class Trainer(object):
                 output_device=rank,
                 find_unused_parameters=True)
 
-        # self.accessible_model is useful for e.g., checkpointing
-        if isinstance(self.model,
-                      nn.parallel.DistributedDataParallel) or isinstance(
-                          self.model, nn.DataParallel):
-            self.accessible_model = self.model.module
-        else:
-            self.accessible_model = self.model
+        # # self.accessible_model is useful for e.g., checkpointing
+        # if isinstance(self.model,
+        #               nn.parallel.DistributedDataParallel) or isinstance(
+        #                   self.model, nn.DataParallel):
+        #     self.accessible_model = self.model.module
+        # else:
+        #     self.accessible_model = self.model
 
         # setup optimizer and scheduler
         self.optimizer = optimizer
@@ -161,6 +161,16 @@ class Trainer(object):
         if self._use_amp:
             self.scaler = torch.cuda.amp.GradScaler()
             self.logger.info('AMP is activated')
+
+    @property
+    def accessible_model(self):
+        # self.accessible_model is useful for e.g., checkpointing
+        if isinstance(self.model,
+                      nn.parallel.DistributedDataParallel) or isinstance(
+                          self.model, nn.DataParallel):
+            return self.model.module
+        else:
+            return self.model
 
     @property
     def log_interval(self):
@@ -335,6 +345,7 @@ class Trainer(object):
 
         self._is_train = True
         self._epoch += 1
+        self._loss = None
 
         # Turn on the train mode
         self.model.train()
@@ -363,6 +374,7 @@ class Trainer(object):
         """
 
         self._is_train = False
+        self._loss = None
 
         # Turn on the evaluation mode
         self.model.eval()
@@ -430,7 +442,8 @@ class Trainer(object):
         return {
             'model': self.accessible_model.state_dict(),
             'optim': self.optimizer.state_dict(),
-            'scheduler': self.scheduler.state_dict(),
+            'scheduler':
+            self.scheduler.state_dict() if self.scheduler else None,
             'epoch': self.epoch,
             'step': self.step,
             'update_scheduler_by_epoch': self._update_scheduler_by_epoch,
@@ -489,7 +502,8 @@ class Trainer(object):
             self.load_state_dict(checkpoint, resume_optimizer=resume_optimizer)
         else:
             logx.msg("=> no checkpoint found at '{}'".format(resume_file))
-            raise FileNotFoundError(f'resume file {resume_file} not found!')
+            raise FileNotFoundError(
+                f'checkpoint file {resume_file} not found!')
 
     def set_optimizer(self) -> None:
         """Set optimizer(s) for model(s).

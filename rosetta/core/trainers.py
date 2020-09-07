@@ -132,13 +132,13 @@ class Trainer(object):
                 output_device=rank,
                 find_unused_parameters=True)
 
-        # # self.accessible_model is useful for e.g., checkpointing
-        # if isinstance(self.model,
-        #               nn.parallel.DistributedDataParallel) or isinstance(
-        #                   self.model, nn.DataParallel):
-        #     self.accessible_model = self.model.module
-        # else:
-        #     self.accessible_model = self.model
+        # self.accessible_model is useful for e.g., checkpointing
+        if isinstance(self.model,
+                      nn.parallel.DistributedDataParallel) or isinstance(
+                          self.model, nn.DataParallel):
+            self.accessible_model = self.model.module
+        else:
+            self.accessible_model = self.model
 
         # setup optimizer and scheduler
         self.optimizer = optimizer
@@ -161,16 +161,6 @@ class Trainer(object):
         if self._use_amp:
             self.scaler = torch.cuda.amp.GradScaler()
             self.logger.info('AMP is activated')
-
-    @property
-    def accessible_model(self):
-        # self.accessible_model is useful for e.g., checkpointing
-        if isinstance(self.model,
-                      nn.parallel.DistributedDataParallel) or isinstance(
-                          self.model, nn.DataParallel):
-            return self.model.module
-        else:
-            return self.model
 
     @property
     def log_interval(self):

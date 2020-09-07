@@ -171,10 +171,16 @@ class _DecayedLRWithWarmup(_lr_scheduler._LRScheduler):
                 )
             return factor_rate
 
-        return [
-            max(self.min_lr, base_lr * _lr_lambda(self.last_epoch))
-            for base_lr in self.base_lrs
-        ]
+        if self.last_epoch > self.warmup_steps:
+            return [
+                max(self.min_lr, base_lr * _lr_lambda(self.last_epoch))
+                for base_lr in self.base_lrs
+            ]
+        else:
+            return [
+                base_lr * _lr_lambda(self.last_epoch)
+                for base_lr in self.base_lrs
+            ]
 
 
 def _exponential_decay(factor_rate, step, decay_steps=20000, decay_rate=0.5):

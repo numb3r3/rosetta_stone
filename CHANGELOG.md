@@ -1,4 +1,24 @@
 
+# Release Note (`v1.2.10`)
+> Release time: 2020-09-07 17:12:41
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🆕 New Features
+ - [[```d0451480```](https://github.com/numb3r3/rosetta_stone/commit/d0451480ee278abff95b100a1451ab35a399ad5a)] __-__ add  pacakge to manage utilization scripts (*wangfeng*)
+ - [[```05e78989```](https://github.com/numb3r3/rosetta_stone/commit/05e789897c1a10f9ee9bfee6bf8c1372c9be5f5f)] __-__ __optimizer__: add adadelta and adafactor optimizer (*wangfeng*)
+
+### 🐞 Bug fixes
+ - [[```6ecec44c```](https://github.com/numb3r3/rosetta_stone/commit/6ecec44c05253c9728db47cb5a6d7269e357808c)] __-__ __trainer__: minor improvement code (*wangfeng*)
+ - [[```7ab30c5f```](https://github.com/numb3r3/rosetta_stone/commit/7ab30c5f5bf2d21910e73a22bbbb7b994b719990)] __-__ __scheduler__: warmup lr from zero instead of min_lr (*wangfeng*)
+
+### 🍹 Other Improvements
+ - [[```13693a6c```](https://github.com/numb3r3/rosetta_stone/commit/13693a6c6b58cbb487fbecd72bcf231cec82964a)] __-__ ... (*wangfeng*)
+ - [[```550c25fa```](https://github.com/numb3r3/rosetta_stone/commit/550c25fa501f0d21eb1139cd8b40d2632d115cd6)] __-__ __changelog__: update change log to v1.2.9 (*wangfeng*)
+
 # Release Note (`v1.2.9`)
 > Release time: 2020-08-28 20:03:04
 

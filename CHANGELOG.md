@@ -1,4 +1,18 @@
 
+# Release Note (`v1.2.11`)
+> Release time: 2020-09-07 17:22:19
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🐞 Bug fixes
+ - [[```04f3d7b7```](https://github.com/numb3r3/rosetta_stone/commit/04f3d7b72380032839ded515615300c50149de67)] __-__ __trainer__: revert commit (*wangfeng*)
+
+### 🍹 Other Improvements
+ - [[```960c0757```](https://github.com/numb3r3/rosetta_stone/commit/960c0757db4aff0dc044772c8fe6f72e0e887e4a)] __-__ __changelog__: update change log to v1.2.10 (*wangfeng*)
+
 # Release Note (`v1.2.10`)
 > Release time: 2020-09-07 17:12:41
 

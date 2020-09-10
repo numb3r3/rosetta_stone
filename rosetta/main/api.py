@@ -30,7 +30,8 @@ def _create_optimizer(hparams):
     else:
         optimizer = {
             'Adam': optimizers.Adam,
-            'AdamW': optimizers.AdamW
+            'AdamW': optimizers.AdamW,
+            'LAMB': optimizers.LAMB,
         }.get(optim)(
             lr=hparams['learning_rate'],
             weight_decay=hparams['weight_decay_rate'],

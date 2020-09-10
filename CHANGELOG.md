@@ -1,4 +1,18 @@
 
+# Release Note (`v1.2.12`)
+> Release time: 2020-09-10 16:13:24
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🆕 New Features
+ - [[```793933e4```](https://github.com/numb3r3/rosetta_stone/commit/793933e4be0c9e38feb3c8420b3c6a58b4cd4543)] __-__ __optimizer__: add LAMB optimizer (*wangfeng*)
+
+### 🍹 Other Improvements
+ - [[```b95eb9e3```](https://github.com/numb3r3/rosetta_stone/commit/b95eb9e32a3a4eb8a015cbad1bca5f3c845da87e)] __-__ __changelog__: update change log to v1.2.11 (*wangfeng*)
+
 # Release Note (`v1.2.11`)
 > Release time: 2020-09-07 17:22:19
 

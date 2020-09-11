@@ -1,4 +1,18 @@
 
+# Release Note (`v1.2.13`)
+> Release time: 2020-09-11 14:23:24
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🐞 Bug fixes
+ - [[```17f31c6c```](https://github.com/numb3r3/rosetta_stone/commit/17f31c6c1dcfddb7bea4c8512160121a4e8e2ffd)] __-__ __optimizer__: correct steps num per epoch (*wangfeng*)
+
+### 🍹 Other Improvements
+ - [[```0fd328ac```](https://github.com/numb3r3/rosetta_stone/commit/0fd328ac20ff5dc30521036a7728d9d3b8b6aefb)] __-__ __changelog__: update change log to v1.2.12 (*wangfeng*)
+
 # Release Note (`v1.2.12`)
 > Release time: 2020-09-10 16:13:24
 

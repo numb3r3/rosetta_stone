@@ -110,7 +110,7 @@ def train(args, unused_argv):
     total_size = (
         len(train_loader.dataset)
         if isinstance(train_loader, DataLoader) else len(train_loader))
-    epoch_steps = total_size // hparams['batch_size']
+    epoch_steps = total_size // (hparams['batch_size'] * get_world_size())
 
     if hparams['lr_warmup_epochs'] > 0:
         hparams['lr_warmup_steps'] = int(hparams['lr_warmup_epochs'] *

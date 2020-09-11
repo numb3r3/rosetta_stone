@@ -578,7 +578,7 @@ class _Lamb(torch.optim.Optimizer):
                 betas[1]))
         defaults = dict(lr=lr, betas=betas, eps=eps, weight_decay=weight_decay)
         self.adam = adam
-        super(Lamb, self).__init__(params, defaults)
+        super().__init__(params, defaults)
 
     def step(self, closure=None):
         """Performs a single optimization step.
@@ -618,9 +618,9 @@ class _Lamb(torch.optim.Optimizer):
 
                 # Decay the first and second moment running average coefficient
                 # m_t
-                exp_avg.mul_(beta1).add_(1 - beta1, grad)
+                exp_avg.mul_(beta1).add_(grad, alpha=1 - beta1)
                 # v_t
-                exp_avg_sq.mul_(beta2).addcmul_(1 - beta2, grad, grad)
+                exp_avg_sq.mul_(beta2).addcmul_(grad, grad, value=1.0 - beta2)
 
                 # Paper v3 does not use debiasing.
                 # bias_correction1 = 1 - beta1 ** state['step']
@@ -633,7 +633,7 @@ class _Lamb(torch.optim.Optimizer):
 
                 adam_step = exp_avg / exp_avg_sq.sqrt().add(group['eps'])
                 if group['weight_decay'] != 0:
-                    adam_step.add_(group['weight_decay'], p.data)
+                    adam_step.add_(p.data, alpha=group['weight_decay'])
 
                 adam_norm = adam_step.pow(2).sum().sqrt()
                 if weight_norm == 0 or adam_norm == 0:
@@ -646,6 +646,6 @@ class _Lamb(torch.optim.Optimizer):
                 if self.adam:
                     trust_ratio = 1
 
-                p.data.add_(-step_size * trust_ratio, adam_step)
+                p.data.add_(adam_step, alpha=-step_size * trust_ratio)
 
         return loss

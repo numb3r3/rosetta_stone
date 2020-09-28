@@ -204,44 +204,51 @@ class Trainer(object):
                 self._use_amp) if self._use_amp else nullcontext():
             try:
                 output, loss, metrics = self.model(*data)
+                # collapse all losses if they are scattered on multiple gpus
+                loss = loss.mean()
             except Exception:
                 raise ValueError(
                     f'The implemented module = {type(self.model)} should return 3-tuples, i.e, output, loss, metrics. '
                 )
 
-        self._loss = self._loss + loss if (self._loss is not None) else loss
+        loss = loss / self.gradient_accumulation_steps
 
-        if (self.step + 1) % self.gradient_accumulation_steps == 0:
-            self._loss = self._loss / self.gradient_accumulation_steps
+        is_update_step = ((self.step + 1) %
+                          self.gradient_accumulation_steps == 0)
 
-            if self.is_train:
-                self.optimizer.zero_grad()
-                self.model.zero_grad()
-                if self._use_amp:
-                    self.scaler.scale(self._loss).backward()
+        if self.is_train:
+            # backprop and update the parameters
+
+            # self.optimizer.zero_grad()
+
+            if self._use_amp:
+                self.scaler.scale(loss).backward()
+
+                if is_update_step:
                     if self.kwargs.get('gradient_clip', None):
                         self.scaler.unscale_(self.optimizer)
                         torch.nn.utils.clip_grad_norm_(
                             self.model.parameters(),
                             self.kwargs['gradient_max_norm'])
 
+                    # optimizer.zero_grad()
                     self.scaler.step(self.optimizer)
                     self.scaler.update()
-                else:
-                    self._loss.backward()
+                    self.model.zero_grad()
+            else:
+                loss.backward()
 
+                if is_update_step:
                     if self.kwargs.get('gradient_clip', None):
                         torch.nn.utils.clip_grad_norm_(
                             self.model.parameters(),
                             self.kwargs['gradient_max_norm'])
 
                     self.optimizer.step()
+                    self.model.zero_grad()
 
-            if self.is_train and self.scheduler is not None and not self._update_scheduler_by_epoch:
+            if self.is_train and is_update_step and self.scheduler is not None and not self._update_scheduler_by_epoch:
                 self.scheduler.step()
-
-            # reset self._loss to accumulate again
-            self._loss = None
 
         return output, loss, metrics
 

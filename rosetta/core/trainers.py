@@ -211,7 +211,7 @@ class Trainer(object):
                     f'The implemented module = {type(self.model)} should return 3-tuples, i.e, output, loss, metrics. '
                 )
 
-        loss = loss / self.gradient_accumulation_steps
+        self._loss = loss / self.gradient_accumulation_steps
 
         is_update_step = ((self.step + 1) %
                           self.gradient_accumulation_steps == 0)
@@ -222,7 +222,7 @@ class Trainer(object):
             # self.optimizer.zero_grad()
 
             if self._use_amp:
-                self.scaler.scale(loss).backward()
+                self.scaler.scale(self._loss).backward()
 
                 if is_update_step:
                     if self.kwargs.get('gradient_clip', None):
@@ -235,8 +235,9 @@ class Trainer(object):
                     self.scaler.step(self.optimizer)
                     self.scaler.update()
                     self.model.zero_grad()
+                    # self.optimizer.zero_grad()
             else:
-                loss.backward()
+                self._loss.backward()
 
                 if is_update_step:
                     if self.kwargs.get('gradient_clip', None):
@@ -246,6 +247,7 @@ class Trainer(object):
 
                     self.optimizer.step()
                     self.model.zero_grad()
+                    # self.optimizer.zero_grad()
 
             if self.is_train and is_update_step and self.scheduler is not None and not self._update_scheduler_by_epoch:
                 self.scheduler.step()
@@ -306,7 +308,8 @@ class Trainer(object):
 
             avg_metrics.update(metrics)
 
-            if (batch_idx + 1) % self.log_interval == 0:
+            if (batch_idx + 1) % (self.log_interval *
+                                  self.gradient_accumulation_steps) == 0:
                 if mode == 'train':
                     elapsed = time.time() - start_time
 
@@ -318,7 +321,9 @@ class Trainer(object):
                                  total_batchs,
                                  self.scheduler.get_lr()[0],
                                  elapsed * 1000 /
-                                 (self.log_interval * get_world_size()),
+                                 (self.log_interval *
+                                  self.gradient_accumulation_steps *
+                                  get_world_size()),
                                  loss.item(),
                              ))
 

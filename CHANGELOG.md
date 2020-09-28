@@ -1,4 +1,16 @@
 
+# Release Note (`v1.2.14`)
+> Release time: 2020-09-28 12:11:53
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🍹 Other Improvements
+ - [[```dee66e36```](https://github.com/numb3r3/rosetta_stone/commit/dee66e36077c2b6b40f5c1653dae1b831ae79287)] __-__ __trainer__: make gradient_accumulation work correctly (*wangfeng*)
+ - [[```fcb34067```](https://github.com/numb3r3/rosetta_stone/commit/fcb34067bb8a5538f09fcaadfa9f01550a8423da)] __-__ __changelog__: update change log to v1.2.13 (*wangfeng*)
+
 # Release Note (`v1.2.13`)
 > Release time: 2020-09-11 14:23:24
 

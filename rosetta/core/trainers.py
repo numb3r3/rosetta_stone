@@ -340,7 +340,7 @@ class Trainer(object):
                     for tag, value in self.model.named_parameters():
                         tag = tag.replace('.', '/')
                         if value is None:
-                            print('[warning] the [%s] is None' % tag)
+                            logx.msg('[warning] the [%s] is None' % tag)
                             continue
                         logx.add_histogram('model/(train)' + tag, to_np(value),
                                            self.step)

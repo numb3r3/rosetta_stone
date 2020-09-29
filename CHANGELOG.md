@@ -1,4 +1,18 @@
 
+# Release Note (`v1.2.16`)
+> Release time: 2020-09-29 15:43:48
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🆕 New Features
+ - [[```83943bf2```](https://github.com/numb3r3/rosetta_stone/commit/83943bf2cf007c210e8f7a81eb7e943c75799ef4)] __-__ __visualizer__: check gradient flow in tensorboard (*wangfeng*)
+
+### 🍹 Other Improvements
+ - [[```c7458628```](https://github.com/numb3r3/rosetta_stone/commit/c7458628e2f3b79c40358d37656179f9a5c595de)] __-__ __changelog__: update change log to v1.2.15 (*wangfeng*)
+
 # Release Note (`v1.2.15`)
 > Release time: 2020-09-28 13:19:47
 

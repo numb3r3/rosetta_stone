@@ -173,6 +173,8 @@ def train(args, unused_argv):
         logx.msg(report_msg)
         logx.msg('-' * 89)
 
+        logx.add_hparams(hparams, eval_metrics, global_step=epoch)
+
 
 def eval(args, unused_argv):
     from collections import defaultdict

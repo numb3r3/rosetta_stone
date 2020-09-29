@@ -158,6 +158,7 @@ class Trainer(object):
                 self.optimizer, named_parameters=self.model.named_parameters())
 
         self._use_amp = use_amp
+        self.scaler = None
         if self._use_amp:
             self.scaler = torch.cuda.amp.GradScaler()
             self.logger.info('AMP is activated')
@@ -217,14 +218,27 @@ class Trainer(object):
                           self.gradient_accumulation_steps == 0)
 
         if self.is_train:
-            # backprop and update the parameters
-
-            # self.optimizer.zero_grad()
-
+            # backprop computation
             if self._use_amp:
                 self.scaler.scale(self._loss).backward()
+            else:
+                self._loss.backward()
 
-                if is_update_step:
+            # log the layers and layers gradient histogram and distributions
+            if (self.step + 1) % (self.log_interval *
+                                  self.gradient_accumulation_steps) == 0:
+                for tag, value in self.model.named_parameters():
+                    tag = tag.replace('.', '/')
+                    if value is not None and value.grad is not None:
+                        logx.add_histogram('model/' + tag, to_np(value),
+                                           self.step)
+
+                        logx.add_histogram('model/' + tag + '/grad',
+                                           to_np(value.grad), self.step)
+
+            # update the parameters
+            if is_update_step:
+                if self._use_amp:
                     if self.kwargs.get('gradient_clip', None):
                         self.scaler.unscale_(self.optimizer)
                         torch.nn.utils.clip_grad_norm_(
@@ -236,10 +250,7 @@ class Trainer(object):
                     self.scaler.update()
                     self.model.zero_grad()
                     # self.optimizer.zero_grad()
-            else:
-                self._loss.backward()
-
-                if is_update_step:
+                else:
                     if self.kwargs.get('gradient_clip', None):
                         torch.nn.utils.clip_grad_norm_(
                             self.model.parameters(),
@@ -249,8 +260,8 @@ class Trainer(object):
                     self.model.zero_grad()
                     # self.optimizer.zero_grad()
 
-            if self.is_train and is_update_step and self.scheduler is not None and not self._update_scheduler_by_epoch:
-                self.scheduler.step()
+                if self.scheduler is not None and not self._update_scheduler_by_epoch:
+                    self.scheduler.step()
 
         return output, loss, metrics
 
@@ -335,16 +346,6 @@ class Trainer(object):
                         self.step,
                     )
                     logx.metric(mode, metrics, self.step)
-
-                    # log the layers and layers gradient histogram and distributions
-                    for tag, value in self.model.named_parameters():
-                        tag = tag.replace('.', '/')
-                        if value is not None and value.grad is not None:
-                            logx.add_histogram('model/' + tag, to_np(value),
-                                               self.step)
-
-                            logx.add_histogram('model/' + tag + '/grad',
-                                               to_np(value.grad), self.step)
 
         return avg_metrics
 

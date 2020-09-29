@@ -50,5 +50,14 @@ def add_histogram(self, name, val, idx):
     self.tensorboard.add_histogram(name, val, idx)
 
 
+def add_hparams(self, hparam_dict, metric_dict, name=None, global_step=None):
+    self.tensorboard.add_hparams(
+        hparam_dict=hparam_dict,
+        metric_dict=metric_dict,
+        name=name,
+        global_step=global_step)
+
+
 logx.summary_model = lambda m: summary_model(logx, m)
 logx.add_histogram = lambda n, v, i: add_histogram(logx, n, v, i)
+logx.add_hparams = lambda p, m, n, i: add_hparams(logx, p, m, n, i)

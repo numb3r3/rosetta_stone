@@ -340,9 +340,10 @@ class Trainer(object):
                     for tag, value in self.model.named_parameters():
                         tag = tag.replace('.', '/')
                         if value is not None and value.grad is not None:
-                            logx.add_histogram(tag, to_np(value), self.step)
+                            logx.add_histogram('model/' + tag, to_np(value),
+                                               self.step)
 
-                            logx.add_histogram(tag + '/grad',
+                            logx.add_histogram('model/' + tag + '/grad',
                                                to_np(value.grad), self.step)
 
         return avg_metrics

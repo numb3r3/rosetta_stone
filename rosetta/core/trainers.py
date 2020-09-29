@@ -225,6 +225,7 @@ class Trainer(object):
                 self._loss.backward()
 
             # log the layers and layers gradient histogram and distributions
+            # NOTE: the visualization step must be called before `zero_grad()`
             if (self.step + 1) % (self.log_interval *
                                   self.gradient_accumulation_steps) == 0:
                 for tag, value in self.model.named_parameters():

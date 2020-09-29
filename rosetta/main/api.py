@@ -173,7 +173,7 @@ def train(args, unused_argv):
         logx.msg(report_msg)
         logx.msg('-' * 89)
 
-        logx.add_hparams(hparams, eval_metrics, global_step=epoch)
+        logx.add_hparams(hparams, eval_metrics, 'training', epoch)
 
 
 def eval(args, unused_argv):

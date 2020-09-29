@@ -45,4 +45,10 @@ def summary_model(self, model):
     print('Number of parameter = {}'.format(total_params))
 
 
+def add_histogram(self, name, val, idx):
+    """Write a histogram to the tensorboard file."""
+    self.tensorboard.add_histogram(name, val, idx)
+
+
 logx.summary_model = lambda m: summary_model(logx, m)
+logx.add_histogram = lambda n, v, i: add_histogram(logx, n, v, i)

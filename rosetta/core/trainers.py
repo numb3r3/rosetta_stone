@@ -28,7 +28,7 @@ from ..utils.distribute import (
     is_distributed,
     is_horovod_available,
 )
-from ..utils.logx import logx
+from ..utils.logx import logx, to_np
 
 
 class Trainer(object):
@@ -335,6 +335,14 @@ class Trainer(object):
                         self.step,
                     )
                     logx.metric(mode, metrics, self.step)
+
+                    # log the layers and layers gradient histogram and distributions
+                    for tag, value in self.model.named_parameters():
+                        tag = tag.replace('.', '/')
+                        logx.add_histogram('model/(train)' + tag, to_np(value),
+                                           self.step)
+                        logx.add_histogram('model/(train)' + tag + '/grad',
+                                           to_np(value.grad), self.step)
 
         return avg_metrics
 

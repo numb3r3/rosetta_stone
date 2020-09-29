@@ -1,6 +1,16 @@
 from runx.logx import logx
 
 
+def to_np(x):
+    """https://github.com/yunjey/pytorch-
+    tutorial/blob/master/tutorials/04-utils/tensorboard/main.py#L20.
+
+    :param x:
+    :return:
+    """
+    return x.data.cpu().numpy()
+
+
 def info(self, msg):
     assert hasattr(self, 'logger')
     if not self.rank0:

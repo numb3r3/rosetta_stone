@@ -173,11 +173,11 @@ def train(args, unused_argv):
         logx.msg(report_msg)
         logx.msg('-' * 89)
 
-        logx.add_hparams({k: v
-                          for k, v in hparams.items()},
-                         {k: v
-                          for k, v in eval_metrics.items()}, args.model_name,
-                         epoch)
+        # logx.add_hparams({k: v
+        #                   for k, v in hparams.items() if v.isinstance(str)},
+        #                  {k: v
+        #                   for k, v in eval_metrics.items()}, args.model_name,
+        #                  epoch)
 
 
 def eval(args, unused_argv):

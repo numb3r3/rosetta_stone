@@ -224,18 +224,18 @@ class Trainer(object):
             else:
                 self._loss.backward()
 
-            # # log the layers and layers gradient histogram and distributions
-            # # NOTE: the visualization step must be called before `zero_grad()`
-            # if (self.step + 1) % (self.log_interval *
-            #                       self.gradient_accumulation_steps) == 0:
-            #     for tag, value in self.model.named_parameters():
-            #         tag = tag.replace('.', '/')
-            #         if value is not None and value.grad is not None:
-            #             logx.add_histogram('model/' + tag, to_np(value),
-            #                                self.step)
+            # log the layers and layers gradient histogram and distributions
+            # NOTE: the visualization step must be called before `zero_grad()`
+            if (self.step + 1) % (self.log_interval *
+                                  self.gradient_accumulation_steps) == 0:
+                for tag, value in self.model.named_parameters():
+                    tag = tag.replace('.', '/')
+                    if value is not None and value.grad is not None:
+                        logx.add_histogram('model/' + tag, to_np(value),
+                                           self.step)
 
-            #             logx.add_histogram('model/' + tag + '/grad',
-            #                                to_np(value.grad), self.step)
+                        logx.add_histogram('model/' + tag + '/grad',
+                                           to_np(value.grad), self.step)
 
             # update the parameters
             if is_update_step:

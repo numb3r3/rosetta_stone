@@ -339,13 +339,11 @@ class Trainer(object):
                     # log the layers and layers gradient histogram and distributions
                     for tag, value in self.model.named_parameters():
                         tag = tag.replace('.', '/')
-                        if value is None:
-                            logx.msg('[warning] the [%s] is None' % tag)
-                            continue
-                        logx.add_histogram('model/(train)' + tag, to_np(value),
-                                           self.step)
-                        logx.add_histogram('model/(train)' + tag + '/grad',
-                                           to_np(value.grad), self.step)
+                        if value is not None and value.grad is not None:
+                            logx.add_histogram(tag, to_np(value), self.step)
+
+                            logx.add_histogram(tag + '/grad',
+                                               to_np(value.grad), self.step)
 
         return avg_metrics
 

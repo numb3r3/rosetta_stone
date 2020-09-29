@@ -339,6 +339,7 @@ class Trainer(object):
                     # log the layers and layers gradient histogram and distributions
                     for tag, value in self.model.named_parameters():
                         tag = tag.replace('.', '/')
+                        if not value: continue
                         logx.add_histogram('model/(train)' + tag, to_np(value),
                                            self.step)
                         logx.add_histogram('model/(train)' + tag + '/grad',

@@ -239,11 +239,8 @@ class Trainer(object):
                         logx.add_histogram('model/' + tag + '/grad',
                                            to_np(value.grad), self.step)
 
+            # update the parameters
             if is_update_step:
-                # reset gradient
-                self.optimizer.zero_grad()
-
-                # update the parameters
                 if self._use_amp:
                     if self.kwargs.get('gradient_clip', None):
                         self.scaler.unscale_(self.optimizer)
@@ -265,7 +262,12 @@ class Trainer(object):
                     # self.model.zero_grad()
                     # self.optimizer.zero_grad()
 
-                if self.scheduler is not None and not self._update_scheduler_by_epoch:
+                # reset gradient
+                self.model.zero_grad()
+                # self.optimizer.zero_grad()
+
+                if (self.scheduler
+                        is not None) and (not self._update_scheduler_by_epoch):
                     self.scheduler.step()
 
         return output, loss, metrics

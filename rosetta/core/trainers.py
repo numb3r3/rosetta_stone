@@ -276,11 +276,22 @@ class Trainer(object):
               data_loader: Iterable or DataLoader,
               mode: str = 'train',
               **kwargs):
-        batch_size, total_size = ((data_loader.batch_size,
-                                   len(data_loader.dataset)) if isinstance(
-                                       data_loader, DataLoader) else
-                                  (len(data_loader), len(data_loader)))
-        total_batchs = total_size // batch_size
+        # batch_size, total_size = ((data_loader.batch_size,
+        #                            len(data_loader.dataset)) if isinstance(
+        #                                data_loader, DataLoader) else
+        #                           (len(data_loader), len(data_loader)))
+        # total_batchs = total_size // batch_size
+
+        batch_size = data_loader.batch_size if hasattr(
+            data_loader, 'batch_size') else len(data_loader)
+        total_size = None
+        if hasattr(data_loader, 'dataset') and hasattr(data_loader.dataset,
+                                                       '__len__'):
+            total_size = len(data_loader.dataset)
+        elif hasattr(data_loader, '__len__'):
+            total_size = len(data_loader)
+
+        total_batchs = total_size // batch_size if total_size else None
 
         # keep tracking the model's metric
         avg_metrics = AverageDictMeter()
@@ -288,26 +299,26 @@ class Trainer(object):
 
         prefetcher = None
         if self._use_prefetcher:
-            if is_distributed():
-                from ..data.prefetcher import DataPrefetcher
-                prefetcher = DataPrefetcher(data_loader)
-                self.logger.info(
-                    'use `rosetta_stone.data.prefetcher.DataPrefetcher` as prefetcher'
-                )
-            else:
-                # NOTE: async dataloader is better than DataPrefetcher,
-                #         However, it does not work with DDP
-                from ..data.async_data import AsyncDataLoader
-                prefetcher = AsyncDataLoader(data_loader)
-                self.logger.info(
-                    'use `rosetta_stone.data.async_data.AsyncDataLoader` as prefetcher'
-                )
+            # if is_distributed():
+            #     from ..data.prefetcher import DataPrefetcher
+            #     prefetcher = DataPrefetcher(data_loader)
+            #     self.logger.info(
+            #         'use `rosetta_stone.data.prefetcher.DataPrefetcher` as prefetcher'
+            #     )
+            # else:
+            #     # NOTE: async dataloader is better than DataPrefetcher,
+            #     #         However, it does not work with DDP
+            #     from ..data.async_data import AsyncDataLoader
+            #     prefetcher = AsyncDataLoader(data_loader)
+            #     self.logger.info(
+            #         'use `rosetta_stone.data.async_data.AsyncDataLoader` as prefetcher'
+            #     )
 
-            # from ..data.prefetcher import DataPrefetcher
-            # prefetcher = DataPrefetcher(data_loader)
-            # self.logger.info(
-            #     'use `rosetta_stone.data.prefetcher.DataPrefetcher` as prefetcher'
-            # )
+            from ..utils.prefetcher import DataPrefetcher
+            prefetcher = DataPrefetcher(data_loader)
+            self.logger.info(
+                'use `rosetta_stone.data.prefetcher.DataPrefetcher` as prefetcher'
+            )
 
         for batch_idx, batch_data in enumerate(prefetcher or data_loader):
             # move batch of samples to device
@@ -328,7 +339,7 @@ class Trainer(object):
 
             # emptying the CUDA cache after the first step can
             # reduce the chance of OOM
-            if 'cuda' in str(self.device) and self.step == 0:
+            if 'cuda' in str(self.device) and batch_idx == 0:
                 torch.cuda.empty_cache()
 
             if (batch_idx + 1) % (self.log_interval *
@@ -341,7 +352,7 @@ class Trainer(object):
                              'loss {:5.3f}'.format(
                                  self.epoch,
                                  (batch_idx + 1) * get_world_size(),
-                                 total_batchs,
+                                 total_batchs if total_batchs else -1,
                                  self.scheduler.get_lr()[0],
                                  elapsed * 1000 /
                                  (self.log_interval *

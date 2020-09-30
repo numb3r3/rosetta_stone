@@ -104,23 +104,31 @@ def train(args, unused_argv):
     eval_loader = dataio.create_data_loader(
         eval_data_path, mode='eval', num_workers=num_workers, **hparams)
 
+    total_size = None
+
+    if hasattr(data_loader, 'dataset') and hasattr(train_loader.dataset,
+                                                   '__len__'):
+        total_size = len(train_loader.dataset)
+    elif hasattr(train_loader, '__len__'):
+        total_size = len(train_loader)
+
+    if total_size:
+        steps_per_epoch = total_size // (
+            hparams['batch_size'] * get_world_size())
+    else:
+        steps_per_epoch = hparams.get('steps_per_epoch', None)
+
     # adjust learning rate decay parameter
-    from torch.utils.data import DataLoader
-
-    total_size = (
-        len(train_loader.dataset)
-        if isinstance(train_loader, DataLoader) else len(train_loader))
-    epoch_steps = total_size // (hparams['batch_size'] * get_world_size())
-
-    if hparams['lr_warmup_epochs'] > 0:
-        hparams['lr_warmup_steps'] = int(hparams['lr_warmup_epochs'] *
-                                         epoch_steps)
-    if hparams['lr_constant_epochs'] > 0:
-        hparams['lr_constant_steps'] = int(hparams['lr_constant_epochs'] *
-                                           epoch_steps)
-    if hparams['lr_decay_epochs'] > 0:
-        hparams['lr_decay_steps'] = int(hparams['lr_decay_epochs'] *
-                                        epoch_steps)
+    if epoch_steps:
+        if hparams['lr_warmup_epochs'] > 0:
+            hparams['lr_warmup_steps'] = int(hparams['lr_warmup_epochs'] *
+                                             steps_per_epoch)
+        if hparams['lr_constant_epochs'] > 0:
+            hparams['lr_constant_steps'] = int(hparams['lr_constant_epochs'] *
+                                               steps_per_epoch)
+        if hparams['lr_decay_epochs'] > 0:
+            hparams['lr_decay_steps'] = int(hparams['lr_decay_epochs'] *
+                                            steps_per_epoch)
 
     device = 'cpu' if args.no_cuda else 'cuda'
 

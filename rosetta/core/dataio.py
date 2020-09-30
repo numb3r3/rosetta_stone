@@ -9,7 +9,6 @@ from torch.utils.data.sampler import RandomSampler
 
 from .. import helper
 from ..utils.distribute import get_global_rank, get_world_size, is_distributed
-from ..data.prefetcher import DataPrefetcher
 
 
 class BaseDataIO:

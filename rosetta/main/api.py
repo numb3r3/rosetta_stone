@@ -97,12 +97,11 @@ def train(args, unused_argv):
     # data loading code
     train_data_path = hparams.pop('train_data_path')
     eval_data_path = hparams.pop('eval_data_path')
-    num_workers = hparams.pop('dataloader_workers')
 
     train_loader = dataio.create_data_loader(
-        train_data_path, mode='train', num_workers=num_workers, **hparams)
+        train_data_path, mode='train', **hparams)
     eval_loader = dataio.create_data_loader(
-        eval_data_path, mode='eval', num_workers=num_workers, **hparams)
+        eval_data_path, mode='eval', **hparams)
 
     total_size = None
 
@@ -206,10 +205,9 @@ def eval(args, unused_argv):
 
     # data loading code
     eval_data_path = hparams.pop('eval_data_path')
-    num_workers = hparams.pop('dataloader_workers')
 
     eval_loader = dataio.create_data_loader(
-        eval_data_path, mode='eval', num_workers=num_workers, **hparams)
+        eval_data_path, mode='eval', **hparams)
 
     device = 'cpu' if args.no_cuda else 'cuda'
 

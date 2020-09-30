@@ -1,4 +1,19 @@
 
+# Release Note (`v1.2.18`)
+> Release time: 2020-09-30 19:46:28
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🆕 New Features
+ - [[```bba1b44b```](https://github.com/numb3r3/rosetta_stone/commit/bba1b44b96741fc7bc2444af5da492bfb410592a)] __-__ __dataio__: try to support streaming dataset with ease use of multi-worker (*wangfeng*)
+
+### 🍹 Other Improvements
+ - [[```7c6247a8```](https://github.com/numb3r3/rosetta_stone/commit/7c6247a801b9c18f9d2da16d7116367d7331fc27)] __-__ revert ... (*wangfeng*)
+ - [[```a2d1bab3```](https://github.com/numb3r3/rosetta_stone/commit/a2d1bab346d3cd8166fe9355e937739e8904bb39)] __-__ __changelog__: update change log to v1.2.17 (*wangfeng*)
+
 # Release Note (`v1.2.17`)
 > Release time: 2020-09-30 11:33:27
 

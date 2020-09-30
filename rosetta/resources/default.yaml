@@ -15,7 +15,7 @@ default: &default
     eval_metric: accuracy
     higher_better: true
 
-  dataloader_workers: 0
+  num_workers: 0
 
   log_interval: 10
   save_checkpoints_steps: 500

@@ -92,6 +92,9 @@ class BaseDataIO:
                 and 'forkserver' in mp.get_all_start_methods()):
             loader_kwargs['multiprocessing_context'] = 'forkserver'
 
+        from ..utils.logx import logx
+        logx.msg('############3 number of works: %d' % num_workers)
+
         return DataLoader(
             dataset,
             sampler=sampler,

@@ -206,19 +206,22 @@ class Trainer(object):
             try:
                 output, loss, metrics = self.model(*data)
                 # collapse all losses if they are scattered on multiple gpus
-                loss = loss.mean()
+                if get_world_size() > 1:
+                    loss = loss.mean()
             except Exception:
                 raise ValueError(
-                    f'The implemented module = {type(self.model)} should return 3-tuples, i.e, output, loss, metrics. '
+                    f'The implemented module = {type(self.accessible_model)} should return 3-tuples, i.e, output, loss, metrics. '
                 )
 
         self._loss = loss / self.gradient_accumulation_steps
 
         is_update_step = ((self.step + 1) %
                           self.gradient_accumulation_steps == 0)
+        is_log_step = (self.step + 1) % (self.log_interval *
+                                         self.gradient_accumulation_steps) == 0
 
         if self.is_train:
-            # backprop computation
+            # back propagation
             if self._use_amp:
                 self.scaler.scale(self._loss).backward()
             else:
@@ -226,8 +229,7 @@ class Trainer(object):
 
             # log the layers and layers gradient histogram and distributions
             # NOTE: the visualization step must be called before `zero_grad()`
-            if (self.step + 1) % (self.log_interval *
-                                  self.gradient_accumulation_steps) == 0:
+            if is_log_step:
                 for tag, value in self.model.named_parameters():
                     tag = tag.replace('.', '/')
                     if value is not None and value.grad is not None:
@@ -237,8 +239,11 @@ class Trainer(object):
                         logx.add_histogram('model/' + tag + '/grad',
                                            to_np(value.grad), self.step)
 
-            # update the parameters
             if is_update_step:
+                # reset gradient
+                self.optimizer.zero_grad()
+
+                # update the parameters
                 if self._use_amp:
                     if self.kwargs.get('gradient_clip', None):
                         self.scaler.unscale_(self.optimizer)
@@ -246,10 +251,9 @@ class Trainer(object):
                             self.model.parameters(),
                             self.kwargs['gradient_max_norm'])
 
-                    # optimizer.zero_grad()
                     self.scaler.step(self.optimizer)
                     self.scaler.update()
-                    self.model.zero_grad()
+                    # self.model.zero_grad()
                     # self.optimizer.zero_grad()
                 else:
                     if self.kwargs.get('gradient_clip', None):
@@ -258,7 +262,7 @@ class Trainer(object):
                             self.kwargs['gradient_max_norm'])
 
                     self.optimizer.step()
-                    self.model.zero_grad()
+                    # self.model.zero_grad()
                     # self.optimizer.zero_grad()
 
                 if self.scheduler is not None and not self._update_scheduler_by_epoch:
@@ -319,6 +323,11 @@ class Trainer(object):
                 metrics.update({'loss': loss})
 
             avg_metrics.update(metrics)
+
+            # emptying the CUDA cache after the first step can
+            # reduce the chance of OOM
+            if 'cuda' in str(self.device) and self.step == 0:
+                torch.cuda.empty_cache()
 
             if (batch_idx + 1) % (self.log_interval *
                                   self.gradient_accumulation_steps) == 0:

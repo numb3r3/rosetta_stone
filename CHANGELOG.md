@@ -1,4 +1,19 @@
 
+# Release Note (`v1.2.17`)
+> Release time: 2020-09-30 11:33:27
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🚧 Code Refactoring
+ - [[```8e5c3693```](https://github.com/numb3r3/rosetta_stone/commit/8e5c3693831a65b2e86e26e8268a29e3e4783199)] __-__ __trainier__: optimize training loop (*wangfeng*)
+
+### 🍹 Other Improvements
+ - [[```4b3ef36b```](https://github.com/numb3r3/rosetta_stone/commit/4b3ef36b87cbdb3cf976e1f04976da9bf8e9c31b)] __-__ ... (*wangfeng*)
+ - [[```4a8a5e6b```](https://github.com/numb3r3/rosetta_stone/commit/4a8a5e6be6f1bb1e02060604cf3937483e0b5d2e)] __-__ __changelog__: update change log to v1.2.16 (*wangfeng*)
+
 # Release Note (`v1.2.16`)
 > Release time: 2020-09-29 15:43:48
 

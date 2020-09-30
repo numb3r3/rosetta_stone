@@ -106,8 +106,8 @@ def train(args, unused_argv):
 
     total_size = None
 
-    if hasattr(data_loader, 'dataset') and hasattr(train_loader.dataset,
-                                                   '__len__'):
+    if hasattr(train_loader, 'dataset') and hasattr(train_loader.dataset,
+                                                    '__len__'):
         total_size = len(train_loader.dataset)
     elif hasattr(train_loader, '__len__'):
         total_size = len(train_loader)

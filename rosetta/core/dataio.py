@@ -80,6 +80,10 @@ class BaseDataIO:
         elif is_train:
             sampler = RandomSampler(dataset, True)
 
+        # NOTE: `IterableDataset` does not work with sampler
+        if isinstance(dataset, torch.utils.data.IterableDataset):
+            sampler = None
+
         loader_kwargs = dict()
         # When supported, use 'forkserver' to spawn dataloader workers instead of 'fork' to prevent
         # issues with Infiniband implementations that are not fork-safe

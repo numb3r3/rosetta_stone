@@ -119,7 +119,7 @@ def train(args, unused_argv):
         steps_per_epoch = hparams.get('steps_per_epoch', None)
 
     # adjust learning rate decay parameter
-    if epoch_steps:
+    if steps_per_epoch:
         if hparams['lr_warmup_epochs'] > 0:
             hparams['lr_warmup_steps'] = int(hparams['lr_warmup_epochs'] *
                                              steps_per_epoch)

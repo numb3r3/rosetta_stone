@@ -76,7 +76,7 @@ setup(
         'isort==4.3.21',
     ],
     tests_require=['pytest'],
-    python_requires='>=3.6',
+    python_requires='>=3.5',
     entry_points={'console_scripts': ['rosetta=rosetta.main.__main__:main']},
     classifiers=[
         'Programming Language :: Python :: 3',

@@ -1,4 +1,16 @@
 
+# Release Note (`v1.2.19`)
+> Release time: 2020-10-12 14:10:40
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🍹 Other Improvements
+ - [[```6d5ad1e4```](https://github.com/numb3r3/rosetta_stone/commit/6d5ad1e43ca8dc1352232942223aed5830041ae6)] __-__ fix setup for py3.5 (*wangfeng*)
+ - [[```963d067a```](https://github.com/numb3r3/rosetta_stone/commit/963d067a03fe9c6165bf84823e64dbfe998b90af)] __-__ __changelog__: update change log to v1.2.18 (*wangfeng*)
+
 # Release Note (`v1.2.18`)
 > Release time: 2020-09-30 19:46:28
 

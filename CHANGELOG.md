@@ -1,4 +1,16 @@
 
+# Release Note (`v1.2.20`)
+> Release time: 2020-10-22 11:20:32
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🍹 Other Improvements
+ - [[```aad96f91```](https://github.com/numb3r3/rosetta_stone/commit/aad96f91bbe2b5db60ef9de917a3a5a082f90d00)] __-__ fix model and dataio import (*wangfeng*)
+ - [[```b7e869f0```](https://github.com/numb3r3/rosetta_stone/commit/b7e869f044f9674c4d2fb4fc312973835d0903e0)] __-__ __changelog__: update change log to v1.2.19 (*wangfeng*)
+
 # Release Note (`v1.2.19`)
 > Release time: 2020-10-12 14:10:40
 

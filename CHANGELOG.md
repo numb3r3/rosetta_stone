@@ -1,4 +1,16 @@
 
+# Release Note (`v1.2.21`)
+> Release time: 2020-11-05 18:51:08
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🍹 Other Improvements
+ - [[```ccc7c058```](https://github.com/numb3r3/rosetta_stone/commit/ccc7c058e64414d3a1d697e6a1ecc6d0584c9641)] __-__ fix rumal.yaml (*wangfeng*)
+ - [[```cde13f13```](https://github.com/numb3r3/rosetta_stone/commit/cde13f13e2be779102ce4c0268fdb7fe51825d76)] __-__ __changelog__: update change log to v1.2.20 (*wangfeng*)
+
 # Release Note (`v1.2.20`)
 > Release time: 2020-10-22 11:20:32
 

@@ -267,7 +267,10 @@ class Trainer(object):
 
                 if (self.scheduler
                         is not None) and (not self._update_scheduler_by_epoch):
-                    self.scheduler.step()
+
+                    # update scheduler step by gradient_accumulation_steps
+                    for _ in range(self.gradient_accumulation_steps):
+                        self.scheduler.step()
 
         return output, loss, metrics
 

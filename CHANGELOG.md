@@ -1,4 +1,18 @@
 
+# Release Note (`v1.2.25`)
+> Release time: 2020-11-12 15:31:54
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🐞 Bug fixes
+ - [[```f722a1c8```](https://github.com/numb3r3/rosetta_stone/commit/f722a1c8e90b958e4b74c95fced6f7a2c09c0917)] __-__ __scheduler__: update step by gradient_accumulation_steps (*wangfeng*)
+
+### 🍹 Other Improvements
+ - [[```ba0dfd71```](https://github.com/numb3r3/rosetta_stone/commit/ba0dfd71cbe2af0f8d64608d2aabdc7cde329bcf)] __-__ __changelog__: update change log to v1.2.24 (*wangfeng*)
+
 # Release Note (`v1.2.24`)
 > Release time: 2020-11-12 15:02:11
 

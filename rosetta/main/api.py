@@ -131,13 +131,13 @@ def train(args, unused_argv):
                                     steps_per_epoch)
             print('%20s: %20s -> %20s' %
                   ('lr_constant_steps', hparams.get('lr_constant_steps'),
-                   lr_warmup_steps))
+                   lr_constant_steps))
             hparams['lr_constant_steps'] = lr_constant_steps
         if hparams['lr_decay_epochs'] > 0:
             lr_decay_steps = int(hparams['lr_decay_epochs'] * steps_per_epoch)
             print('%20s: %20s -> %20s' %
                   ('lr_decay_steps', hparams.get('lr_decay_steps'),
-                   lr_warmup_steps))
+                   lr_decay_steps))
             hparams['lr_decay_steps'] = lr_decay_steps
 
     device = 'cpu' if args.no_cuda else 'cuda'

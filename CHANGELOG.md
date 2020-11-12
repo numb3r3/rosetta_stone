@@ -1,4 +1,21 @@
 
+# Release Note (`v1.2.23`)
+> Release time: 2020-11-12 12:48:46
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🆕 New Features
+ - [[```d2b84c15```](https://github.com/numb3r3/rosetta_stone/commit/d2b84c1538fee46fb746e944eb37315e8420882e)] __-__ __trainer__: move data to cuda with no_blocking (*wangfeng*)
+
+### 🐞 Bug fixes
+ - [[```fc09ad8f```](https://github.com/numb3r3/rosetta_stone/commit/fc09ad8f3a13a1a7758616216cad4f1b943cf005)] __-__ __api__: fix lr_decay update error (*wangfeng*)
+
+### 🍹 Other Improvements
+ - [[```7f971696```](https://github.com/numb3r3/rosetta_stone/commit/7f97169630b347db3070eadc4ce63c80f8c81936)] __-__ __changelog__: update change log to v1.2.22 (*wangfeng*)
+
 # Release Note (`v1.2.22`)
 > Release time: 2020-11-12 11:59:50
 

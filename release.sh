@@ -112,7 +112,7 @@ then
     # write back tag to client and server code
     VER_VAL=$VER_TAG"'"${VER#"v"}"'"
     change_line "$VER_TAG" "$VER_VAL" $INIT_FILE
-    pub_pypi
+    # pub_pypi
     pub_gittag
     make_chore_pr $VER
 fi

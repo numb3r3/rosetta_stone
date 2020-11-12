@@ -67,10 +67,12 @@ class BaseDataIO:
             tensor_names = dataset.tensor_names
 
         sampler = None
+        drop_last = False
         if is_distributed():
             sampler_kwargs = dict(
                 num_replicas=get_world_size(), rank=get_global_rank())
             sampler = DistributedSampler(dataset, **sampler_kwargs)
+            drop_last = True
 
             # In distributed mode, calling the :meth`set_epoch(epoch) <set_epoch>` method
             # at the beginning of each epoch **before** creating the `DataLoader` iterator is necessary
@@ -104,4 +106,5 @@ class BaseDataIO:
                 **kwargs),
             pin_memory=pin_memory,
             num_workers=num_workers,
+            drop_last=drop_last,
             **loader_kwargs)

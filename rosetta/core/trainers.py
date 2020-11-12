@@ -91,9 +91,8 @@ class Trainer(object):
         self._use_sync_bn = use_sync_bn
         if is_distributed():
             if self._use_sync_bn:
+                self.logger.info('Convert batch norm to sync batch norm')
                 model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
-                self.logger.info(
-                    'BNs of model are converted to nn.SyncBatchNorm')
 
             rank = get_local_rank()
             torch.cuda.set_device(rank)

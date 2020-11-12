@@ -264,11 +264,11 @@ class Trainer(object):
 
                 # reset gradient
                 self.model.zero_grad()
-                # self.optimizer.zero_grad()
+                self.optimizer.zero_grad()
 
-            if (self.scheduler
-                    is not None) and (not self._update_scheduler_by_epoch):
-                self.scheduler.step()
+                if (self.scheduler
+                        is not None) and (not self._update_scheduler_by_epoch):
+                    self.scheduler.step()
 
         return output, loss, metrics
 
@@ -322,10 +322,12 @@ class Trainer(object):
 
         for batch_idx, batch_data in enumerate(prefetcher or data_loader):
             # move batch of samples to device
-            batch_data = [
-                x.to(self.device) if isinstance(x, torch.Tensor) else x
-                for x in batch_data
-            ]
+
+            if 'cuda' in str(self.device):
+                batch_data = [
+                    x.to(self.device, non_blocking=True) if isinstance(
+                        x, torch.Tensor) else x for x in batch_data
+                ]
 
             if self.is_train:
                 self._step += 1

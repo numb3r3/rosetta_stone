@@ -1,4 +1,23 @@
 
+# Release Note (`v1.2.22`)
+> Release time: 2020-11-12 11:59:50
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🆕 New Features
+ - [[```68d71be8```](https://github.com/numb3r3/rosetta_stone/commit/68d71be8842e299a100cd2fedc580c7ca8e6cd68)] __-__ __api__: output the updated lr_delay related params (*wangfeng*)
+ - [[```e732bbb0```](https://github.com/numb3r3/rosetta_stone/commit/e732bbb06da598b828f7b389df15e0535b28325b)] __-__ __dataio__: enable drop_last in distributed training (*wangfeng*)
+
+### 🐞 Bug fixes
+ - [[```2ec884a4```](https://github.com/numb3r3/rosetta_stone/commit/2ec884a44c677e6fe312498b98a0ffec343a2fe2)] __-__ __scheduler__: update scheduler each step without considering graident accumulate (*wangfeng*)
+
+### 🍹 Other Improvements
+ - [[```112ab798```](https://github.com/numb3r3/rosetta_stone/commit/112ab798cfb17c8933158ca89e40f7ce9a48b446)] __-__ unable publish to pypi (*wangfeng*)
+ - [[```1d478300```](https://github.com/numb3r3/rosetta_stone/commit/1d4783006a0f56e546f2d6940bc95e7310cb9bf0)] __-__ __changelog__: update change log to v1.2.21 (*wangfeng*)
+
 # Release Note (`v1.2.21`)
 > Release time: 2020-11-05 18:51:08
 

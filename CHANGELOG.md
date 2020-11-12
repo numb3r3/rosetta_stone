@@ -1,4 +1,19 @@
 
+# Release Note (`v1.2.24`)
+> Release time: 2020-11-12 15:02:11
+
+
+🙇 We'd like to thank all contributors for this new release! In particular,
+ wangfeng,  🙇
+
+
+### 🐞 Bug fixes
+ - [[```5440697a```](https://github.com/numb3r3/rosetta_stone/commit/5440697a1e1e4e62bec05e4de4eed7cb758620ce)] __-__ __dataio__: enable shuffle in distributed data parall training (*wangfeng*)
+
+### 🍹 Other Improvements
+ - [[```09b42ea1```](https://github.com/numb3r3/rosetta_stone/commit/09b42ea1f68546a2b233f8e5a9d43b7df8229734)] __-__ __logging__: minor revision logging info (*wangfeng*)
+ - [[```d6544319```](https://github.com/numb3r3/rosetta_stone/commit/d65443196ca7f2d6a83cf0f4da59685419ef89b6)] __-__ __changelog__: update change log to v1.2.23 (*wangfeng*)
+
 # Release Note (`v1.2.23`)
 > Release time: 2020-11-12 12:48:46
 

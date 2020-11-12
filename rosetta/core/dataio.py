@@ -70,7 +70,9 @@ class BaseDataIO:
         drop_last = False
         if is_distributed():
             sampler_kwargs = dict(
-                num_replicas=get_world_size(), rank=get_global_rank())
+                num_replicas=get_world_size(),
+                rank=get_global_rank(),
+                shuffle=True if is_train else False)
             sampler = DistributedSampler(dataset, **sampler_kwargs)
             drop_last = True
 

@@ -266,9 +266,9 @@ class Trainer(object):
                 self.model.zero_grad()
                 # self.optimizer.zero_grad()
 
-                if (self.scheduler
-                        is not None) and (not self._update_scheduler_by_epoch):
-                    self.scheduler.step()
+            if (self.scheduler
+                    is not None) and (not self._update_scheduler_by_epoch):
+                self.scheduler.step()
 
         return output, loss, metrics
 
